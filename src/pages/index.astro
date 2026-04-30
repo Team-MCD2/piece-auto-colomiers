@@ -147,14 +147,23 @@ const homeFaq = FAQ.filter((f) => f.home).slice(0, 5);
       <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-6">
         {featured.map((cat) => (
           <a href={`/catalogue/${cat.slug}`} class="card-interactive group flex flex-col">
-            <div class="aspect-[4/3] bg-charcoal-50 overflow-hidden rounded-t-card">
+            {/* Visuel : placeholder gradient marine avec initiale en filigrane.
+                Si l'image catégorie existe (assets:images), elle recouvre.
+                Si 404 (assets pas encore générés), le placeholder reste visible. */}
+            <div class="aspect-[4/3] overflow-hidden rounded-t-card relative bg-gradient-to-br from-marine-700 to-marine-900">
+              <span
+                class="absolute inset-0 flex items-center justify-center font-display font-bold text-7xl text-signal-400/30 select-none pointer-events-none"
+                aria-hidden="true"
+              >
+                {cat.label.charAt(0)}
+              </span>
               <img
                 src={cat.image}
                 alt={cat.label}
-                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-brand"
+                class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-brand"
                 loading="lazy"
                 decoding="async"
-                onerror="this.parentElement.classList.add('bg-marine-100');this.style.display='none'"
+                onerror="this.style.display='none'"
               />
             </div>
             <div class="p-4 flex-1 flex flex-col">

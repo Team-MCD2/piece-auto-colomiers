@@ -44,22 +44,30 @@ const breadcrumb = [
     <div class="container-tight space-y-6">
       {SERVICES.map((s) => (
         <article id={s.slug} class={`card p-6 lg:p-8 ${s.usp ? 'border-2 border-signal-400/40' : ''}`}>
-          <div class="grid lg:grid-cols-12 gap-6 items-start">
-            <div class="lg:col-span-3">
-              <div class="flex items-center gap-3 mb-2">
+          <div class="flex flex-col lg:flex-row lg:items-center gap-5 lg:gap-8">
+            {/* Bloc gauche : badges + titre + tagline (largeur fixe sur lg) */}
+            <div class="lg:w-64 lg:shrink-0">
+              <div class="flex items-center gap-2 mb-2 flex-wrap">
                 {s.usp && <span class="badge-signal">USP</span>}
                 {s.audience === 'pro' && <span class="badge-sky">B2B</span>}
               </div>
-              <h2 class="font-display uppercase text-h3 text-marine-800">{s.label}</h2>
+              <h2 class="font-display uppercase text-h3 text-marine-800 leading-tight">{s.label}</h2>
               <p class="text-sm text-charcoal-500 mt-2">{s.short}</p>
             </div>
-            <div class="lg:col-span-7">
+
+            {/* Description (prend l'espace restant) */}
+            <div class="flex-1 min-w-0">
               <p class="text-charcoal-700 leading-relaxed">{s.desc}</p>
             </div>
-            <div class="lg:col-span-2 flex lg:justify-end">
+
+            {/* CTA (auto-width, jamais brisé) */}
+            <div class="lg:shrink-0">
               <a
                 href={s.cta.href}
-                class={s.usp ? 'btn-primary btn-md w-full lg:w-auto' : 'btn-secondary btn-md w-full lg:w-auto'}
+                class:list={[
+                  s.usp ? 'btn-primary' : 'btn-secondary',
+                  'btn-md w-full lg:w-auto whitespace-nowrap',
+                ]}
               >
                 {s.cta.label}
               </a>

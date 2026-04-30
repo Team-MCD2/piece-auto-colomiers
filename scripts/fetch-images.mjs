@@ -105,13 +105,40 @@ async function downloadImage(url, dest) {
   return buf.length;
 }
 
-async function processCategory(cat, apiKey) {
+/**
+ * Décide s'il faut (re)télécharger une catégorie.
+ * Règles :
+ *   - force=true                      → toujours re-fetch
+ *   - fichier absent                  → fetch
+ *   - existant source=pexels          → skip (déjà optimal)
+ *   - existant source=picsum + apiKey → upgrade (re-fetch Pexels)
+ *   - existant source=picsum sans key → skip (pas de downgrade possible)
+ *   - existant sans credits           → traité comme picsum (legacy)
+ */
+function shouldFetch({ fileExists, existingCredit, apiKey, force }) {
+  if (force) return { fetch: true, reason: 'force' };
+  if (!fileExists) return { fetch: true, reason: 'new' };
+  const source = existingCredit?.source || 'picsum'; // legacy = picsum
+  if (source === 'pexels') return { fetch: false, reason: 'pexels-already' };
+  if (source === 'picsum' && apiKey) return { fetch: true, reason: 'upgrade' };
+  return { fetch: false, reason: 'no-upgrade-path' };
+}
+
+async function processCategory(cat, apiKey, existingCredit, force) {
   const dest = join(OUT_DIR, `${cat.slug}.jpg`);
-  if (await exists(dest)) {
-    return { slug: cat.slug, status: 'skipped', credit: null };
+  const fileExists = await exists(dest);
+  const decision = shouldFetch({ fileExists, existingCredit, apiKey, force });
+
+  if (!decision.fetch) {
+    return { slug: cat.slug, status: 'skipped', reason: decision.reason, credit: null };
   }
 
-  process.stdout.write(`  ⬇ ${cat.slug.padEnd(28)} `);
+  // Préfixe différent selon le contexte
+  const prefix =
+    decision.reason === 'upgrade' ? '  ↑' :
+    decision.reason === 'force'   ? '  ↻' :
+                                     '  ⬇';
+  process.stdout.write(`${prefix} ${cat.slug.padEnd(28)} `);
 
   let credit = null;
   if (apiKey) {
@@ -126,15 +153,17 @@ async function processCategory(cat, apiKey) {
   if (!credit) {
     credit = picsumFallback(cat.slug);
     process.stdout.write('(picsum) ');
+  } else if (decision.reason === 'upgrade') {
+    process.stdout.write('(pexels) ');
   }
 
   try {
     const size = await downloadImage(credit.url, dest);
     process.stdout.write(`✓ ${(size / 1024).toFixed(0)} KB\n`);
-    return { slug: cat.slug, status: 'downloaded', credit };
+    return { slug: cat.slug, status: 'downloaded', reason: decision.reason, credit };
   } catch (err) {
     process.stdout.write(`✗ ${err.message}\n`);
-    return { slug: cat.slug, status: 'failed', credit: null };
+    return { slug: cat.slug, status: 'failed', reason: decision.reason, credit: null };
   }
 }
 
@@ -148,8 +177,11 @@ async function loadExistingCredits() {
 }
 
 async function main() {
+  const force = process.argv.includes('--force') || process.argv.includes('-f');
+
   console.log('═══════════════════════════════════════════════════════════════');
   console.log('  Fetch images catégories — Pexels (ou Picsum fallback)');
+  if (force) console.log('  Mode : --force (re-fetch complet)');
   console.log('═══════════════════════════════════════════════════════════════');
 
   await loadEnv();
@@ -164,14 +196,20 @@ async function main() {
   await mkdir(OUT_DIR, { recursive: true });
 
   const categories = await loadCategories();
+  const existing = await loadExistingCredits();
+
+  // Compter combien d'upgrades sont prévus pour le user
+  const picsumCount = Object.values(existing).filter((c) => c?.source === 'picsum').length;
+  if (apiKey && picsumCount > 0 && !force) {
+    console.log(`🔁 ${picsumCount} placeholder(s) Picsum détecté(s) — upgrade Pexels automatique`);
+  }
   console.log(`📦 ${categories.length} catégories à traiter\n`);
 
-  const existing = await loadExistingCredits();
   const credits = { ...existing };
   const results = [];
 
   for (const cat of categories) {
-    const r = await processCategory(cat, apiKey);
+    const r = await processCategory(cat, apiKey, existing[cat.slug], force);
     results.push(r);
     if (r.credit) {
       credits[r.slug] = {
@@ -183,18 +221,22 @@ async function main() {
       };
     }
     // Petite pause pour éviter rate-limit Pexels (200 req/h sur le plan free)
-    if (apiKey) await new Promise((r) => setTimeout(r, 250));
+    if (apiKey && r.status === 'downloaded') await new Promise((r) => setTimeout(r, 250));
   }
 
   await writeFile(CREDITS_FILE, JSON.stringify(credits, null, 2) + '\n', 'utf8');
 
   const downloaded = results.filter((r) => r.status === 'downloaded').length;
+  const upgraded = results.filter((r) => r.status === 'downloaded' && r.reason === 'upgrade').length;
   const skipped = results.filter((r) => r.status === 'skipped').length;
   const failed = results.filter((r) => r.status === 'failed').length;
 
   console.log('\n═══════════════════════════════════════════════════════════════');
-  console.log(`✅ ${downloaded} téléchargées · ${skipped} skip · ${failed} échec`);
+  console.log(`✅ ${downloaded} téléchargées (dont ${upgraded} upgrade picsum→pexels) · ${skipped} skip · ${failed} échec`);
   console.log(`   Credits écrits : ${CREDITS_FILE}`);
+  if (failed > 0) {
+    console.log('   ⚠ Certaines catégories ont échoué. Relancez le script pour réessayer.');
+  }
   console.log('═══════════════════════════════════════════════════════════════');
 }
 
