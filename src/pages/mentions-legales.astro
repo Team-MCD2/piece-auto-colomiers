@@ -1,0 +1,160 @@
+---
+/**
+ * Mentions légales — page legalement obligatoire pour tout site d'entreprise FR.
+ *
+ * Données extraites de Pappers (D14, D39).
+ * Discipline RGPD (D40) : narratif anonymisé V1, noms gerants non exposés.
+ *
+ * Sections obligatoires (Code de commerce L123-1 + LCEN art. 6) :
+ *   1. Identification de l'éditeur (raison sociale, SIREN, capital, RCS, siège)
+ *   2. Directeur de la publication
+ *   3. Hébergeur
+ *   4. Propriété intellectuelle (logos fair-use, contenu)
+ *   5. Données personnelles (RGPD)
+ *   6. Cookies
+ *   7. Médiation à la consommation
+ *
+ * Cf. plan.md §11.
+ */
+
+import Layout from '../layouts/Layout.astro';
+import { STORE } from '../data/store.js';
+
+const breadcrumb = [
+  { label: 'Accueil', href: '/' },
+  { label: 'Mentions légales' },
+];
+
+const lastUpdate = '2025-01';
+---
+
+<Layout
+  title="Mentions légales — Pièces Auto Colomiers"
+  description="Mentions légales du site Pièces Auto Colomiers : éditeur, hébergement, propriété intellectuelle, données personnelles (RGPD), cookies."
+  breadcrumb={breadcrumb}
+  noindex={true}
+>
+  <section class="bg-marine-800 text-white">
+    <div class="container-tight py-12">
+      <nav aria-label="Fil d'Ariane" class="text-sm text-offwhite-200 mb-4">
+        <a href="/" class="hover:text-signal-400">Accueil</a>
+        <span class="mx-2 opacity-50">›</span>
+        <span>Mentions légales</span>
+      </nav>
+      <h1 class="text-h1 lg:text-display-2 mb-2">Mentions légales</h1>
+      <p class="text-sm text-offwhite-200">Dernière mise à jour : {lastUpdate}</p>
+    </div>
+  </section>
+
+  <article class="section-y bg-offwhite">
+    <div class="container-narrow prose-content space-y-10 leading-relaxed text-charcoal-700">
+
+      <section aria-labelledby="editeur">
+        <h2 id="editeur" class="font-display uppercase text-h2 text-marine-800 mb-4">1. Éditeur du site</h2>
+        <ul class="space-y-1.5">
+          <li><strong class="text-charcoal-800">Raison sociale :</strong> {STORE.raisonSociale}</li>
+          <li><strong class="text-charcoal-800">Forme juridique :</strong> {STORE.formeJuridique}</li>
+          <li><strong class="text-charcoal-800">Capital social :</strong> {STORE.capitalDisplay}</li>
+          <li><strong class="text-charcoal-800">SIREN :</strong> {STORE.sirenDisplay}</li>
+          <li><strong class="text-charcoal-800">RCS :</strong> {STORE.rcs}</li>
+          <li><strong class="text-charcoal-800">Siège social :</strong> {STORE.adresse.full}</li>
+          <li><strong class="text-charcoal-800">Téléphone :</strong> {STORE.contact.telDisplay}</li>
+          <li>
+            <strong class="text-charcoal-800">Email :</strong> {STORE.contact.email}
+            {STORE.contact.emailIsPlaceholder && <span class="text-signal-600 ml-1 text-sm">(provisoire)</span>}
+          </li>
+        </ul>
+      </section>
+
+      <section aria-labelledby="directeur">
+        <h2 id="directeur" class="font-display uppercase text-h2 text-marine-800 mb-4">2. Directeur de la publication</h2>
+        <p>
+          La publication du présent site est assurée conjointement par les co-gérants de la {STORE.formeJuridique}.
+          Pour toute demande, merci de nous contacter via les coordonnées ci-dessus.
+        </p>
+      </section>
+
+      <section aria-labelledby="hebergeur">
+        <h2 id="hebergeur" class="font-display uppercase text-h2 text-marine-800 mb-4">3. Hébergement</h2>
+        <ul class="space-y-1.5">
+          <li><strong class="text-charcoal-800">Hébergeur :</strong> {STORE.hebergeur.nom}</li>
+          <li><strong class="text-charcoal-800">Adresse :</strong> {STORE.hebergeur.adresse}</li>
+          <li><strong class="text-charcoal-800">Site :</strong> <a href={STORE.hebergeur.site} target="_blank" rel="noopener" class="link-inline">{STORE.hebergeur.site}</a></li>
+        </ul>
+      </section>
+
+      <section aria-labelledby="propriete">
+        <h2 id="propriete" class="font-display uppercase text-h2 text-marine-800 mb-4">4. Propriété intellectuelle</h2>
+        <p class="mb-3">
+          L'ensemble des éléments composant ce site (textes, images, logos, mise en page) est la propriété
+          de {STORE.raisonSociale}, sauf mentions contraires. Toute reproduction sans autorisation préalable est interdite.
+        </p>
+        <p class="mb-3">
+          <strong class="text-charcoal-800">Logos des marques fournisseurs :</strong> les logos des équipementiers
+          présentés (Bosch, Valeo, NGK, Brembo, MANN-FILTER, Continental, Febi Bilstein, ATE, Sachs, SKF, Hella, TRW,
+          Castrol, TotalEnergies, Mobil 1) sont la propriété de leurs détenteurs respectifs et sont utilisés à titre
+          informatif (article L713-6 du Code de la propriété intellectuelle, fair-use marque pour identifier
+          l'origine des produits distribués).
+        </p>
+        <p>
+          Pour toute demande de retrait ou rectification, merci de nous contacter.
+        </p>
+      </section>
+
+      <section aria-labelledby="rgpd">
+        <h2 id="rgpd" class="font-display uppercase text-h2 text-marine-800 mb-4">5. Données personnelles (RGPD)</h2>
+        <p class="mb-3">
+          Les données personnelles que vous nous transmettez via le formulaire de devis (nom, email, téléphone,
+          informations véhicule) sont collectées uniquement pour répondre à votre demande. Elles ne sont pas cédées
+          ni revendues à des tiers.
+        </p>
+        <p class="mb-3">
+          <strong class="text-charcoal-800">Durée de conservation :</strong> 3 ans à compter du dernier contact, puis
+          archivage 10 ans pour obligations comptables si une transaction a eu lieu.
+        </p>
+        <p class="mb-3">
+          <strong class="text-charcoal-800">Vos droits :</strong> conformément au RGPD (règlement UE 2016/679), vous
+          disposez d'un droit d'accès, de rectification, d'opposition, d'effacement et de portabilité de vos données.
+          Pour exercer ces droits, contactez-nous à <a href={`mailto:${STORE.contact.email}`} class="link-inline">{STORE.contact.email}</a>.
+        </p>
+        <p>
+          Vous pouvez également introduire une réclamation auprès de la <a href="https://www.cnil.fr/" target="_blank" rel="noopener" class="link-inline">CNIL</a>.
+        </p>
+      </section>
+
+      <section aria-labelledby="cookies">
+        <h2 id="cookies" class="font-display uppercase text-h2 text-marine-800 mb-4">6. Cookies</h2>
+        <p class="mb-3">
+          Ce site utilise un nombre minimal de cookies techniques nécessaires à son bon fonctionnement
+          (préférences d'affichage). Aucun cookie publicitaire ou de traçage tiers n'est déposé.
+        </p>
+        <p>
+          Vous pouvez configurer votre navigateur pour bloquer ou supprimer ces cookies. Cela peut affecter
+          certaines fonctionnalités du site.
+        </p>
+      </section>
+
+      <section aria-labelledby="mediation">
+        <h2 id="mediation" class="font-display uppercase text-h2 text-marine-800 mb-4">7. Médiation à la consommation</h2>
+        <p class="mb-3">
+          Conformément à l'article L612-1 du Code de la consommation, en cas de litige et après une réclamation
+          écrite restée sans réponse satisfaisante de notre part, vous pouvez avoir recours gratuitement à un
+          médiateur de la consommation.
+        </p>
+        <p>
+          Plateforme européenne de règlement en ligne des litiges :
+          <a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener" class="link-inline">ec.europa.eu/consumers/odr</a>.
+        </p>
+      </section>
+
+      <section aria-labelledby="credits">
+        <h2 id="credits" class="font-display uppercase text-h2 text-marine-800 mb-4">8. Crédits</h2>
+        <p>
+          Conception et développement : projet réalisé avec Astro, Tailwind CSS, React et Lucide. Polices Oswald
+          et Inter (auto-hébergées). Icônes sociales : simpleicons.org (CC0). Photos catégories : sources
+          libres de droits (Unsplash, Pexels, Wikimedia Commons) avec crédits respectés.
+        </p>
+      </section>
+    </div>
+  </article>
+</Layout>

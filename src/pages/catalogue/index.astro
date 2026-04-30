@@ -1,0 +1,105 @@
+---
+/**
+ * Catalogue — vue d'ensemble des 47 catégories regroupées par famille.
+ *
+ * V1 : grille statique groupée par famille.
+ * V2 (J3) : filtres pills (véhicule + famille) avec JS interaction.
+ *
+ * Cf. plan.md §5 (page catalogue).
+ */
+
+import Layout from '../../layouts/Layout.astro';
+import { CATEGORIES, FAMILIES, VEHICLE_TYPES } from '../../data/categories.js';
+
+// Grouper par famille, en respectant l'ordre déclaré dans FAMILIES
+const grouped = FAMILIES
+  .map((fam) => ({
+    ...fam,
+    items: CATEGORIES.filter((c) => c.family === fam.id),
+  }))
+  .filter((g) => g.items.length > 0);
+
+const breadcrumb = [
+  { label: 'Accueil', href: '/' },
+  { label: 'Catalogue' },
+];
+---
+
+<Layout
+  title="Catalogue pièces auto — Toutes catégories | Pièces Auto Colomiers"
+  description="Découvrez nos 47 catégories de pièces auto multi-marques à Colomiers : freinage, moteur, suspension, éclairage, échappement, et plus."
+  breadcrumb={breadcrumb}
+>
+  {/* Hero court */}
+  <section class="bg-gradient-hero text-white relative overflow-hidden">
+    <div class="absolute inset-0 bg-hex-pattern opacity-30" aria-hidden="true"></div>
+    <div class="container-tight section-y relative">
+      <nav aria-label="Fil d'Ariane" class="text-sm text-offwhite-200 mb-4">
+        <a href="/" class="hover:text-signal-400">Accueil</a>
+        <span class="mx-2 opacity-50">›</span>
+        <span>Catalogue</span>
+      </nav>
+      <span class="eyebrow-light">Catalogue complet</span>
+      <h1 class="text-h1 lg:text-display-2 mt-2 mb-4">Toutes nos catégories.</h1>
+      <p class="text-lg text-offwhite-200 max-w-prose">
+        47 catégories de pièces auto neuves, multi-marques. Filtres avancés (véhicule, famille) à venir prochainement —
+        en attendant, parcourez la liste ou demandez-nous directement la pièce qui vous intéresse.
+      </p>
+      <div class="mt-6 flex flex-wrap gap-3">
+        <a href="/contact#devis" class="btn-primary btn-md">Demander un devis</a>
+        <a href="#families" class="btn-secondary-light btn-md">Parcourir les familles</a>
+      </div>
+    </div>
+  </section>
+
+  {/* Vehicles types — pills info (V1 informationnelles, V2 deviendront filtres) */}
+  <section class="bg-white border-b border-charcoal-100">
+    <div class="container-tight py-6">
+      <div class="flex flex-wrap items-center justify-center gap-2">
+        <span class="eyebrow text-charcoal-500">Compatibilités :</span>
+        {VEHICLE_TYPES.map((v) => (
+          <span class="badge-soft">{v.label}</span>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  {/* Catégories par famille */}
+  <section id="families" class="section-y bg-offwhite">
+    <div class="container-tight space-y-12">
+      {grouped.map((group) => (
+        <article aria-labelledby={`family-${group.id}`}>
+          <header class="flex items-center justify-between mb-5 pb-3 border-b border-charcoal-100">
+            <div>
+              <h2 id={`family-${group.id}`} class="font-display uppercase text-h3 text-marine-800">
+                {group.label}
+              </h2>
+              <p class="text-sm text-charcoal-500 mt-0.5">{group.items.length} catégorie{group.items.length > 1 ? 's' : ''}</p>
+            </div>
+          </header>
+          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 lg:gap-4">
+            {group.items.map((cat) => (
+              <a href={`/catalogue/${cat.slug}`} class="card-interactive group p-4">
+                <h3 class="font-display uppercase text-sm text-charcoal-800 group-hover:text-marine-700 transition-colors">
+                  {cat.label}
+                </h3>
+                <p class="text-xs text-charcoal-500 mt-1.5 line-clamp-2">{cat.desc}</p>
+              </a>
+            ))}
+          </div>
+        </article>
+      ))}
+    </div>
+  </section>
+
+  {/* CTA final */}
+  <section class="bg-marine-800 text-white">
+    <div class="container-tight section-y text-center max-w-2xl">
+      <h2 class="text-h2">Vous ne trouvez pas votre catégorie ?</h2>
+      <p class="text-lg text-offwhite-200 mt-3 mb-6">
+        Notre catalogue couvre les pièces les plus courantes. Mais on commande aussi sur référence OEM ou VIN. Demandez-nous, on cherche pour vous.
+      </p>
+      <a href="/contact#devis" class="btn-primary btn-lg">Demander un devis</a>
+    </div>
+  </section>
+</Layout>

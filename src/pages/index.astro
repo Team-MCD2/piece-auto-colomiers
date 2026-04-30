@@ -1,0 +1,262 @@
+---
+/**
+ * Home — page d'accueil V1.
+ *
+ * Sections (J1, version courte) :
+ *   1) Hero
+ *   2) Trust strip USPs
+ *   3) Catégories phares (12)
+ *   4) Services (4)
+ *   5) FAQ (top 5)
+ *   6) CTA final
+ *
+ * Sections additionnelles V2 (J2) :
+ *   - "Notre proximité" intro
+ *   - Témoignages slider
+ *   - Why choose us (3 raisons)
+ *   - Marques fournisseurs grid
+ *
+ * Cf. plan.md §4 (architecture home).
+ */
+
+import Layout from '../layouts/Layout.astro';
+import { STORE, whatsappUrl, telUrl } from '../data/store.js';
+import { CATEGORIES, HOME_FEATURED_SLUGS } from '../data/categories.js';
+import { SERVICES } from '../data/services.js';
+import { FAQ } from '../data/faq.js';
+
+const featured = HOME_FEATURED_SLUGS
+  .map((slug) => CATEGORIES.find((c) => c.slug === slug))
+  .filter((c): c is NonNullable<typeof c> => Boolean(c));
+
+const homeServices = SERVICES.slice(0, 4);
+const homeFaq = FAQ.filter((f) => f.home).slice(0, 5);
+---
+
+<Layout
+  title="Pièces Auto Colomiers — Pièces auto neuves multi-marques à Colomiers"
+  description="Vendeur de pièces auto neuves multi-marques à Colomiers. Devis sous 24 h, retrait magasin, expédition Mondial Relay. Tourisme, 4×4, japonaises, utilitaires."
+  faq={homeFaq.map((f) => ({ q: f.q, a: f.a }))}
+>
+  {/* === 1) Hero ============================================================ */}
+  <section class="bg-gradient-hero text-white relative overflow-hidden">
+    <div class="absolute inset-0 bg-hex-pattern opacity-40" aria-hidden="true"></div>
+    <div class="container-tight section-y relative grid lg:grid-cols-12 gap-10 items-center">
+      <div class="lg:col-span-7 animate-fade-up">
+        <span class="eyebrow-light">Bienvenue chez nous</span>
+        <h1 class="font-display text-display-1 uppercase leading-[0.95] mt-3 mb-6">
+          Pièces auto neuves,<br />
+          <span class="text-signal-400">multi-marques,</span><br />
+          à Colomiers.
+        </h1>
+        <p class="text-lg text-offwhite-200 max-w-prose mb-8 leading-relaxed">
+          Tourisme, 4×4, japonaises, utilitaires. Devis sous 24 heures.
+          Retrait en magasin ou expédition Mondial Relay dans toute la France.
+        </p>
+        <div class="flex flex-wrap items-center gap-3">
+          <a href="/contact#devis" class="btn-primary btn-lg">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            Demander un devis
+          </a>
+          <a href={whatsappUrl()} target="_blank" rel="noopener" class="btn-secondary-light btn-lg">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.71.306 1.263.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413"/></svg>
+            WhatsApp Business
+          </a>
+        </div>
+        <p class="text-sm text-offwhite-200/80 mt-6">
+          ou appelez le{' '}
+          <a href={telUrl()} class="text-signal-400 font-semibold hover:text-signal-300 underline decoration-2 underline-offset-4">{STORE.contact.telDisplay}</a>
+        </p>
+      </div>
+
+      {/* Visual placeholder côté droit — sera remplacé par le storefront en J2 */}
+      <div class="lg:col-span-5 hidden lg:block">
+        <div class="relative aspect-square max-w-md mx-auto">
+          <img
+            src="/assets/store/storefront.jpg"
+            alt="Notre magasin à Colomiers"
+            class="rounded-card shadow-2xl shadow-marine-950/40 object-cover w-full h-full"
+            loading="eager"
+            decoding="async"
+            onerror="this.style.display='none'"
+          />
+          <div class="absolute -bottom-4 -left-4 bg-signal-400 text-marine-900 px-5 py-3 rounded-card shadow-cta">
+            <div class="font-display uppercase text-xs tracking-wider">Au cœur de</div>
+            <div class="font-display uppercase text-xl">Toulouse Ouest</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {/* === 2) Trust strip ==================================================== */}
+  <section class="bg-white border-y border-charcoal-100">
+    <div class="container-tight py-6">
+      <ul class="grid grid-cols-2 md:grid-cols-4 gap-y-4 gap-x-8 text-center md:text-left">
+        <li class="flex items-center gap-3 justify-center md:justify-start">
+          <span class="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-signal-400 text-marine-900">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg>
+          </span>
+          <div>
+            <div class="font-display uppercase text-sm">Mondial Relay</div>
+            <div class="text-xs text-charcoal-500">Partout en France</div>
+          </div>
+        </li>
+        <li class="flex items-center gap-3 justify-center md:justify-start">
+          <span class="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-sky-400 text-marine-900">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+          </span>
+          <div>
+            <div class="font-display uppercase text-sm">Retrait magasin</div>
+            <div class="text-xs text-charcoal-500">Gratuit, sur place</div>
+          </div>
+        </li>
+        <li class="flex items-center gap-3 justify-center md:justify-start">
+          <span class="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-signal-400 text-marine-900">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </span>
+          <div>
+            <div class="font-display uppercase text-sm">Devis sous 24 h</div>
+            <div class="text-xs text-charcoal-500">Réponse rapide</div>
+          </div>
+        </li>
+        <li class="flex items-center gap-3 justify-center md:justify-start">
+          <span class="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-sky-400 text-marine-900">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19.5 12.572 12 20l-7.5-7.428A5 5 0 1 1 12 6.006a5 5 0 1 1 7.5 6.572"/></svg>
+          </span>
+          <div>
+            <div class="font-display uppercase text-sm">Conseil pro</div>
+            <div class="text-xs text-charcoal-500">Équipe humaine</div>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  {/* === 3) Catégories phares =============================================== */}
+  <section class="section-y bg-offwhite">
+    <div class="container-tight">
+      <div class="mb-10 max-w-2xl">
+        <span class="eyebrow">Catalogue</span>
+        <h2 class="text-h2 lg:text-display-2 mt-2 mb-4">Trouvez votre pièce.</h2>
+        <p class="text-charcoal-500 text-lg">
+          Plus de 47 catégories, multi-marques. De la plaquette de frein au turbo, du démarreur au pare-chocs.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-6">
+        {featured.map((cat) => (
+          <a href={`/catalogue/${cat.slug}`} class="card-interactive group flex flex-col">
+            <div class="aspect-[4/3] bg-charcoal-50 overflow-hidden rounded-t-card">
+              <img
+                src={cat.image}
+                alt={cat.label}
+                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-brand"
+                loading="lazy"
+                decoding="async"
+                onerror="this.parentElement.classList.add('bg-marine-100');this.style.display='none'"
+              />
+            </div>
+            <div class="p-4 flex-1 flex flex-col">
+              <h3 class="font-display uppercase text-base text-charcoal-800 group-hover:text-marine-700 transition-colors">
+                {cat.label}
+              </h3>
+              <p class="text-sm text-charcoal-500 mt-1.5 line-clamp-2 flex-1">{cat.desc}</p>
+              <span class="inline-flex items-center gap-1 mt-3 text-sm font-semibold text-marine-700 group-hover:text-signal-600">
+                En savoir plus
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="group-hover:translate-x-1 transition-transform"><path d="m9 18 6-6-6-6"/></svg>
+              </span>
+            </div>
+          </a>
+        ))}
+      </div>
+
+      <div class="text-center mt-12">
+        <a href="/catalogue" class="btn-secondary btn-lg">Voir toutes les catégories</a>
+      </div>
+    </div>
+  </section>
+
+  {/* === 4) Services ======================================================== */}
+  <section class="section-y bg-marine-800 text-white relative overflow-hidden">
+    <div class="absolute inset-0 bg-hex-pattern opacity-30" aria-hidden="true"></div>
+    <div class="container-tight relative">
+      <div class="mb-10 max-w-2xl">
+        <span class="eyebrow-light">Nos services</span>
+        <h2 class="text-h2 lg:text-display-2 mt-2 mb-4">Du devis à la livraison.</h2>
+        <p class="text-offwhite-200 text-lg">
+          Particuliers, garages, ateliers, flottes. On s'adapte à votre besoin avec une équipe humaine et des équipementiers de référence.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+        {homeServices.map((s) => (
+          <article class={`relative rounded-card p-6 backdrop-blur-sm border transition-all duration-300 ${
+            s.usp
+              ? 'bg-signal-400/10 border-signal-400/40 hover:bg-signal-400/15'
+              : 'bg-marine-700/40 border-white/10 hover:bg-marine-700'
+          }`}>
+            {s.usp && <span class="badge-signal absolute top-4 right-4">USP</span>}
+            <h3 class="font-display uppercase text-lg text-white mb-2 pr-12">{s.label}</h3>
+            <p class="text-sm text-offwhite-200 leading-relaxed mb-4">{s.short}</p>
+            <a href={s.cta.href} class="inline-flex items-center gap-1 text-sm font-semibold text-signal-400 hover:text-signal-300">
+              {s.cta.label}
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+            </a>
+          </article>
+        ))}
+      </div>
+
+      <div class="text-center mt-12">
+        <a href="/services" class="btn-secondary-light btn-lg">Tous nos services</a>
+      </div>
+    </div>
+  </section>
+
+  {/* === 5) FAQ ============================================================= */}
+  <section class="section-y bg-offwhite">
+    <div class="container-narrow">
+      <div class="mb-10 text-center">
+        <span class="eyebrow">Questions fréquentes</span>
+        <h2 class="text-h2 lg:text-display-2 mt-2">Tout ce que vous voulez savoir.</h2>
+      </div>
+
+      <div class="space-y-3">
+        {homeFaq.map((f) => (
+          <details class="card group p-0 overflow-hidden">
+            <summary class="cursor-pointer p-5 flex items-start justify-between gap-4 hover:bg-charcoal-50 transition-colors list-none">
+              <h3 class="font-display uppercase text-base text-charcoal-800 group-open:text-marine-700">{f.q}</h3>
+              <svg class="shrink-0 mt-1 transition-transform group-open:rotate-180 text-charcoal-400 group-open:text-marine-700" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+            </summary>
+            <div class="px-5 pb-5 text-charcoal-600 leading-relaxed">
+              {f.a}
+            </div>
+          </details>
+        ))}
+      </div>
+
+      <div class="text-center mt-10">
+        <a href="/contact" class="link-inline">Une autre question ? Contactez-nous</a>
+      </div>
+    </div>
+  </section>
+
+  {/* === 6) CTA final ====================================================== */}
+  <section class="bg-signal-400 text-marine-900 relative overflow-hidden">
+    <div class="absolute inset-0 bg-diagonal-stripe opacity-50" aria-hidden="true"></div>
+    <div class="container-tight section-y relative text-center max-w-3xl">
+      <h2 class="text-h2 lg:text-display-2">Une pièce en tête ?</h2>
+      <p class="text-lg mt-4 mb-8 leading-relaxed">
+        Marque, modèle, année, code moteur ou référence OEM — partagez ce que vous savez. On revient sous 24 h.
+      </p>
+      <div class="flex flex-wrap justify-center items-center gap-3">
+        <a href="/contact#devis" class="btn-md bg-marine-800 text-white shadow-lg hover:bg-marine-900 hover:-translate-y-0.5">
+          Demander un devis
+        </a>
+        <a href={telUrl()} class="btn-md bg-white/30 text-marine-900 hover:bg-white/50">
+          {STORE.contact.telDisplay}
+        </a>
+      </div>
+    </div>
+  </section>
+</Layout>

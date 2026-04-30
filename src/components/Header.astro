@@ -1,0 +1,222 @@
+---
+/**
+ * Header — barre supérieure :
+ *   1) Bandeau marquee USP (top thin, marine, scrolling)
+ *   2) Barre principale (sticky, logo + nav + CTAs tel/WA/devis)
+ *
+ * Cf. plan.md §3.2 (header) et §4.2 (USPs marquee).
+ *
+ * Mobile :
+ *   - Le marquee reste visible (réduit en hauteur).
+ *   - La barre principale collapse les liens dans un menu burger.
+ *   - Toggle vanilla JS (pas de React island nécessaire).
+ */
+
+import Logo from './Logo.astro';
+import { STORE, telUrl, whatsappUrl } from '../data/store.js';
+import { MAIN_NAV } from '../data/menu.js';
+
+const currentPath = Astro.url.pathname;
+const isActive = (href: string) => currentPath === href || (href !== '/' && currentPath.startsWith(href));
+
+const usps = [
+  { label: 'Mondial Relay', icon: 'M9 17a3 3 0 1 0 0 0' }, // marqueur, l'icône réelle vient de Lucide via la classe
+  { label: 'Retrait magasin' },
+  { label: 'Devis sous 24 h' },
+  { label: 'Conseil pro' },
+  { label: 'Multi-marques' },
+  { label: '4×4 · Japonaises · Utilitaires' },
+];
+
+// Doublé pour l'effet marquee infini (translateX 0 → -50%)
+const marqueeItems = [...usps, ...usps];
+
+const waUrl = whatsappUrl();
+---
+
+<header class="w-full">
+  {/* === 1) Marquee USPs (haut) ============================================= */}
+  <div
+    class="bg-marine-900 text-offwhite-50 border-b border-marine-700 overflow-hidden mask-fade-x"
+    role="region"
+    aria-label="Avantages Pièces Auto Colomiers"
+  >
+    <div class="container-tight py-2 flex items-center gap-3">
+      <span class="hidden sm:inline-flex eyebrow-light shrink-0">À votre service</span>
+      <div class="flex-1 overflow-hidden">
+        <div class="flex animate-marquee whitespace-nowrap will-change-transform">
+          {marqueeItems.map((usp) => (
+            <span class="inline-flex items-center gap-2 px-5 text-sm">
+              <span class="inline-block size-1.5 rounded-full bg-signal-400"></span>
+              <span class="font-medium">{usp.label}</span>
+            </span>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {/* === 2) Barre principale (sticky) ====================================== */}
+  <div class="bg-marine-800 text-white sticky top-0 z-40 shadow-lg shadow-marine-900/20">
+    <div class="container-tight flex items-center justify-between gap-4 py-3 lg:py-4">
+      {/* Logo */}
+      <Logo size="md" variant="light" withText={true} href="/" class="shrink-0" />
+
+      {/* Nav desktop */}
+      <nav class="hidden lg:flex items-center gap-1" aria-label="Navigation principale">
+        {MAIN_NAV.map((item) => (
+          <a
+            href={item.href}
+            class={`px-4 py-2 rounded-lg font-display uppercase tracking-wide text-sm transition-colors duration-200 ${
+              isActive(item.href)
+                ? 'bg-signal-400 text-marine-900'
+                : 'text-white hover:bg-white/10'
+            }`}
+            aria-current={isActive(item.href) ? 'page' : undefined}
+          >
+            {item.label}
+          </a>
+        ))}
+      </nav>
+
+      {/* CTAs desktop */}
+      <div class="hidden md:flex items-center gap-2 lg:gap-3 shrink-0">
+        {/* Tel */}
+        <a
+          href={telUrl()}
+          class="hidden lg:inline-flex items-center gap-2 px-3 py-2 rounded-lg text-white hover:bg-white/10 transition-colors text-sm font-semibold"
+          aria-label={`Téléphone — ${STORE.contact.telDisplay}`}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+          </svg>
+          {STORE.contact.telDisplay}
+        </a>
+
+        {/* WhatsApp */}
+        <a
+          href={waUrl}
+          target="_blank"
+          rel="noopener"
+          class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-white/20 hover:bg-white/10 hover:border-white/40 transition-colors text-sm font-semibold"
+          aria-label="Contacter via WhatsApp"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.71.306 1.263.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413"/>
+          </svg>
+          <span class="hidden lg:inline">WhatsApp</span>
+        </a>
+
+        {/* Devis primary */}
+        <a
+          href="/contact#devis"
+          class="btn btn-sm md:btn-md bg-signal-400 text-marine-900 shadow-cta hover:bg-signal-300 hover:-translate-y-0.5 hover:shadow-cta-hover"
+        >
+          Devis 24 h
+        </a>
+      </div>
+
+      {/* Burger mobile */}
+      <button
+        id="menu-toggle"
+        type="button"
+        class="lg:hidden inline-flex items-center justify-center size-10 rounded-lg hover:bg-white/10 transition-colors"
+        aria-label="Ouvrir le menu"
+        aria-expanded="false"
+        aria-controls="mobile-menu"
+      >
+        <svg id="menu-icon-open" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="4" x2="20" y1="6" y2="6"/>
+          <line x1="4" x2="20" y1="12" y2="12"/>
+          <line x1="4" x2="20" y1="18" y2="18"/>
+        </svg>
+        <svg id="menu-icon-close" class="hidden" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M18 6 6 18"/>
+          <path d="m6 6 12 12"/>
+        </svg>
+      </button>
+    </div>
+
+    {/* Menu mobile (overlay slide-in) */}
+    <div
+      id="mobile-menu"
+      class="lg:hidden fixed inset-x-0 top-0 bottom-0 z-50 translate-x-full transition-transform duration-300 ease-brand bg-marine-900 text-white pt-20 px-6 pb-8 overflow-y-auto"
+      aria-hidden="true"
+    >
+      <button
+        id="menu-close-x"
+        type="button"
+        class="absolute top-4 right-4 inline-flex items-center justify-center size-10 rounded-lg hover:bg-white/10 transition-colors"
+        aria-label="Fermer le menu"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M18 6 6 18"/>
+          <path d="m6 6 12 12"/>
+        </svg>
+      </button>
+
+      <Logo size="md" variant="light" withText={true} href="/" class="mb-8" />
+
+      <nav class="flex flex-col gap-2 mb-8" aria-label="Navigation mobile">
+        {MAIN_NAV.map((item) => (
+          <a
+            href={item.href}
+            class={`block px-4 py-3 rounded-lg font-display uppercase tracking-wide text-lg transition-colors ${
+              isActive(item.href)
+                ? 'bg-signal-400 text-marine-900'
+                : 'hover:bg-white/10'
+            }`}
+            aria-current={isActive(item.href) ? 'page' : undefined}
+          >
+            {item.label}
+            <span class="block text-xs font-normal text-white/60 mt-0.5 normal-case tracking-normal">{item.desc}</span>
+          </a>
+        ))}
+      </nav>
+
+      <div class="flex flex-col gap-3 pt-6 border-t border-white/10">
+        <a href="/contact#devis" class="btn btn-lg bg-signal-400 text-marine-900 w-full">Devis 24 h</a>
+        <a href={waUrl} target="_blank" rel="noopener" class="btn btn-lg border-2 border-white/30 text-white w-full">
+          WhatsApp Business
+        </a>
+        <a href={telUrl()} class="btn btn-lg bg-white/10 text-white w-full">
+          {STORE.contact.telDisplay}
+        </a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<script is:inline>
+  // Toggle menu mobile — vanilla JS (pas de React island pour ce besoin simple)
+  (function () {
+    const btn = document.getElementById('menu-toggle');
+    const closeX = document.getElementById('menu-close-x');
+    const menu = document.getElementById('mobile-menu');
+    const iconOpen = document.getElementById('menu-icon-open');
+    const iconClose = document.getElementById('menu-icon-close');
+    if (!btn || !menu) return;
+
+    const setOpen = (open) => {
+      menu.classList.toggle('translate-x-full', !open);
+      menu.classList.toggle('translate-x-0', open);
+      menu.setAttribute('aria-hidden', String(!open));
+      btn.setAttribute('aria-expanded', String(open));
+      btn.setAttribute('aria-label', open ? 'Fermer le menu' : 'Ouvrir le menu');
+      if (iconOpen) iconOpen.classList.toggle('hidden', open);
+      if (iconClose) iconClose.classList.toggle('hidden', !open);
+      document.body.classList.toggle('scroll-locked', open);
+    };
+
+    btn.addEventListener('click', () => {
+      const isOpen = menu.classList.contains('translate-x-0');
+      setOpen(!isOpen);
+    });
+    closeX?.addEventListener('click', () => setOpen(false));
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && menu.classList.contains('translate-x-0')) setOpen(false);
+    });
+    // Close when clicking a nav link inside mobile menu
+    menu.querySelectorAll('a').forEach((a) => a.addEventListener('click', () => setOpen(false)));
+  })();
+</script>

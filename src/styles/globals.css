@@ -1,0 +1,311 @@
+/* =====================================================================
+ * GLOBALS — Pièces Auto Colomiers
+ * ---------------------------------------------------------------------
+ * Ordre des layers : tailwind base → fonts → base custom → components →
+ * utilities. Les tokens DA vivent dans tailwind.config.mjs ; ce fichier
+ * gère le polish CSS (typography, focus, motion, composants utilitaires).
+ *
+ * Cf. plan.md §6 (DA) et §10 (composants signature).
+ * ===================================================================== */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ---------------------------------------------------------------------
+ * Self-hosted fonts (D11 — pas de Google Fonts CDN, leçon Mon Boum V3)
+ * Les fichiers woff2 sont à placer dans /public/fonts/.
+ * Si absents, fallback `system-ui` via tailwind config — degraded mais OK.
+ * --------------------------------------------------------------------- */
+
+@font-face {
+  font-family: 'Oswald';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src:
+    local('Oswald Regular'),
+    local('Oswald-Regular'),
+    url('/fonts/oswald-400.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Oswald';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src:
+    local('Oswald Medium'),
+    local('Oswald-Medium'),
+    url('/fonts/oswald-500.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Oswald';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src:
+    local('Oswald SemiBold'),
+    local('Oswald-SemiBold'),
+    url('/fonts/oswald-600.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Oswald';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src:
+    local('Oswald Bold'),
+    local('Oswald-Bold'),
+    url('/fonts/oswald-700.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src:
+    local('Inter Regular'),
+    local('Inter-Regular'),
+    url('/fonts/inter-400.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src:
+    local('Inter Medium'),
+    local('Inter-Medium'),
+    url('/fonts/inter-500.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src:
+    local('Inter SemiBold'),
+    local('Inter-SemiBold'),
+    url('/fonts/inter-600.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src:
+    local('Inter Bold'),
+    local('Inter-Bold'),
+    url('/fonts/inter-700.woff2') format('woff2');
+}
+
+/* ---------------------------------------------------------------------
+ * Base layer — reset + foundations
+ * --------------------------------------------------------------------- */
+
+@layer base {
+  :root {
+    /* Tokens accessibles aussi en pure CSS (utiles dans certains components) */
+    --color-marine: #0F2C5A;
+    --color-marine-700: #152E58;
+    --color-sky: #5BA8D9;
+    --color-signal: #F5C518;
+    --color-signal-600: #B98A02;
+    --color-offwhite: #F4F6F9;
+    --color-charcoal: #1E2532;
+
+    /* Easings cohérents partout */
+    --ease-brand: cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  html {
+    @apply scroll-smooth;
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    @apply bg-offwhite text-charcoal-700 font-sans antialiased;
+    @apply min-h-screen;
+    /* Espace pour la sticky bar mobile */
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+
+  /* Padding-bottom pour la sticky bar mobile (fixed bottom) */
+  @media (max-width: 767px) {
+    body {
+      padding-bottom: calc(4.25rem + env(safe-area-inset-bottom, 0));
+    }
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display tracking-tight text-charcoal-800;
+    text-wrap: balance;
+  }
+
+  h1 { @apply text-h1 lg:text-display-2; }
+  h2 { @apply text-h2; }
+  h3 { @apply text-h3; }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  a {
+    @apply transition-colors duration-200;
+  }
+
+  /* Focus accessibility — anneau jaune signalétique sur fond clair, marine sur fond foncé */
+  :focus-visible {
+    @apply outline-none ring-2 ring-offset-2 ring-signal-400 ring-offset-offwhite;
+  }
+  .bg-marine-800 :focus-visible,
+  .bg-marine-900 :focus-visible,
+  .bg-gradient-hero :focus-visible {
+    @apply ring-offset-marine-800;
+  }
+
+  /* Sélection texte */
+  ::selection {
+    @apply bg-signal-400/40 text-marine-900;
+  }
+
+  /* Scrollbar custom (subtle) */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(15, 44, 90, 0.3) transparent;
+  }
+  *::-webkit-scrollbar { width: 8px; height: 8px; }
+  *::-webkit-scrollbar-track { background: transparent; }
+  *::-webkit-scrollbar-thumb {
+    background-color: rgba(15, 44, 90, 0.3);
+    border-radius: 4px;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(15, 44, 90, 0.5);
+  }
+
+  /* Reduced motion — discipline a11y */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* ---------------------------------------------------------------------
+ * Components layer — classes utilitaires composant
+ * --------------------------------------------------------------------- */
+
+@layer components {
+  .container-tight {
+    @apply mx-auto w-full max-w-container px-4 sm:px-6 lg:px-8;
+  }
+  .container-narrow {
+    @apply mx-auto w-full max-w-narrow px-4 sm:px-6 lg:px-8;
+  }
+  .section-y {
+    @apply py-section-sm md:py-section;
+  }
+
+  /* Eyebrow — petite étiquette au-dessus du H2 */
+  .eyebrow {
+    @apply text-eyebrow uppercase tracking-widest text-signal-600 font-semibold;
+  }
+  .eyebrow-light {
+    @apply text-eyebrow uppercase tracking-widest text-signal-400 font-semibold;
+  }
+
+  /* === Boutons =========================================================
+     Discipline Mon Boum V3 : focus visible, état hover/active, loading
+     ===================================================================== */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-pill font-display
+           font-semibold uppercase tracking-wide transition-all duration-200
+           ease-brand select-none whitespace-nowrap;
+    @apply focus-visible:ring-2 focus-visible:ring-offset-2;
+    text-decoration: none !important;
+  }
+  .btn-sm  { @apply px-4 py-2 text-sm; }
+  .btn-md  { @apply px-5 py-2.5 text-base; }
+  .btn-lg  { @apply px-7 py-3.5 text-base md:text-lg; }
+
+  .btn-primary {
+    @apply btn btn-md bg-signal-400 text-marine-900 shadow-cta;
+    @apply hover:bg-signal-300 hover:-translate-y-0.5 hover:shadow-cta-hover;
+    @apply active:translate-y-0 active:shadow-none;
+  }
+  .btn-secondary {
+    @apply btn btn-md border-2 border-marine-800 bg-white text-marine-800;
+    @apply hover:bg-marine-800 hover:text-white;
+  }
+  .btn-secondary-light {
+    @apply btn btn-md border-2 border-white/40 bg-transparent text-white;
+    @apply hover:bg-white/10 hover:border-white;
+  }
+  .btn-ghost {
+    @apply btn btn-md bg-transparent text-marine-800;
+    @apply hover:bg-marine-800/8;
+  }
+
+  /* Liens textuels */
+  .link-inline {
+    @apply text-marine-700 underline decoration-signal-400 decoration-2 underline-offset-4;
+    @apply hover:text-marine-800 hover:decoration-signal-500;
+  }
+
+  /* Cards */
+  .card {
+    @apply bg-white rounded-card shadow-card transition-all duration-300 ease-brand;
+    @apply border border-charcoal-100;
+  }
+  .card-interactive {
+    @apply card hover:-translate-y-1 hover:shadow-card-hover hover:border-sky-400;
+  }
+
+  /* Badges */
+  .badge {
+    @apply inline-flex items-center gap-1.5 rounded-pill px-3 py-1 text-xs font-semibold uppercase tracking-wide;
+  }
+  .badge-signal { @apply badge bg-signal-400 text-marine-900; }
+  .badge-sky    { @apply badge bg-sky-400/15 text-sky-700 border border-sky-400/30; }
+  .badge-marine { @apply badge bg-marine-800 text-white; }
+  .badge-soft   { @apply badge bg-charcoal-50 text-charcoal-600 border border-charcoal-100; }
+
+  /* Section dividers (D35 — lignes diagonales subtiles) */
+  .divider-diagonal {
+    @apply relative h-1 w-full overflow-hidden;
+    background-image: theme('backgroundImage.diagonal-stripe');
+  }
+
+  /* Skip link a11y */
+  .skip-link {
+    @apply sr-only focus:not-sr-only;
+    @apply focus:absolute focus:top-2 focus:left-2 focus:z-50;
+    @apply focus:bg-marine-800 focus:text-white focus:px-4 focus:py-2 focus:rounded;
+    @apply focus:font-semibold focus:no-underline;
+  }
+}
+
+/* ---------------------------------------------------------------------
+ * Utilities layer — petits helpers transversaux
+ * --------------------------------------------------------------------- */
+
+@layer utilities {
+  .text-balance { text-wrap: balance; }
+  .text-pretty  { text-wrap: pretty; }
+
+  /* Fade gradient mask (utilisé pour le marquee header) */
+  .mask-fade-x {
+    mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
+  }
+
+  /* Lock body scroll quand menu mobile ouvert */
+  .scroll-locked {
+    @apply overflow-hidden;
+  }
+}

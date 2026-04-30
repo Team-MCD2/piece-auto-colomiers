@@ -1,0 +1,93 @@
+---
+/**
+ * Services — page complète détaillant les 6 services V1.
+ *
+ * Cf. plan.md §7 et `src/data/services.js`.
+ */
+
+import Layout from '../layouts/Layout.astro';
+import { SERVICES } from '../data/services.js';
+import { FAQ } from '../data/faq.js';
+
+const breadcrumb = [
+  { label: 'Accueil', href: '/' },
+  { label: 'Services' },
+];
+---
+
+<Layout
+  title="Nos services — Pièces Auto Colomiers"
+  description="Devis sous 24 h, expédition Mondial Relay, retrait magasin, conseil pro, commande sur référence OEM, tarif revendeur pour les professionnels."
+  breadcrumb={breadcrumb}
+  faq={FAQ.map((f) => ({ q: f.q, a: f.a }))}
+>
+  {/* Hero */}
+  <section class="bg-gradient-hero text-white relative overflow-hidden">
+    <div class="absolute inset-0 bg-hex-pattern opacity-30" aria-hidden="true"></div>
+    <div class="container-tight section-y relative">
+      <nav aria-label="Fil d'Ariane" class="text-sm text-offwhite-200 mb-4">
+        <a href="/" class="hover:text-signal-400">Accueil</a>
+        <span class="mx-2 opacity-50">›</span>
+        <span>Services</span>
+      </nav>
+      <span class="eyebrow-light">Tout ce qu'on fait</span>
+      <h1 class="text-h1 lg:text-display-2 mt-2 mb-4">Du devis à la livraison.</h1>
+      <p class="text-lg text-offwhite-200 max-w-prose">
+        Particuliers, garages, ateliers, flottes. Notre métier : trouver la pièce qu'il vous faut, vous conseiller,
+        et vous la livrer comme vous voulez — magasin, point relais, sur place.
+      </p>
+    </div>
+  </section>
+
+  {/* Liste services */}
+  <section class="section-y bg-offwhite">
+    <div class="container-tight space-y-6">
+      {SERVICES.map((s) => (
+        <article id={s.slug} class={`card p-6 lg:p-8 ${s.usp ? 'border-2 border-signal-400/40' : ''}`}>
+          <div class="grid lg:grid-cols-12 gap-6 items-start">
+            <div class="lg:col-span-3">
+              <div class="flex items-center gap-3 mb-2">
+                {s.usp && <span class="badge-signal">USP</span>}
+                {s.audience === 'pro' && <span class="badge-sky">B2B</span>}
+              </div>
+              <h2 class="font-display uppercase text-h3 text-marine-800">{s.label}</h2>
+              <p class="text-sm text-charcoal-500 mt-2">{s.short}</p>
+            </div>
+            <div class="lg:col-span-7">
+              <p class="text-charcoal-700 leading-relaxed">{s.desc}</p>
+            </div>
+            <div class="lg:col-span-2 flex lg:justify-end">
+              <a
+                href={s.cta.href}
+                class={s.usp ? 'btn-primary btn-md w-full lg:w-auto' : 'btn-secondary btn-md w-full lg:w-auto'}
+              >
+                {s.cta.label}
+              </a>
+            </div>
+          </div>
+        </article>
+      ))}
+    </div>
+  </section>
+
+  {/* FAQ inline */}
+  <section class="section-y bg-marine-800 text-white">
+    <div class="container-narrow">
+      <div class="mb-8 text-center">
+        <span class="eyebrow-light">Questions fréquentes</span>
+        <h2 class="text-h2 lg:text-display-2 mt-2 text-white">On répond à tout.</h2>
+      </div>
+      <div class="space-y-3">
+        {FAQ.map((f) => (
+          <details class="bg-marine-900/60 backdrop-blur-sm border border-white/10 rounded-card overflow-hidden group">
+            <summary class="cursor-pointer p-5 flex items-start justify-between gap-4 hover:bg-marine-900 list-none">
+              <h3 class="font-display uppercase text-base text-white">{f.q}</h3>
+              <svg class="shrink-0 mt-1 transition-transform group-open:rotate-180 text-signal-400" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+            </summary>
+            <div class="px-5 pb-5 text-offwhite-200 leading-relaxed">{f.a}</div>
+          </details>
+        ))}
+      </div>
+    </div>
+  </section>
+</Layout>

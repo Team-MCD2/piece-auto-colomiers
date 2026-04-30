@@ -1,0 +1,53 @@
+# Build output
+dist/
+.astro/
+.vercel/
+.netlify/
+
+# Dependencies
+node_modules/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+*.swp
+*.swo
+
+# TikTok download cache (videos kept in public/tiktoks/, but yt-dlp temp files ignored)
+.yt-dlp-cache/
+*.part
+*.ytdl
+
+# Sharp/asset cache
+.sharp-cache/
+
+# Generated favicons (regenerable via npm run assets:brand)
+public/favicon-*.png
+public/apple-touch-icon.png
+public/og-image.jpg
+public/icon-*.png
+
+# TikTok mp4s (regenerable via npm run sync:tiktok — committed only when stable)
+# Décommenter la ligne suivante pour exclure du repo :
+# public/tiktoks/*.mp4
+
+
+plan/

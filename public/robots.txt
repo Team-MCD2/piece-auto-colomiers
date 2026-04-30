@@ -1,0 +1,12 @@
+# Pièces Auto Colomiers — robots.txt
+# Le sitemap est généré automatiquement par @astrojs/sitemap au build.
+
+User-agent: *
+Allow: /
+
+# Bloquer les pages admin futures et les paramètres internes
+Disallow: /api/
+Disallow: /_assets/
+
+# Sitemap (généré par astro build)
+Sitemap: https://pieces-auto-colomiers.vercel.app/sitemap-index.xml

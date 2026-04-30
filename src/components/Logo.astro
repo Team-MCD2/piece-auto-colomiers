@@ -1,0 +1,76 @@
+---
+/**
+ * Logo — composant brand réutilisable.
+ *
+ * Source : `/assets/logos/logo.png` (généré par `npm run assets:brand`
+ * depuis /images/logo.jpg).
+ *
+ * Pattern : tag dynamique `<Tag>` (idiomatique Astro) — pas de duplication,
+ * pas de top-level ternary qui stresse le parseur.
+ *
+ * Variants :
+ *  - light: usage sur fond foncé (header marine, footer marine)
+ *  - dark : usage sur fond clair (sections offwhite)
+ *
+ * Sizes :
+ *  - sm: 32px (sticky bars, mobile compact)
+ *  - md: 44px (header desktop standard)
+ *  - lg: 64px (footer, hero accent)
+ */
+
+interface Props {
+  size?: 'sm' | 'md' | 'lg';
+  variant?: 'light' | 'dark';
+  withText?: boolean;
+  href?: string | null;
+  class?: string;
+}
+
+const {
+  size = 'md',
+  variant = 'dark',
+  withText = false,
+  href = '/',
+  class: className = '',
+} = Astro.props;
+
+const sizeMap = {
+  sm: 'h-8',
+  md: 'h-11',
+  lg: 'h-16',
+};
+
+const textColor = variant === 'light' ? 'text-white' : 'text-marine-800';
+const textSize = size === 'lg' ? 'text-xl' : size === 'sm' ? 'text-sm' : 'text-base';
+
+// Tag dynamique : <a> si href défini, <span> sinon. Évite la duplication JSX.
+const Tag = href ? 'a' : 'span';
+const wrapperProps = href
+  ? { href, 'aria-label': 'Pièces Auto Colomiers — accueil' }
+  : {};
+---
+
+<Tag
+  class:list={['inline-flex items-center gap-3 group', className]}
+  {...wrapperProps}
+>
+  <img
+    src="/assets/logos/logo.png"
+    alt="Pièces Auto Colomiers — logo"
+    class:list={[
+      sizeMap[size],
+      'w-auto select-none transition-transform duration-300 ease-brand group-hover:scale-105',
+    ]}
+    width="64"
+    height="64"
+    loading="eager"
+    decoding="async"
+  />
+  {withText && (
+    <span class:list={['font-display font-bold uppercase tracking-tight leading-none', textColor, textSize]}>
+      Pièces Auto
+      <br />
+      <span class="text-signal-400">Colomiers</span>
+    </span>
+  )}
+</Tag>

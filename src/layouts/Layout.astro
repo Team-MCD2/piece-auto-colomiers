@@ -1,0 +1,197 @@
+---
+/**
+ * Layout — shell HTML maître pour toutes les pages.
+ *
+ * Responsabilités :
+ *   - Meta SEO (title, description, canonical, OG, Twitter)
+ *   - Theme color, manifest, favicons
+ *   - JSON-LD AutoPartsStore (toutes pages)
+ *   - JSON-LD BreadcrumbList (conditionnel via props.breadcrumb)
+ *   - JSON-LD FAQPage (conditionnel via props.faq)
+ *   - Skip link a11y → #main
+ *   - Header + Slot + Footer + StickyBar
+ *
+ * Cf. plan.md §13 (JSON-LD) et §16 (SEO infra).
+ */
+
+import '../styles/globals.css';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import StickyBar from '../components/StickyBar.astro';
+import { STORE } from '../data/store.js';
+
+interface Props {
+  title?: string;
+  description?: string;
+  canonical?: string;
+  ogImage?: string;
+  noindex?: boolean;
+  breadcrumb?: Array<{ label: string; href?: string }>;
+  faq?: Array<{ q: string; a: string }>;
+  bodyClass?: string;
+}
+
+const {
+  title = 'Pièces Auto Colomiers — Pièces auto neuves multi-marques à Colomiers',
+  description = "Pièces auto neuves multi-marques à Colomiers. Devis sous 24 h, retrait magasin, expédition Mondial Relay. Particuliers et professionnels.",
+  canonical,
+  ogImage = '/og-image.jpg',
+  noindex = false,
+  breadcrumb,
+  faq,
+  bodyClass = '',
+} = Astro.props;
+
+const SITE_URL = import.meta.env.PUBLIC_SITE_URL || 'https://pieces-auto-colomiers.vercel.app';
+const canonicalUrl = canonical || new URL(Astro.url.pathname.replace(/\/$/, '') || '/', SITE_URL).toString();
+const ogImageUrl = new URL(ogImage, SITE_URL).toString();
+
+// === JSON-LD AutoPartsStore =================================================
+// Schema.org : openingHoursSpecification doit être flat (1 entrée par plage).
+const dayOfWeekMap: Record<string, string> = {
+  lundi:    'Monday',
+  mardi:    'Tuesday',
+  mercredi: 'Wednesday',
+  jeudi:    'Thursday',
+  vendredi: 'Friday',
+  samedi:   'Saturday',
+  dimanche: 'Sunday',
+};
+
+const openingHoursSpec = STORE.horaires
+  .filter((h) => !h.closed)
+  .flatMap((h) => {
+    const day = dayOfWeekMap[h.jour];
+    if (!day) return [];
+    if (h.mid) {
+      return [
+        { '@type': 'OpeningHoursSpecification', dayOfWeek: day, opens: h.open, closes: h.mid[0] },
+        { '@type': 'OpeningHoursSpecification', dayOfWeek: day, opens: h.mid[1], closes: h.close },
+      ];
+    }
+    return [{ '@type': 'OpeningHoursSpecification', dayOfWeek: day, opens: h.open, closes: h.close }];
+  });
+
+const storeSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'AutoPartsStore',
+  '@id': `${SITE_URL}#store`,
+  name: STORE.raisonSociale,
+  alternateName: STORE.nomCommercial,
+  image: new URL('/assets/logos/logo.png', SITE_URL).toString(),
+  url: SITE_URL,
+  telephone: STORE.contact.tel,
+  email: STORE.contact.emailIsPlaceholder ? undefined : STORE.contact.email,
+  address: {
+    '@type': 'PostalAddress',
+    streetAddress: STORE.adresse.rue,
+    postalCode: STORE.adresse.cp,
+    addressLocality: STORE.adresse.ville,
+    addressRegion: STORE.adresse.region,
+    addressCountry: 'FR',
+  },
+  geo: {
+    '@type': 'GeoCoordinates',
+    latitude: STORE.coords.lat,
+    longitude: STORE.coords.lng,
+  },
+  openingHoursSpecification: openingHoursSpec,
+  priceRange: '€€',
+  paymentAccepted: STORE.paiement.join(', '),
+  areaServed: STORE.zoneChalandise.map((v) => ({ '@type': 'City', name: v })),
+  sameAs: [STORE.social.tiktok, STORE.social.instagram, STORE.social.facebook].filter(Boolean),
+};
+
+const breadcrumbSchema =
+  breadcrumb && breadcrumb.length > 1
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: breadcrumb.map((b, i) => ({
+          '@type': 'ListItem',
+          position: i + 1,
+          name: b.label,
+          ...(b.href && { item: new URL(b.href, SITE_URL).toString() }),
+        })),
+      }
+    : null;
+
+const faqSchema =
+  faq && faq.length > 0
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: faq.map((f) => ({
+          '@type': 'Question',
+          name: f.q,
+          acceptedAnswer: { '@type': 'Answer', text: f.a },
+        })),
+      }
+    : null;
+---
+
+<!doctype html>
+<html lang="fr" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="generator" content={Astro.generator} />
+
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalUrl} />
+
+    {noindex && <meta name="robots" content="noindex,nofollow" />}
+
+    {/* Open Graph */}
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:image" content={ogImageUrl} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:locale" content="fr_FR" />
+    <meta property="og:site_name" content="Pièces Auto Colomiers" />
+
+    {/* Twitter */}
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImageUrl} />
+
+    {/* Theme */}
+    <meta name="theme-color" content="#0F2C5A" />
+    <meta name="color-scheme" content="light" />
+    <meta name="format-detection" content="telephone=yes" />
+
+    {/* Icons & manifest */}
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="mask-icon" href="/favicon.svg" color="#0F2C5A" />
+
+    {/* Preconnect uniquement vers domaines vraiment utilisés */}
+    <link rel="dns-prefetch" href="//www.google-analytics.com" />
+
+    {/* JSON-LD */}
+    <script is:inline type="application/ld+json" set:html={JSON.stringify(storeSchema)}></script>
+    {breadcrumbSchema && <script is:inline type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)}></script>}
+    {faqSchema && <script is:inline type="application/ld+json" set:html={JSON.stringify(faqSchema)}></script>}
+  </head>
+
+  <body class={`flex min-h-screen flex-col ${bodyClass}`}>
+    <a href="#main" class="skip-link">Aller au contenu principal</a>
+
+    <Header />
+
+    <main id="main" class="flex-1 focus:outline-none" tabindex="-1">
+      <slot />
+    </main>
+
+    <Footer />
+    <StickyBar />
+  </body>
+</html>

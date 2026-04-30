@@ -1,0 +1,183 @@
+---
+/**
+ * Contact — page contact + formulaire de devis V1.
+ *
+ * V1 : formulaire HTML5 + fallback mailto: (EmailJS non configure).
+ * V2 (J4) : EmailJS fonctionnel + upload photos + honeypot anti-spam.
+ *
+ * Cf. plan.md §9 et §22 (DevisForm en J4).
+ */
+
+import Layout from '../layouts/Layout.astro';
+import { STORE, telUrl, whatsappUrl } from '../data/store.js';
+
+const breadcrumb = [
+  { label: 'Accueil', href: '/' },
+  { label: 'Contact' },
+];
+---
+
+<Layout
+  title="Contact & devis — Pièces Auto Colomiers"
+  description={`Contactez-nous au ${STORE.contact.telDisplay} ou via WhatsApp Business. Devis sous 24 heures pour toute pièce auto neuve, multi-marques.`}
+  breadcrumb={breadcrumb}
+>
+  <section class="bg-gradient-hero text-white relative overflow-hidden">
+    <div class="absolute inset-0 bg-hex-pattern opacity-30" aria-hidden="true"></div>
+    <div class="container-tight section-y relative max-w-3xl">
+      <nav aria-label="Fil d'Ariane" class="text-sm text-offwhite-200 mb-4">
+        <a href="/" class="hover:text-signal-400">Accueil</a>
+        <span class="mx-2 opacity-50">›</span>
+        <span>Contact</span>
+      </nav>
+      <span class="eyebrow-light">Parlons-nous</span>
+      <h1 class="text-h1 lg:text-display-2 mt-2 mb-4">Contact & devis.</h1>
+      <p class="text-lg text-offwhite-200 leading-relaxed">
+        Téléphone, WhatsApp Business, email, ou directement en magasin. Pour un devis, le formulaire ci-dessous est l'option la plus rapide.
+      </p>
+    </div>
+  </section>
+
+  <section class="section-y bg-offwhite">
+    <div class="container-tight grid lg:grid-cols-12 gap-8">
+
+      {/* Sidebar contact */}
+      <aside class="lg:col-span-4 space-y-4">
+        <div class="card p-6">
+          <h2 class="font-display uppercase text-h3 mb-4">Joignez-nous</h2>
+          <ul class="space-y-4">
+            <li>
+              <a href={telUrl()} class="flex items-start gap-3 group hover:text-marine-700">
+                <span class="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-signal-400 text-marine-900">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                </span>
+                <span>
+                  <span class="block font-semibold text-base">{STORE.contact.telDisplay}</span>
+                  <span class="block text-xs text-charcoal-500">Lun-Ven 8h30-18h · Sam 9h-13h</span>
+                </span>
+              </a>
+            </li>
+            <li>
+              <a href={whatsappUrl()} target="_blank" rel="noopener" class="flex items-start gap-3 group">
+                <span class="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-sky-400 text-marine-900">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.5 3.5A11.8 11.8 0 0 0 12 0C5.4 0 0 5.4 0 12c0 2.1.5 4.1 1.6 5.9L0 24l6.3-1.7C8 23.4 9.9 24 12 24c6.6 0 12-5.4 12-12 0-3.2-1.2-6.2-3.5-8.5"/></svg>
+                </span>
+                <span>
+                  <span class="block font-semibold text-base text-charcoal-800 group-hover:text-marine-700">WhatsApp Business</span>
+                  <span class="block text-xs text-charcoal-500">Réponse rapide en journée</span>
+                </span>
+              </a>
+            </li>
+            <li>
+              <a href={`mailto:${STORE.contact.email}`} class="flex items-start gap-3 group">
+                <span class="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-charcoal-100 text-marine-800">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                </span>
+                <span class="flex-1 min-w-0">
+                  <span class="block font-semibold text-base text-charcoal-800 break-all group-hover:text-marine-700">{STORE.contact.email}</span>
+                  {STORE.contact.emailIsPlaceholder && (
+                    <span class="block text-xs text-signal-600">(adresse provisoire — à venir)</span>
+                  )}
+                </span>
+              </a>
+            </li>
+            <li>
+              <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(STORE.adresse.full)}`} target="_blank" rel="noopener" class="flex items-start gap-3 group">
+                <span class="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-charcoal-100 text-marine-800">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
+                </span>
+                <span>
+                  <span class="block font-semibold text-base text-charcoal-800 group-hover:text-marine-700">{STORE.adresse.rue}</span>
+                  <span class="block text-xs text-charcoal-500">{STORE.adresse.cp} {STORE.adresse.ville}</span>
+                </span>
+              </a>
+            </li>
+          </ul>
+        </div>
+      </aside>
+
+      {/* Form devis */}
+      <div class="lg:col-span-8">
+        <div id="devis" class="card p-6 lg:p-8">
+          <span class="eyebrow">Formulaire</span>
+          <h2 class="text-h2 mt-2 mb-2">Demander un devis</h2>
+          <p class="text-charcoal-500 mb-6">
+            Plus le véhicule est précis, plus le devis est rapide. Réponse sous 24 h ouvrées.
+          </p>
+
+          <form
+            id="devis-form"
+            action={`mailto:${STORE.contact.email}`}
+            method="post"
+            enctype="text/plain"
+            class="space-y-5"
+          >
+            <div class="grid sm:grid-cols-2 gap-4">
+              <label class="block">
+                <span class="block text-sm font-semibold mb-1.5 text-charcoal-700">Nom <span class="text-red-500">*</span></span>
+                <input type="text" name="nom" required class="w-full px-4 py-2.5 rounded-lg border-2 border-charcoal-100 focus:border-marine-700 focus:outline-none transition-colors" />
+              </label>
+              <label class="block">
+                <span class="block text-sm font-semibold mb-1.5 text-charcoal-700">Email <span class="text-red-500">*</span></span>
+                <input type="email" name="email" required class="w-full px-4 py-2.5 rounded-lg border-2 border-charcoal-100 focus:border-marine-700 focus:outline-none transition-colors" />
+              </label>
+              <label class="block">
+                <span class="block text-sm font-semibold mb-1.5 text-charcoal-700">Téléphone</span>
+                <input type="tel" name="telephone" class="w-full px-4 py-2.5 rounded-lg border-2 border-charcoal-100 focus:border-marine-700 focus:outline-none transition-colors" />
+              </label>
+              <label class="block">
+                <span class="block text-sm font-semibold mb-1.5 text-charcoal-700">Vous êtes</span>
+                <select name="audience" class="w-full px-4 py-2.5 rounded-lg border-2 border-charcoal-100 focus:border-marine-700 focus:outline-none transition-colors">
+                  <option value="particulier">Particulier</option>
+                  <option value="pro">Professionnel (garage, flotte)</option>
+                </select>
+              </label>
+              <label class="block">
+                <span class="block text-sm font-semibold mb-1.5 text-charcoal-700">Marque véhicule</span>
+                <input type="text" name="marque" placeholder="Ex. Renault, Toyota, Iveco…" class="w-full px-4 py-2.5 rounded-lg border-2 border-charcoal-100 focus:border-marine-700 focus:outline-none transition-colors" />
+              </label>
+              <label class="block">
+                <span class="block text-sm font-semibold mb-1.5 text-charcoal-700">Modèle</span>
+                <input type="text" name="modele" placeholder="Ex. Clio IV, RAV4, Daily…" class="w-full px-4 py-2.5 rounded-lg border-2 border-charcoal-100 focus:border-marine-700 focus:outline-none transition-colors" />
+              </label>
+              <label class="block">
+                <span class="block text-sm font-semibold mb-1.5 text-charcoal-700">Année</span>
+                <input type="number" name="annee" min="1950" max="2030" placeholder="Ex. 2018" class="w-full px-4 py-2.5 rounded-lg border-2 border-charcoal-100 focus:border-marine-700 focus:outline-none transition-colors" />
+              </label>
+              <label class="block">
+                <span class="block text-sm font-semibold mb-1.5 text-charcoal-700">Code moteur / VIN</span>
+                <input type="text" name="motorisation" placeholder="Ex. K9K-636, VIN" class="w-full px-4 py-2.5 rounded-lg border-2 border-charcoal-100 focus:border-marine-700 focus:outline-none transition-colors" />
+              </label>
+            </div>
+
+            <label class="block">
+              <span class="block text-sm font-semibold mb-1.5 text-charcoal-700">Pièce(s) recherchée(s) <span class="text-red-500">*</span></span>
+              <textarea name="message" rows="5" required placeholder="Décrivez la ou les pièces souhaitées. Référence OEM si vous l'avez. Un photo, un signe d'usure, tout détail aide." class="w-full px-4 py-2.5 rounded-lg border-2 border-charcoal-100 focus:border-marine-700 focus:outline-none transition-colors"></textarea>
+            </label>
+
+            {/* Honeypot anti-spam (champ caché que les bots remplissent) */}
+            <input type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" class="absolute left-[-9999px] opacity-0 pointer-events-none" />
+
+            <p class="text-xs text-charcoal-500">
+              <strong>Photos en V1.5</strong> — Pour cette première version, joignez vos photos en réponse au mail que nous vous enverrons.
+            </p>
+
+            <div class="flex flex-col sm:flex-row items-start gap-3 pt-2">
+              <button type="submit" class="btn-primary btn-lg w-full sm:w-auto">
+                Envoyer ma demande
+              </button>
+              <a href={whatsappUrl('Bonjour, je souhaite un devis pour une pièce auto.')} target="_blank" rel="noopener" class="btn-secondary btn-lg w-full sm:w-auto">
+                Plutôt par WhatsApp
+              </a>
+            </div>
+
+            <p class="text-xs text-charcoal-500">
+              En envoyant ce formulaire, vous acceptez que vos données soient utilisées uniquement pour répondre à votre demande.
+              <a href="/mentions-legales#rgpd" class="link-inline">En savoir plus (RGPD)</a>.
+            </p>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+</Layout>
