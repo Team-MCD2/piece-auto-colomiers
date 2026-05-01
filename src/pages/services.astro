@@ -6,6 +6,7 @@
  */
 
 import Layout from '../layouts/Layout.astro';
+import LucideIcon from '../components/LucideIcon.astro';
 import { SERVICES } from '../data/services.js';
 import { FAQ } from '../data/faq.js';
 
@@ -13,6 +14,9 @@ const breadcrumb = [
   { label: 'Accueil', href: '/' },
   { label: 'Services' },
 ];
+
+// Pré-tri pour mettre les USP en premier (visuel impactant en haut de page)
+const sortedServices = [...SERVICES].sort((a, b) => Number(b.usp) - Number(a.usp));
 ---
 
 <Layout
@@ -39,29 +43,49 @@ const breadcrumb = [
     </div>
   </section>
 
-  {/* Liste services */}
+  {/* Liste services — USP en premier (sortedServices) */}
   <section class="section-y bg-offwhite">
-    <div class="container-tight space-y-6">
-      {SERVICES.map((s) => (
-        <article id={s.slug} class={`card p-6 lg:p-8 ${s.usp ? 'border-2 border-signal-400/40' : ''}`}>
-          <div class="flex flex-col lg:flex-row lg:items-center gap-5 lg:gap-8">
-            {/* Bloc gauche : badges + titre + tagline (largeur fixe sur lg) */}
-            <div class="lg:w-64 lg:shrink-0">
+    <div class="container-tight space-y-5 lg:space-y-6">
+      {sortedServices.map((s) => (
+        <article
+          id={s.slug}
+          class:list={[
+            'card group p-6 lg:p-8 transition-all duration-300 ease-brand',
+            s.usp
+              ? 'border-2 border-signal-400/40 shadow-card hover:shadow-cta hover:-translate-y-1 bg-gradient-to-br from-white to-signal-50/40'
+              : 'hover:border-marine-700/30 hover:shadow-card',
+          ]}
+        >
+          <div class="flex flex-col lg:flex-row gap-5 lg:gap-7 items-start">
+            {/* Icon avatar — gros, coloré selon contexte (USP/B2B/standard) */}
+            <div
+              class:list={[
+                'inline-flex size-14 lg:size-16 shrink-0 items-center justify-center rounded-card transition-transform group-hover:scale-110 group-hover:rotate-[-4deg]',
+                s.usp
+                  ? 'bg-signal-400 text-marine-900 shadow-cta'
+                  : s.audience === 'pro'
+                  ? 'bg-sky-400/20 text-sky-700 border border-sky-400/40'
+                  : 'bg-marine-800 text-signal-400',
+              ]}
+              aria-hidden="true"
+            >
+              <LucideIcon name={s.icon} size={28} strokeWidth={2.2} />
+            </div>
+
+            {/* Content — titre + badges + short + desc */}
+            <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 mb-2 flex-wrap">
                 {s.usp && <span class="badge-signal">USP</span>}
                 {s.audience === 'pro' && <span class="badge-sky">B2B</span>}
+                {s.badge && <span class="badge-soft">{s.badge}</span>}
               </div>
               <h2 class="font-display uppercase text-h3 text-marine-800 leading-tight">{s.label}</h2>
-              <p class="text-sm text-charcoal-500 mt-2">{s.short}</p>
-            </div>
-
-            {/* Description (prend l'espace restant) */}
-            <div class="flex-1 min-w-0">
+              <p class="text-sm text-charcoal-500 mt-1.5 mb-3 italic">{s.short}</p>
               <p class="text-charcoal-700 leading-relaxed">{s.desc}</p>
             </div>
 
-            {/* CTA (auto-width, jamais brisé) */}
-            <div class="lg:shrink-0">
+            {/* CTA — full-width mobile, auto-width desktop, jamais brisé */}
+            <div class="lg:shrink-0 lg:ml-2 w-full lg:w-auto">
               <a
                 href={s.cta.href}
                 class:list={[

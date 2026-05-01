@@ -16,6 +16,7 @@
     "jsxImportSource": "react",
     "allowJs": true,
     "checkJs": false,
-    "verbatimModuleSyntax": false
+    "verbatimModuleSyntax": false,
+    "noEmit": true
   }
 }

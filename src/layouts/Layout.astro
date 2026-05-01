@@ -28,6 +28,11 @@ interface Props {
   noindex?: boolean;
   breadcrumb?: Array<{ label: string; href?: string }>;
   faq?: Array<{ q: string; a: string }>;
+  /**
+   * JSON-LD additionnels à injecter en plus de AutoPartsStore + Breadcrumb + FAQ.
+   * Ex : Product schema sur les fiches catégorie. Chaque entrée est sérialisée tel quel.
+   */
+  extraJsonLd?: Array<Record<string, unknown>>;
   bodyClass?: string;
 }
 
@@ -39,6 +44,7 @@ const {
   noindex = false,
   breadcrumb,
   faq,
+  extraJsonLd,
   bodyClass = '',
 } = Astro.props;
 
@@ -180,6 +186,9 @@ const faqSchema =
     <script is:inline type="application/ld+json" set:html={JSON.stringify(storeSchema)}></script>
     {breadcrumbSchema && <script is:inline type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)}></script>}
     {faqSchema && <script is:inline type="application/ld+json" set:html={JSON.stringify(faqSchema)}></script>}
+    {extraJsonLd?.map((schema) => (
+      <script is:inline type="application/ld+json" set:html={JSON.stringify(schema)}></script>
+    ))}
   </head>
 
   <body class={`flex min-h-screen flex-col ${bodyClass}`}>

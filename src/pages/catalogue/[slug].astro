@@ -1,0 +1,310 @@
+---
+/**
+ * Fiche catégorie — route dynamique pour les 47 catégories produit.
+ *
+ * V1 : contenu générique par famille (cf. data/family-copy.js).
+ * V2 (J5+) : prose éditée main pour les catégories priority=1.
+ *
+ * SEO : Product schema (JSON-LD) sans offers (pas de prix V1, devis sur demande).
+ * Cf. plan.md §5.2 et cascade-plan.md D11 (taxonomie).
+ */
+
+import Layout from '../../layouts/Layout.astro';
+import { CATEGORIES, FAMILIES, VEHICLE_TYPES } from '../../data/categories.js';
+import { BRANDS } from '../../data/brands.js';
+import { STORE, telUrl, whatsappUrl } from '../../data/store.js';
+import { getFamilyCopy } from '../../data/family-copy.js';
+import { publicAssetExists } from '../../lib/public-asset';
+
+export async function getStaticPaths() {
+  return CATEGORIES.map((cat) => ({
+    params: { slug: cat.slug },
+    props: { cat },
+  }));
+}
+
+const { cat } = Astro.props;
+const family = FAMILIES.find((f) => f.id === cat.family);
+const familyLabel = family?.label ?? 'Catégorie';
+const copy = getFamilyCopy(cat.family);
+
+const vehicleLabels: string[] = cat.vehicles.map(
+  (v: string) => VEHICLE_TYPES.find((vt) => vt.id === v)?.label ?? v
+);
+
+const compatibleBrands = BRANDS.filter((b) => b.families.includes(cat.family));
+
+const relatedCategories = CATEGORIES
+  .filter((c) => c.family === cat.family && c.slug !== cat.slug)
+  .slice(0, 6);
+
+const breadcrumb = [
+  { label: 'Accueil', href: '/' },
+  { label: 'Catalogue', href: '/catalogue' },
+  { label: familyLabel, href: `/catalogue#family-${cat.family}` },
+  { label: cat.label },
+];
+
+const waMessage = `Bonjour, je souhaite un devis pour ${cat.label.toLowerCase()}.`;
+
+const SITE_URL = import.meta.env.PUBLIC_SITE_URL || 'https://pieces-auto-colomiers.vercel.app';
+const pageUrl = new URL(`/catalogue/${cat.slug}`, SITE_URL).toString();
+const imageUrl = new URL(cat.image, SITE_URL).toString();
+
+// Description SEO enrichie
+const seoDescription = `${cat.label} multi-marques à Colomiers (31770). ${cat.desc} Devis sous 24 h, retrait magasin ou expédition Mondial Relay.`;
+
+// Product schema JSON-LD (catégorie générique, sans offers/prix V1)
+const productSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Product',
+  '@id': `${pageUrl}#product`,
+  name: cat.label,
+  description: seoDescription,
+  image: imageUrl,
+  category: familyLabel,
+  url: pageUrl,
+  brand: compatibleBrands.map((b) => ({ '@type': 'Brand', name: b.name })),
+  // Pas d'offers V1 (catalogue informationnel — devis sur demande)
+  // V2 : offers.AggregateOffer si l'on collecte des fourchettes de prix
+  isRelatedTo: relatedCategories.slice(0, 3).map((rc) => ({
+    '@type': 'Product',
+    name: rc.label,
+    url: new URL(`/catalogue/${rc.slug}`, SITE_URL).toString(),
+  })),
+  manufacturer: {
+    '@type': 'AutoPartsStore',
+    '@id': `${SITE_URL}#store`,
+  },
+};
+---
+
+<Layout
+  title={`${cat.label} — Pièces Auto Colomiers`}
+  description={seoDescription}
+  breadcrumb={breadcrumb}
+  extraJsonLd={[productSchema]}
+>
+  {/* === Hero ============================================================== */}
+  <section class="bg-gradient-hero text-white relative overflow-hidden">
+    <div class="absolute inset-0 bg-hex-pattern opacity-30" aria-hidden="true"></div>
+    <div class="container-tight section-y relative">
+      <nav aria-label="Fil d'Ariane" class="text-sm text-offwhite-200 mb-4 flex flex-wrap items-center gap-x-1.5 gap-y-1">
+        <a href="/" class="hover:text-signal-400">Accueil</a>
+        <span class="opacity-50">›</span>
+        <a href="/catalogue" class="hover:text-signal-400">Catalogue</a>
+        <span class="opacity-50">›</span>
+        <a href={`/catalogue#family-${cat.family}`} class="hover:text-signal-400">{familyLabel}</a>
+        <span class="opacity-50">›</span>
+        <span class="text-white">{cat.label}</span>
+      </nav>
+
+      <div class="grid lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+        <div class="lg:col-span-7">
+          <span class="eyebrow-light">{familyLabel}</span>
+          <h1 class="text-h1 lg:text-display-2 mt-2 mb-4">{cat.label}.</h1>
+          <p class="text-lg text-offwhite-200 leading-relaxed mb-6 max-w-prose">
+            {cat.desc} Multi-marques, neuves, livrables en magasin ou en point relais Mondial Relay.
+          </p>
+
+          {/* Badges véhicules */}
+          <div class="flex flex-wrap items-center gap-2 mb-7">
+            <span class="text-xs uppercase tracking-wider text-offwhite-200/70 mr-1">Compatible :</span>
+            {vehicleLabels.map((v) => (
+              <span class="badge bg-marine-700/60 backdrop-blur-sm text-white border border-white/10">{v}</span>
+            ))}
+          </div>
+
+          <div class="flex flex-wrap items-center gap-3">
+            <a href={whatsappUrl(waMessage)} target="_blank" rel="noopener" class="btn-primary btn-lg">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.5 3.5A11.8 11.8 0 0 0 12 0C5.4 0 0 5.4 0 12c0 2.1.5 4.1 1.6 5.9L0 24l6.3-1.7C8 23.4 9.9 24 12 24c6.6 0 12-5.4 12-12 0-3.2-1.2-6.2-3.5-8.5"/></svg>
+              Devis WhatsApp
+            </a>
+            <a href="/contact#devis" class="btn-secondary-light btn-lg">Formulaire devis</a>
+          </div>
+          <p class="text-sm text-offwhite-200/80 mt-5">
+            ou appelez le{' '}
+            <a href={telUrl()} class="text-signal-400 font-semibold hover:text-signal-300 underline decoration-2 underline-offset-4">{STORE.contact.telDisplay}</a>
+          </p>
+        </div>
+
+        {/* Visuel catégorie */}
+        <div class="lg:col-span-5 hidden md:block">
+          <div class="relative aspect-[4/3] max-w-md mx-auto md:ml-auto">
+            <div class="absolute inset-0 rounded-card bg-gradient-to-br from-marine-700 to-marine-950 shadow-2xl shadow-marine-950/40 flex items-center justify-center" aria-hidden="true">
+              <span class="font-display uppercase text-signal-400/20 text-9xl leading-none">
+                {cat.label.charAt(0)}
+              </span>
+            </div>
+            <img
+              src={cat.image}
+              alt={cat.label}
+              class="absolute inset-0 rounded-card shadow-2xl shadow-marine-950/40 object-cover w-full h-full"
+              loading="eager"
+              decoding="async"
+              onerror="this.style.display='none'"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {/* === Ce qu'on traite + Signes d'usure ================================== */}
+  <section class="section-y bg-offwhite">
+    <div class="container-tight grid lg:grid-cols-12 gap-8">
+      {/* Bloc gauche — contenu principal */}
+      <div class="lg:col-span-8 space-y-10">
+        <article>
+          <span class="eyebrow">Ce qu'on traite</span>
+          <h2 class="text-h2 mt-2 mb-5">Notre offre {cat.label.toLowerCase()}.</h2>
+          <ul class="space-y-3">
+            {copy.handle.map((line: string) => (
+              <li class="flex items-start gap-3">
+                <span class="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-signal-400 text-marine-900 mt-0.5">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                </span>
+                <span class="text-charcoal-700 leading-relaxed">{line}</span>
+              </li>
+            ))}
+          </ul>
+        </article>
+
+        <article>
+          <span class="eyebrow">Quand changer ?</span>
+          <h2 class="text-h2 mt-2 mb-5">Signes d'usure typiques.</h2>
+          <ul class="space-y-3">
+            {copy.signs.map((sign: string) => (
+              <li class="flex items-start gap-3">
+                <span class="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-sky-400/20 text-sky-700 border border-sky-400/40 mt-0.5">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+                </span>
+                <span class="text-charcoal-700 leading-relaxed">{sign}</span>
+              </li>
+            ))}
+          </ul>
+          <p class="text-sm text-charcoal-500 mt-6 italic">
+            Doute sur le diagnostic ? Décrivez-nous le symptôme — on vous oriente avant la commande.
+          </p>
+        </article>
+
+        {/* Équipementiers compatibles */}
+        {compatibleBrands.length > 0 && (
+          <article>
+            <span class="eyebrow">Marques disponibles</span>
+            <h2 class="text-h2 mt-2 mb-5">Équipementiers de référence.</h2>
+            <ul class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+              {compatibleBrands.map((b: typeof BRANDS[number]) => {
+                const hasLogo = publicAssetExists(b.logo);
+                return (
+                  <li class="bg-white rounded-card border border-charcoal-100 p-3 text-center hover:border-marine-700 hover:shadow-card transition-all flex flex-col items-center gap-1">
+                    {hasLogo ? (
+                      <img
+                        src={b.logo}
+                        alt={`Logo ${b.name}`}
+                        class="h-8 w-auto max-w-full object-contain grayscale group-hover:grayscale-0 transition-all"
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    ) : (
+                      <div class="font-display uppercase text-charcoal-700 text-sm">{b.name}</div>
+                    )}
+                    <div class="text-xs text-charcoal-500 leading-tight line-clamp-2">{b.tagline}</div>
+                  </li>
+                );
+              })}
+            </ul>
+            <p class="text-xs text-charcoal-400 mt-4 leading-relaxed">
+              Liste indicative — d'autres équipementiers sont sourcés sur demande selon la référence OEM ou VIN.
+              <span class="ml-1">Marques affichées à titre informatif (art. L713-6 CPI).</span>
+            </p>
+          </article>
+        )}
+      </div>
+
+      {/* Sidebar devis sticky */}
+      <aside class="lg:col-span-4">
+        <div class="lg:sticky lg:top-24 space-y-4">
+          <div class="card p-6 border-2 border-signal-400/40 bg-gradient-to-br from-white to-signal-50">
+            <span class="eyebrow">Devis 24 h</span>
+            <h3 class="font-display uppercase text-h3 mt-2 mb-3">Demandez un prix.</h3>
+            <p class="text-sm text-charcoal-600 mb-5 leading-relaxed">
+              Précisez marque, modèle, année et code moteur. Réponse sous 24 h ouvrées avec disponibilité, délai et tarif.
+            </p>
+            <div class="space-y-2.5">
+              <a href={whatsappUrl(waMessage)} target="_blank" rel="noopener" class="btn-primary btn-md w-full">
+                Devis WhatsApp
+              </a>
+              <a href="/contact#devis" class="btn-secondary btn-md w-full">Par formulaire</a>
+              <a href={telUrl()} class="btn-ghost btn-md w-full">{STORE.contact.telDisplay}</a>
+            </div>
+          </div>
+
+          <div class="card p-5">
+            <h3 class="font-display uppercase text-base mb-3">Livraison & retrait</h3>
+            <ul class="space-y-2 text-sm text-charcoal-600">
+              <li class="flex items-start gap-2">
+                <span class="text-signal-600 font-bold shrink-0">→</span>
+                <span><strong class="text-charcoal-800">Retrait magasin</strong> — gratuit, {STORE.adresse.ville}</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-signal-600 font-bold shrink-0">→</span>
+                <span><strong class="text-charcoal-800">Mondial Relay</strong> — partout en France</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-signal-600 font-bold shrink-0">→</span>
+                <span><strong class="text-charcoal-800">Conseil pro</strong> — équipe humaine, pas de bot</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  {/* === Catégories liées (même famille) =================================== */}
+  {relatedCategories.length > 0 && (
+    <section class="section-y bg-white border-t border-charcoal-100">
+      <div class="container-tight">
+        <div class="mb-8 max-w-2xl">
+          <span class="eyebrow">Famille {familyLabel.toLowerCase()}</span>
+          <h2 class="text-h2 mt-2">Catégories liées.</h2>
+        </div>
+        <ul class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 lg:gap-4">
+          {relatedCategories.map((rc) => (
+            <li>
+              <a href={`/catalogue/${rc.slug}`} class="card-interactive group p-4 h-full flex flex-col">
+                <h3 class="font-display uppercase text-sm text-charcoal-800 group-hover:text-marine-700 transition-colors">
+                  {rc.label}
+                </h3>
+                <p class="text-xs text-charcoal-500 mt-1 line-clamp-2 flex-1">{rc.desc}</p>
+                <span class="inline-flex items-center gap-1 mt-2 text-xs font-semibold text-marine-700 group-hover:text-signal-600">
+                  Voir →
+                </span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  )}
+
+  {/* === CTA final ========================================================= */}
+  <section class="bg-signal-400 text-marine-900 relative overflow-hidden">
+    <div class="absolute inset-0 bg-diagonal-stripe opacity-50" aria-hidden="true"></div>
+    <div class="container-tight section-y relative text-center max-w-3xl">
+      <h2 class="text-h2 lg:text-display-2">Besoin de {cat.label.toLowerCase()} ?</h2>
+      <p class="text-lg mt-4 mb-8 leading-relaxed">
+        Marque, modèle, année, code moteur ou référence OEM — partagez ce que vous avez. On revient sous 24 h.
+      </p>
+      <div class="flex flex-wrap justify-center items-center gap-3">
+        <a href={whatsappUrl(waMessage)} target="_blank" rel="noopener" class="btn-md bg-marine-800 text-white shadow-lg hover:bg-marine-900 hover:-translate-y-0.5">
+          Demander un devis
+        </a>
+        <a href={telUrl()} class="btn-md bg-white/30 text-marine-900 hover:bg-white/50">
+          {STORE.contact.telDisplay}
+        </a>
+      </div>
+    </div>
+  </section>
+</Layout>

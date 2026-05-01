@@ -1,0 +1,25 @@
+{
+  // Silence "Unknown at rule @tailwind / @apply" — le CSS Language Server natif
+  // ne comprend pas les directives Tailwind. Le build PostCSS les gère.
+  // Recommandation : installer aussi l'extension "Tailwind CSS IntelliSense"
+  // pour de l'autocomplétion classes + couleurs DA.
+  "css.lint.unknownAtRules": "ignore",
+  "scss.lint.unknownAtRules": "ignore",
+  "less.lint.unknownAtRules": "ignore",
+
+  // TypeScript : utilise la version du workspace (corrige le cache TS Server qui peut
+  // afficher de fausses erreurs sur des paths de tsconfig pourtant valides).
+  "js/ts.tsdk.path": "node_modules/typescript/lib",
+  "js/ts.tsdk.promptToUseWorkspaceVersion": true,
+
+  // Tailwind class regex pour class:list et clsx-like patterns
+  "tailwindCSS.experimental.classRegex": [
+    ["class:list=\\{([^}]*)\\}", "[\"'`]([^\"'`]*).*?[\"'`]"],
+    ["clsx\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"]
+  ],
+
+  // Files — discipline cross-platform (Windows/macOS/Linux)
+  "files.eol": "\n",
+  "files.insertFinalNewline": true,
+  "files.trimTrailingWhitespace": true
+}

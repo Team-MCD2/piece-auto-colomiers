@@ -2,19 +2,44 @@
 /**
  * Contact — page contact + formulaire de devis V1.
  *
- * V1 : formulaire HTML5 + fallback mailto: (EmailJS non configure).
- * V2 (J4) : EmailJS fonctionnel + upload photos + honeypot anti-spam.
+ * J4 :
+ *   - EmailJS lazy init via SDK npm @emailjs/browser
+ *   - Upload photos (max 3, compression client-side via canvas → ~300 KB JPEG)
+ *   - Honeypot anti-spam (champ caché `website`)
+ *   - Rate-limit côté client (localStorage 30 s entre deux envois)
+ *   - États UI : idle / loading / success / error
+ *   - Prefill `audience` depuis URL `?audience=pro` (cohérence services.astro CTA B2B)
+ *   - StoreMap interactive en bas de page (cohérence notre-magasin)
+ *   - Fallback gracieux mailto: si env vars EmailJS manquantes
+ *
+ * Variables d'environnement requises (à mettre dans .env.local) :
+ *   - PUBLIC_EMAILJS_SERVICE_ID
+ *   - PUBLIC_EMAILJS_TEMPLATE_ID
+ *   - PUBLIC_EMAILJS_PUBLIC_KEY
+ *   Sans ces vars : le formulaire fallback en mailto: (UX dégradée mais fonctionnelle).
  *
  * Cf. plan.md §9 et §22 (DevisForm en J4).
  */
 
 import Layout from '../layouts/Layout.astro';
+import StoreMap from '../components/StoreMap.tsx';
+import LucideIcon from '../components/LucideIcon.astro';
 import { STORE, telUrl, whatsappUrl } from '../data/store.js';
 
 const breadcrumb = [
   { label: 'Accueil', href: '/' },
   { label: 'Contact' },
 ];
+
+// Config EmailJS (exposée au client via data-attributes — clés publiques OK à exposer)
+const emailjsConfig = {
+  serviceId: import.meta.env.PUBLIC_EMAILJS_SERVICE_ID ?? '',
+  templateId: import.meta.env.PUBLIC_EMAILJS_TEMPLATE_ID ?? '',
+  publicKey: import.meta.env.PUBLIC_EMAILJS_PUBLIC_KEY ?? '',
+};
+const emailjsEnabled = Boolean(
+  emailjsConfig.serviceId && emailjsConfig.templateId && emailjsConfig.publicKey
+);
 ---
 
 <Layout
@@ -111,6 +136,12 @@ const breadcrumb = [
             method="post"
             enctype="text/plain"
             class="space-y-5"
+            data-emailjs-service={emailjsConfig.serviceId}
+            data-emailjs-template={emailjsConfig.templateId}
+            data-emailjs-public={emailjsConfig.publicKey}
+            data-emailjs-enabled={String(emailjsEnabled)}
+            data-fallback-mailto={STORE.contact.email}
+            novalidate
           >
             <div class="grid sm:grid-cols-2 gap-4">
               <label class="block">
@@ -158,18 +189,68 @@ const breadcrumb = [
             {/* Honeypot anti-spam (champ caché que les bots remplissent) */}
             <input type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" class="absolute left-[-9999px] opacity-0 pointer-events-none" />
 
-            <p class="text-xs text-charcoal-500">
-              <strong>Photos en V1.5</strong> — Pour cette première version, joignez vos photos en réponse au mail que nous vous enverrons.
-            </p>
+            {/* === Upload photos — max 3, compression client-side ============== */}
+            <div class="space-y-3">
+              <span class="block text-sm font-semibold text-charcoal-700">
+                Photos de la pièce <span class="text-charcoal-400 font-normal">(optionnel — max 3)</span>
+              </span>
+
+              <label
+                id="photo-dropzone"
+                class="relative block cursor-pointer border-2 border-dashed border-charcoal-200 hover:border-marine-700 hover:bg-marine-700/5 rounded-lg p-6 text-center transition-colors"
+              >
+                <input
+                  type="file"
+                  id="photo-input"
+                  name="photos"
+                  accept="image/jpeg,image/jpg,image/png,image/webp"
+                  multiple
+                  class="sr-only"
+                />
+                <div class="flex flex-col items-center gap-2 pointer-events-none">
+                  <span class="inline-flex size-12 items-center justify-center rounded-full bg-marine-700/10 text-marine-700">
+                    <LucideIcon name="Upload" size={22} />
+                  </span>
+                  <p class="text-sm font-semibold text-charcoal-700">Cliquez pour sélectionner</p>
+                  <p class="text-xs text-charcoal-500">JPG, PNG, WebP — max 5 MB par photo</p>
+                </div>
+              </label>
+
+              {/* Previews — peuplé par JS au choix de fichiers */}
+              <div id="photo-previews" class="grid grid-cols-3 gap-3 hidden"></div>
+
+              {/* Erreurs upload (taille, type, max) */}
+              <p id="photo-error" class="text-sm text-red-600 hidden flex items-center gap-1.5">
+                <LucideIcon name="AlertCircle" size={16} />
+                <span data-photo-error-msg></span>
+              </p>
+
+              <p class="text-xs text-charcoal-400 leading-relaxed">
+                Les photos sont compressées automatiquement avant envoi (~300 KB chacune). Aucune conservation après réponse à votre devis.
+              </p>
+            </div>
 
             <div class="flex flex-col sm:flex-row items-start gap-3 pt-2">
-              <button type="submit" class="btn-primary btn-lg w-full sm:w-auto">
-                Envoyer ma demande
+              <button
+                id="devis-submit"
+                type="submit"
+                class="btn-primary btn-lg w-full sm:w-auto inline-flex items-center justify-center gap-2"
+              >
+                <span data-submit-label>Envoyer ma demande</span>
+                <LucideIcon name="Loader2" size={18} class="hidden animate-spin" />
               </button>
               <a href={whatsappUrl('Bonjour, je souhaite un devis pour une pièce auto.')} target="_blank" rel="noopener" class="btn-secondary btn-lg w-full sm:w-auto">
                 Plutôt par WhatsApp
               </a>
             </div>
+
+            {/* Status feedback — masqué par défaut, peuplé par JS */}
+            <div
+              id="devis-status"
+              class="hidden rounded-lg p-4 border-2 text-sm flex items-start gap-3"
+              role="status"
+              aria-live="polite"
+            ></div>
 
             <p class="text-xs text-charcoal-500">
               En envoyant ce formulaire, vous acceptez que vos données soient utilisées uniquement pour répondre à votre demande.
@@ -180,4 +261,366 @@ const breadcrumb = [
       </div>
     </div>
   </section>
+
+  {/* StoreMap minimaliste */}
+  <section class="bg-white border-t border-charcoal-100">
+    <div class="container-tight py-10">
+      <div class="mb-5 max-w-2xl">
+        <span class="eyebrow">En personne ?</span>
+        <h2 class="text-h3 mt-2">Notre magasin à Colomiers.</h2>
+        <p class="text-charcoal-500 text-sm mt-1">
+          {STORE.adresse.full} — Lun-Ven 8h30-18h · Sam 9h-13h
+        </p>
+      </div>
+      <StoreMap
+        client:only="react"
+        lat={STORE.coords.lat}
+        lng={STORE.coords.lng}
+        name={STORE.raisonSociale}
+        address={STORE.adresse.full}
+        tel={STORE.contact.tel}
+        telDisplay={STORE.contact.telDisplay}
+        height="320px"
+      >
+        <div slot="fallback" style="height:320px" class="rounded-card bg-charcoal-50 flex items-center justify-center text-charcoal-400 text-sm">
+          Chargement de la carte…
+        </div>
+      </StoreMap>
+    </div>
+  </section>
 </Layout>
+
+{/*
+  DevisForm controller — vanilla TS, lazy-loaded EmailJS.
+  Architecture :
+    - Photos compressées via canvas (1280px max, q0.7 JPEG → ~150 KB base64)
+    - Honeypot: champ `website` doit rester vide
+    - Rate-limit: localStorage 30s entre 2 envois
+    - États: idle/loading/success/error avec aria-live
+    - Fallback gracieux mailto: si EmailJS pas configuré (.env.local manquant)
+    - Prefill audience=pro depuis URL ?audience=pro (cohérence services CTA B2B)
+*/}
+<script>
+  import emailjs from '@emailjs/browser';
+
+  // === Config & élements DOM =================================================
+  const form = document.getElementById('devis-form') as HTMLFormElement | null;
+  const submitBtn = document.getElementById('devis-submit') as HTMLButtonElement | null;
+  const submitLabel = form?.querySelector<HTMLElement>('[data-submit-label]') ?? null;
+  const submitSpinner = submitBtn?.querySelector<SVGElement>('svg.animate-spin') ?? null;
+  const statusEl = document.getElementById('devis-status');
+  const photoInput = document.getElementById('photo-input') as HTMLInputElement | null;
+  const photoPreviews = document.getElementById('photo-previews');
+  const photoError = document.getElementById('photo-error');
+  const photoErrorMsg = photoError?.querySelector<HTMLElement>('[data-photo-error-msg]') ?? null;
+
+  if (!form || !submitBtn || !statusEl || !photoInput || !photoPreviews) {
+    console.warn('[contact] required elements missing — JS handler disabled, fallback to mailto');
+  } else {
+    // === Constantes ==========================================================
+    const MAX_PHOTOS = 3;
+    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB raw
+    const COMPRESS_MAX_WIDTH = 1280;
+    const COMPRESS_QUALITY = 0.7;
+    const RATE_LIMIT_MS = 30_000;
+    const RATE_LIMIT_KEY = 'pac-devis-last-sent';
+
+    const cfg = {
+      service: form.dataset.emailjsService ?? '',
+      template: form.dataset.emailjsTemplate ?? '',
+      publicKey: form.dataset.emailjsPublic ?? '',
+      enabled: form.dataset.emailjsEnabled === 'true',
+      fallbackEmail: form.dataset.fallbackMailto ?? '',
+    };
+
+    // === Init EmailJS ========================================================
+    if (cfg.enabled && cfg.publicKey) {
+      try {
+        emailjs.init({ publicKey: cfg.publicKey });
+      } catch (err) {
+        console.warn('[contact] emailjs.init failed:', err);
+      }
+    }
+
+    // === Prefill audience depuis URL =========================================
+    const urlAudience = new URL(window.location.href).searchParams.get('audience');
+    if (urlAudience === 'pro') {
+      const sel = form.querySelector<HTMLSelectElement>('select[name="audience"]');
+      if (sel) sel.value = 'pro';
+    }
+
+    // === Photos state ========================================================
+    interface PhotoEntry {
+      file: File;
+      compressed: string; // data: URL base64
+    }
+    const photos: PhotoEntry[] = [];
+
+    // === Helpers UI ==========================================================
+    function showPhotoError(msg: string) {
+      if (!photoError || !photoErrorMsg) return;
+      photoErrorMsg.textContent = msg;
+      photoError.classList.remove('hidden');
+    }
+    function clearPhotoError() {
+      if (!photoError) return;
+      photoError.classList.add('hidden');
+    }
+
+    function setSubmitState(state: 'idle' | 'loading') {
+      if (!submitBtn || !submitLabel || !submitSpinner) return;
+      if (state === 'loading') {
+        submitBtn.disabled = true;
+        submitBtn.classList.add('opacity-70', 'cursor-not-allowed');
+        submitLabel.textContent = 'Envoi en cours…';
+        submitSpinner.classList.remove('hidden');
+      } else {
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('opacity-70', 'cursor-not-allowed');
+        submitLabel.textContent = 'Envoyer ma demande';
+        submitSpinner.classList.add('hidden');
+      }
+    }
+
+    function showStatus(kind: 'success' | 'error' | 'info', msg: string) {
+      if (!statusEl) return;
+      const palette: Record<typeof kind, string> = {
+        success: 'bg-green-50 border-green-300 text-green-800',
+        error: 'bg-red-50 border-red-300 text-red-800',
+        info: 'bg-sky-50 border-sky-300 text-sky-800',
+      };
+      const icon =
+        kind === 'success'
+          ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>'
+          : '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>';
+      statusEl.className = `rounded-lg p-4 border-2 text-sm flex items-start gap-3 ${palette[kind]}`;
+      statusEl.innerHTML = `<span class="shrink-0 mt-0.5">${icon}</span><span>${msg}</span>`;
+      statusEl.classList.remove('hidden');
+    }
+    function hideStatus() {
+      if (!statusEl) return;
+      statusEl.classList.add('hidden');
+    }
+
+    // === Compression photo via canvas ========================================
+    function compressImage(file: File): Promise<string> {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error('Lecture du fichier impossible'));
+        reader.onload = () => {
+          const img = new Image();
+          img.onerror = () => reject(new Error("Image invalide ou corrompue"));
+          img.onload = () => {
+            try {
+              const ratio = Math.min(1, COMPRESS_MAX_WIDTH / img.width);
+              const w = Math.round(img.width * ratio);
+              const h = Math.round(img.height * ratio);
+              const canvas = document.createElement('canvas');
+              canvas.width = w;
+              canvas.height = h;
+              const ctx = canvas.getContext('2d');
+              if (!ctx) return reject(new Error('Canvas 2D context indisponible'));
+              ctx.drawImage(img, 0, 0, w, h);
+              const dataUrl = canvas.toDataURL('image/jpeg', COMPRESS_QUALITY);
+              resolve(dataUrl);
+            } catch (err) {
+              reject(err);
+            }
+          };
+          img.src = reader.result as string;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // === Render thumbnails ====================================================
+    function renderPreviews() {
+      if (!photoPreviews) return;
+      photoPreviews.innerHTML = '';
+      if (photos.length === 0) {
+        photoPreviews.classList.add('hidden');
+        return;
+      }
+      photoPreviews.classList.remove('hidden');
+      photos.forEach((p, idx) => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'relative aspect-square rounded-lg overflow-hidden border-2 border-charcoal-100 group';
+        wrapper.innerHTML = `
+          <img src="${p.compressed}" alt="Photo ${idx + 1}" class="w-full h-full object-cover" />
+          <button type="button" data-remove-idx="${idx}" aria-label="Retirer la photo ${idx + 1}"
+            class="absolute top-1 right-1 inline-flex size-7 items-center justify-center rounded-full bg-marine-900/80 hover:bg-marine-900 text-white shadow-lg backdrop-blur-sm">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          </button>
+          <span class="absolute bottom-1 left-1 text-[10px] font-semibold bg-marine-900/70 text-white px-1.5 py-0.5 rounded backdrop-blur-sm">
+            ${(p.compressed.length / 1024).toFixed(0)} KB
+          </span>
+        `;
+        photoPreviews.appendChild(wrapper);
+      });
+
+      photoPreviews.querySelectorAll<HTMLButtonElement>('button[data-remove-idx]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const idx = Number(btn.dataset.removeIdx);
+          if (!Number.isNaN(idx)) {
+            photos.splice(idx, 1);
+            renderPreviews();
+          }
+        });
+      });
+    }
+
+    // === Photo input change handler ==========================================
+    photoInput.addEventListener('change', async (e) => {
+      clearPhotoError();
+      const target = e.target as HTMLInputElement;
+      if (!target.files || target.files.length === 0) return;
+
+      for (const file of Array.from(target.files)) {
+        if (photos.length >= MAX_PHOTOS) {
+          showPhotoError(`Maximum ${MAX_PHOTOS} photos. Retirez-en une pour en ajouter une autre.`);
+          break;
+        }
+        if (!file.type.startsWith('image/')) {
+          showPhotoError(`"${file.name}" n'est pas une image.`);
+          continue;
+        }
+        if (file.size > MAX_FILE_SIZE) {
+          showPhotoError(`"${file.name}" dépasse 5 MB. Choisissez une image plus petite.`);
+          continue;
+        }
+        try {
+          const compressed = await compressImage(file);
+          photos.push({ file, compressed });
+        } catch (err) {
+          showPhotoError(`Erreur compression "${file.name}". Essayez une autre image.`);
+          console.error('[contact] compress error:', err);
+        }
+      }
+      renderPreviews();
+      target.value = ''; // reset input pour permettre re-upload du même fichier
+    });
+
+    // === Validation manuelle (form has novalidate) ============================
+    function validateForm(fd: FormData): string | null {
+      const nom = String(fd.get('nom') ?? '').trim();
+      const email = String(fd.get('email') ?? '').trim();
+      const message = String(fd.get('message') ?? '').trim();
+      if (nom.length < 2) return 'Merci d\'indiquer votre nom.';
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return 'Adresse email invalide.';
+      if (message.length < 10) return 'Décrivez la pièce recherchée (10 caractères minimum).';
+      return null;
+    }
+
+    // === Submit handler =======================================================
+    form.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      hideStatus();
+      clearPhotoError();
+
+      const fd = new FormData(form);
+
+      // 1) Honeypot — bot a rempli le champ "website" → on simule un succès silencieux
+      const honeypot = String(fd.get('website') ?? '').trim();
+      if (honeypot) {
+        showStatus('success', 'Demande envoyée. Réponse sous 24 heures ouvrées.');
+        form.reset();
+        photos.length = 0;
+        renderPreviews();
+        return;
+      }
+
+      // 2) Rate-limit
+      const lastSent = Number(localStorage.getItem(RATE_LIMIT_KEY) ?? '0');
+      const elapsed = Date.now() - lastSent;
+      if (lastSent > 0 && elapsed < RATE_LIMIT_MS) {
+        const wait = Math.ceil((RATE_LIMIT_MS - elapsed) / 1000);
+        showStatus('info', `Patientez ${wait} s avant de renvoyer une demande.`);
+        return;
+      }
+
+      // 3) Validation manuelle
+      const validationError = validateForm(fd);
+      if (validationError) {
+        showStatus('error', validationError);
+        return;
+      }
+
+      // 4) Construction des params EmailJS (toutes les valeurs en string)
+      const params: Record<string, string> = {
+        nom: String(fd.get('nom') ?? ''),
+        email: String(fd.get('email') ?? ''),
+        telephone: String(fd.get('telephone') ?? '—'),
+        audience: String(fd.get('audience') ?? 'particulier'),
+        marque: String(fd.get('marque') ?? '—'),
+        modele: String(fd.get('modele') ?? '—'),
+        annee: String(fd.get('annee') ?? '—'),
+        motorisation: String(fd.get('motorisation') ?? '—'),
+        message: String(fd.get('message') ?? ''),
+        photos_count: String(photos.length),
+        photo_1_data: photos[0]?.compressed ?? '',
+        photo_2_data: photos[1]?.compressed ?? '',
+        photo_3_data: photos[2]?.compressed ?? '',
+        sent_at: new Date().toLocaleString('fr-FR', { timeZone: 'Europe/Paris' }),
+      };
+
+      // 5) Envoi
+      setSubmitState('loading');
+
+      // Fallback mailto: si EmailJS pas configuré
+      if (!cfg.enabled) {
+        const body = [
+          `Nom : ${params.nom}`,
+          `Email : ${params.email}`,
+          `Téléphone : ${params.telephone}`,
+          `Profil : ${params.audience}`,
+          ``,
+          `Véhicule : ${params.marque} ${params.modele} ${params.annee}`,
+          `Motorisation/VIN : ${params.motorisation}`,
+          ``,
+          `Demande :`,
+          params.message,
+          ``,
+          `Photos : ${params.photos_count} (à demander en réponse)`,
+        ].join('\n');
+        const subject = encodeURIComponent(`Devis pièce auto — ${params.nom}`);
+        window.location.href = `mailto:${cfg.fallbackEmail}?subject=${subject}&body=${encodeURIComponent(body)}`;
+        showStatus(
+          'info',
+          'EmailJS non configuré — votre client mail s\'ouvre avec le message pré-rempli.'
+        );
+        setSubmitState('idle');
+        return;
+      }
+
+      try {
+        await emailjs.send(cfg.service, cfg.template, params);
+        localStorage.setItem(RATE_LIMIT_KEY, String(Date.now()));
+        showStatus(
+          'success',
+          'Demande envoyée. Réponse sous 24 h ouvrées par email. Pour un devis urgent, appelez-nous.'
+        );
+        form.reset();
+        photos.length = 0;
+        renderPreviews();
+        // Re-prefill audience si on était venu via ?audience=pro (UX cohérente)
+        if (urlAudience === 'pro') {
+          const sel = form.querySelector<HTMLSelectElement>('select[name="audience"]');
+          if (sel) sel.value = 'pro';
+        }
+      } catch (err) {
+        console.error('[contact] emailjs.send error:', err);
+        const errMsg =
+          err && typeof err === 'object' && 'text' in err
+            ? String((err as { text: string }).text)
+            : 'Erreur d\'envoi inconnue';
+        showStatus(
+          'error',
+          `Impossible d'envoyer (${errMsg}). Réessayez ou contactez-nous au ${form.dataset.fallbackMailto ?? 'téléphone'}.`
+        );
+      } finally {
+        setSubmitState('idle');
+      }
+    });
+  }
+</script>
+

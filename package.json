@@ -13,9 +13,10 @@
     "astro": "astro",
     "fonts:install": "node scripts/download-fonts.mjs",
     "assets:brand": "node scripts/process-brand-assets.mjs",
+    "assets:brand-logos": "node scripts/fetch-brand-logos.mjs",
     "assets:tiktok": "node scripts/tiktok-download.mjs",
     "assets:images": "node scripts/fetch-images.mjs",
-    "assets:all": "npm run fonts:install && npm run assets:brand && npm run assets:images && npm run assets:tiktok",
+    "assets:all": "npm run fonts:install && npm run assets:brand && npm run assets:brand-logos && npm run assets:images && npm run assets:tiktok",
     "format": "prettier --write \"**/*.{astro,js,jsx,ts,tsx,json,md,css}\""
   },
   "dependencies": {

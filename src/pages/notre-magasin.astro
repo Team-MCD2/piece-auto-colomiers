@@ -9,6 +9,7 @@
  */
 
 import Layout from '../layouts/Layout.astro';
+import StoreMap from '../components/StoreMap.tsx';
 import { STORE, telUrl, whatsappUrl } from '../data/store.js';
 
 const breadcrumb = [
@@ -126,6 +127,43 @@ const breadcrumb = [
           <p class="text-sm text-charcoal-700">{STORE.paiement.join(' · ')}</p>
         </div>
       </article>
+    </div>
+  </section>
+
+  {/* Map interactive */}
+  <section class="section-y bg-white border-t border-charcoal-100">
+    <div class="container-tight">
+      <div class="mb-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+        <div class="max-w-2xl">
+          <span class="eyebrow">Localisation</span>
+          <h2 class="text-h2 mt-2">Comment nous trouver.</h2>
+          <p class="text-charcoal-500 mt-2">
+            16 allée de l'Adour, à Colomiers. Parking sur place, accès facile depuis la rocade.
+          </p>
+        </div>
+        <a
+          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(STORE.adresse.full)}`}
+          target="_blank"
+          rel="noopener"
+          class="btn-secondary btn-md whitespace-nowrap shrink-0"
+        >
+          Itinéraire Google Maps →
+        </a>
+      </div>
+      <StoreMap
+        client:only="react"
+        lat={STORE.coords.lat}
+        lng={STORE.coords.lng}
+        name={STORE.raisonSociale}
+        address={STORE.adresse.full}
+        tel={STORE.contact.tel}
+        telDisplay={STORE.contact.telDisplay}
+        height="480px"
+      >
+        <div slot="fallback" style="height:480px" class="rounded-card bg-charcoal-50 flex items-center justify-center text-charcoal-400 text-sm">
+          Chargement de la carte…
+        </div>
+      </StoreMap>
     </div>
   </section>
 
