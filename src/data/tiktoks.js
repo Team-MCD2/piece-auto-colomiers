@@ -18,8 +18,8 @@
  *   id: string;            // ID TikTok (ex: '7611527215808859414')
  *   title: string;         // Titre court (≤ 80 chars)
  *   url: string;           // URL TikTok originale (CTA "Voir sur TikTok")
- *   mp4: string;           // Chemin local du MP4 (/tiktoks/<id>.mp4)
- *   poster: string;        // Chemin local du poster (/tiktoks/posters/<id>.jpg)
+ *   mp4: string;           // Chemin local du MP4 (/assets/tiktoks/<id>.mp4)
+ *   poster: string;        // Chemin local du poster (/assets/tiktoks/<id>-poster.jpg)
  *   views: number;         // Nombre de vues au moment du sync
  *   durationSec: number;   // Durée en secondes
  *   uploadedAt: string;    // ISO 8601
@@ -27,14 +27,17 @@
  *   height: number;        // px (typiquement 1280 ou 1920, ratio 9:16)
  * }> } */
 export const TIKTOKS = [
-  // Placeholder — 1 entrée témoin connue (URL fournie par l'utilisateur).
-  // Le vrai contenu sera populé par `npm run sync:tiktok` au scaffold J1.
+  // Placeholder — 1 entrée témoin (URL fournie par l'utilisateur).
+  // Populé par `npm run assets:tiktok` (tiktok-download.mjs via yt-dlp + ffmpeg).
+  // NB : les MP4 n'existent pas au build initial — le composant TikTokGrid
+  //      filtre build-time via publicAssetExists() pour éviter les <video> 404.
+  //      Chemins alignés avec scripts/tiktok-download.mjs : /assets/tiktoks/<id>.mp4
   {
     id: '7611527215808859414',
     title: 'Pièces Auto Colomiers — vidéo référence',
     url: 'https://www.tiktok.com/@pieces.auto.colomiers/video/7611527215808859414',
-    mp4: '/tiktoks/7611527215808859414.mp4',
-    poster: '/tiktoks/posters/7611527215808859414.jpg',
+    mp4: '/assets/tiktoks/7611527215808859414.mp4',
+    poster: '/assets/tiktoks/7611527215808859414-poster.jpg',
     views: 0,
     durationSec: 30,
     uploadedAt: '2025-01-01',

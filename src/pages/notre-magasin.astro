@@ -50,6 +50,7 @@ const breadcrumb = [
           class="w-full h-full max-h-[480px] object-cover rounded-card shadow-2xl shadow-marine-950/50"
           loading="eager"
           decoding="async"
+          fetchpriority="high"
           onerror="this.style.display='none';this.parentElement.classList.add('bg-marine-900','aspect-video','flex','items-center','justify-center');this.parentElement.innerHTML='<span class=\'text-offwhite-200\'>Photo magasin à venir</span>'"
         />
       </div>

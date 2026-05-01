@@ -179,6 +179,12 @@ const faqSchema =
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="mask-icon" href="/favicon.svg" color="#0F2C5A" />
 
+    {/* Preload fonts critiques — LCP H1 (Oswald 700) + body visible (Inter 400).
+        Les autres poids (400/500/600) chargent lazy via font-display:swap dans globals.css.
+        Limité à 2 preloads pour ne pas concurrencer le LCP image. */}
+    <link rel="preload" href="/fonts/oswald-700.woff2" as="font" type="font/woff2" crossorigin="anonymous" />
+    <link rel="preload" href="/fonts/inter-400.woff2" as="font" type="font/woff2" crossorigin="anonymous" />
+
     {/* Preconnect uniquement vers domaines vraiment utilisés */}
     <link rel="dns-prefetch" href="//www.google-analytics.com" />
 

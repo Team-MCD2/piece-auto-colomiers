@@ -20,6 +20,7 @@
  */
 
 import Layout from '../layouts/Layout.astro';
+import TikTokGrid from '../components/TikTokGrid';
 import { publicAssetExists } from '../lib/public-asset';
 import { STORE, whatsappUrl, telUrl } from '../data/store.js';
 import { CATEGORIES, HOME_FEATURED_SLUGS } from '../data/categories.js';
@@ -27,6 +28,7 @@ import { SERVICES } from '../data/services.js';
 import { FAQ } from '../data/faq.js';
 import { BRANDS } from '../data/brands.js';
 import { TESTIMONIALS } from '../data/testimonials.js';
+import { TIKTOKS, TIKTOK_PROFILE_URL } from '../data/tiktoks.js';
 
 const featured = HOME_FEATURED_SLUGS
   .map((slug) => CATEGORIES.find((c) => c.slug === slug))
@@ -67,6 +69,25 @@ const reasons = [
 
 // Témoignages — affichés si dispo, avec badges placeholder respectés (D32)
 const showTestimonials = TESTIMONIALS.length > 0;
+
+// TikToks — filtre build-time : ne garder que les entrées dont le MP4 existe
+// sur disque. Évite les <video> 404 si le client n'a pas encore lancé
+// `npm run assets:tiktok` (qui dépend de yt-dlp + ffmpeg installés).
+// Normalise le shape pour le composant React (viewCount camelCase).
+const availableTiktoks = TIKTOKS
+  .filter((t: typeof TIKTOKS[number]) => publicAssetExists(t.mp4))
+  .map((t: typeof TIKTOKS[number]) => ({
+    id: t.id,
+    url: t.url,
+    mp4: t.mp4,
+    poster: publicAssetExists(t.poster) ? t.poster : '', // poster optionnel
+    title: t.title,
+    viewCount: (t as { views?: number; viewCount?: number }).views ?? (t as { viewCount?: number }).viewCount ?? 0,
+    duration: (t as { durationSec?: number; duration?: number }).durationSec ?? (t as { duration?: number }).duration ?? 0,
+    width: t.width,
+    height: t.height,
+  }));
+const showTiktoks = availableTiktoks.length > 0;
 ---
 
 <Layout
@@ -118,6 +139,7 @@ const showTestimonials = TESTIMONIALS.length > 0;
             class="absolute inset-0 rounded-card shadow-2xl shadow-marine-950/40 object-cover w-full h-full"
             loading="eager"
             decoding="async"
+            fetchpriority="high"
             onerror="this.style.display='none'"
           />
           {/* Écusson "Toulouse Ouest" — décalé en bas/gauche */}
@@ -393,6 +415,39 @@ const showTestimonials = TESTIMONIALS.length > 0;
       </p>
     </div>
   </section>
+
+  {showTiktoks && (
+    <>
+      {/* === 4.6bis) TikTok (J5 — self-host MP4 via yt-dlp) ================== */}
+      <section class="section-y bg-offwhite-100">
+        <div class="container-tight">
+          <div class="flex flex-wrap items-end justify-between gap-4 mb-10">
+            <div class="max-w-xl">
+              <span class="eyebrow">Le magasin en vidéo</span>
+              <h2 class="text-h2 lg:text-display-2 mt-2 mb-3">Nos coulisses sur TikTok.</h2>
+              <p class="text-charcoal-500 text-lg">
+                Démonstrations, conseils pratiques, coulisses du magasin — suivez notre quotidien à Colomiers.
+              </p>
+            </div>
+            <a
+              href={TIKTOK_PROFILE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="btn-secondary btn-md whitespace-nowrap shrink-0"
+            >
+              Suivre @{TIKTOK_PROFILE_URL.split('@')[1]}
+            </a>
+          </div>
+
+          <TikTokGrid
+            client:visible
+            tiktoks={availableTiktoks}
+            profileUrl={TIKTOK_PROFILE_URL}
+          />
+        </div>
+      </section>
+    </>
+  )}
 
   {showTestimonials && (
     <>
