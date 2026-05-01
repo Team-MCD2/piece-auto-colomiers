@@ -1,0 +1,86 @@
+{
+  "valeo": {
+    "commons_filename": "Valeo_Logo.svg",
+    "commons_url": "https://commons.wikimedia.org/wiki/File:Valeo_Logo.svg",
+    "license": "Public domain",
+    "fetched_at": "2026-05-01T11:58:46.915Z"
+  },
+  "brembo": {
+    "commons_filename": "Brembo_logo.svg",
+    "commons_url": "https://commons.wikimedia.org/wiki/File:Brembo_logo.svg",
+    "license": "Public domain",
+    "fetched_at": "2026-05-01T11:58:47.655Z"
+  },
+  "mann-filter": {
+    "commons_filename": "MANN+HUMMEL_Logo.svg",
+    "commons_url": "https://commons.wikimedia.org/wiki/File:MANN%2BHUMMEL_Logo.svg",
+    "license": "Public domain",
+    "fetched_at": "2026-05-01T11:58:48.263Z"
+  },
+  "continental": {
+    "commons_filename": "Continental_logo.svg",
+    "commons_url": "https://commons.wikimedia.org/wiki/File:Continental_logo.svg",
+    "license": "Public domain",
+    "fetched_at": "2026-05-01T11:58:49.270Z"
+  },
+  "sachs": {
+    "commons_filename": "ZF_Sachs_logo.svg",
+    "commons_url": "https://commons.wikimedia.org/wiki/File:ZF_Sachs_logo.svg",
+    "license": "Public domain",
+    "fetched_at": "2026-05-01T11:58:52.115Z"
+  },
+  "skf": {
+    "commons_filename": "SKF_logo.svg",
+    "commons_url": "https://commons.wikimedia.org/wiki/File:SKF_logo.svg",
+    "license": "Public domain",
+    "fetched_at": "2026-05-01T11:58:52.334Z"
+  },
+  "hella": {
+    "commons_filename": "Hella_Logo.svg",
+    "commons_url": "https://commons.wikimedia.org/wiki/File:Hella_Logo.svg",
+    "license": "Public domain",
+    "fetched_at": "2026-05-01T11:58:52.891Z"
+  },
+  "bosch": {
+    "commons_filename": "Bosch-logo.svg",
+    "commons_url": "https://commons.wikimedia.org/wiki/File:Bosch-logo.svg",
+    "license": "Public domain",
+    "fetched_at": "2026-05-01T11:58:46.638Z"
+  },
+  "ngk": {
+    "commons_filename": "Ngk_logo.svg",
+    "commons_url": "https://commons.wikimedia.org/wiki/File:Ngk_logo.svg",
+    "license": "CC BY 2.5",
+    "fetched_at": "2026-05-01T11:58:47.416Z"
+  },
+  "febi-bilstein": {
+    "commons_filename": "Bilstein_Logo.svg",
+    "commons_url": "https://commons.wikimedia.org/wiki/File:Bilstein_Logo.svg",
+    "license": "CC BY-SA 4.0",
+    "fetched_at": "2026-05-01T11:58:49.959Z"
+  },
+  "trw": {
+    "commons_filename": "TRW_logo.svg",
+    "commons_url": "https://commons.wikimedia.org/wiki/File:TRW_logo.svg",
+    "license": "Public domain",
+    "fetched_at": "2026-05-01T11:58:53.159Z"
+  },
+  "castrol": {
+    "commons_filename": "Castrol_logo_2023.svg",
+    "commons_url": "https://commons.wikimedia.org/wiki/File:Castrol_logo_2023.svg",
+    "license": "Public domain",
+    "fetched_at": "2026-05-01T11:58:53.380Z"
+  },
+  "totalenergies": {
+    "commons_filename": "TotalEnergies_wordmark_(2021-present).svg",
+    "commons_url": "https://commons.wikimedia.org/wiki/File:TotalEnergies_wordmark_(2021-present).svg",
+    "license": "Public domain",
+    "fetched_at": "2026-05-01T11:58:53.778Z"
+  },
+  "mobil-1": {
+    "commons_filename": "Mobil_logo.svg",
+    "commons_url": "https://commons.wikimedia.org/wiki/File:Mobil_logo.svg",
+    "license": "Public domain",
+    "fetched_at": "2026-05-01T11:58:54.014Z"
+  }
+}

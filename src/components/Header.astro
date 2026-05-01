@@ -20,7 +20,7 @@ const currentPath = Astro.url.pathname;
 const isActive = (href: string) => currentPath === href || (href !== '/' && currentPath.startsWith(href));
 
 const usps = [
-  { label: 'Mondial Relay', icon: 'M9 17a3 3 0 1 0 0 0' }, // marqueur, l'icône réelle vient de Lucide via la classe
+  { label: 'Mondial Relay' },
   { label: 'Retrait magasin' },
   { label: 'Devis sous 24 h' },
   { label: 'Conseil pro' },

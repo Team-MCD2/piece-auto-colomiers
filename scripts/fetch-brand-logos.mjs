@@ -36,23 +36,26 @@ const CREDITS_FILE = join(ROOT, 'src', 'data', 'brand-credits.json');
 
 // Candidats Commons par brand id (kebab-case).
 // L'ordre compte : on prend le premier qui existe.
-// Sources vérifiées au 2026-05 — peuvent évoluer si Commons réorganise.
+// ATTENTION : Commons est case-sensitive — "NGK_logo.svg" ≠ "Ngk_logo.svg".
+// Filenames vérifiés au 2026-05 via commons.wikimedia.org/w/api.php.
+// Note : febi-bilstein et ate n'ont pas de SVG propriétaire sur Commons
+// (PNG uniquement ou absents) — fallback typo UI géré par le rendu conditionnel.
 const CANDIDATES = {
-  bosch: ['Bosch-logotype.svg', 'Bosch_logo.svg', 'Bosch-symbol.svg'],
+  bosch: ['Bosch-logo.svg', 'Bosch-logotype.svg', 'Bosch_logo.svg'],
   valeo: ['Valeo_Logo.svg', 'Logo_Valeo.svg', 'Valeo_logo.svg'],
-  ngk: ['NGK_Spark_Plug_logo.svg', 'NGK_logo.svg', 'NGK-Logo.svg'],
+  ngk: ['Ngk_logo.svg', 'NGK_Spark_Plug_logo.svg', 'Ngkntk_logo.svg'],
   brembo: ['Brembo_logo.svg', 'Brembo.svg', 'Logo_Brembo.svg'],
   'mann-filter': ['Mann-filter-logo.svg', 'MANN+HUMMEL_Logo.svg', 'Mann_Hummel_logo.svg'],
   continental: ['Continental_AG_logo.svg', 'Continental-Logo.svg', 'Continental_logo.svg'],
-  'febi-bilstein': ['Febi_bilstein_logo.svg', 'Febi-bilstein.svg', 'Logo_Febi_bilstein.svg'],
-  ate: ['ATE_logo.svg', 'ATE_Bremsen_Logo.svg', 'Logo_ATE.svg'],
+  'febi-bilstein': ['Bilstein_Logo.svg', 'Febi_bilstein_logo.svg', 'Febi-bilstein.svg'], // Bilstein seul (pas de SVG febi propre sur Commons)
+  ate: ['ATE_logo.svg', 'ATE_Bremsen_Logo.svg', 'Logo_ATE.svg'], // probablement absent Commons, fallback typo
   sachs: ['Sachs_logo.svg', 'ZF_Sachs_logo.svg', 'Sachs-Logo.svg'],
   skf: ['SKF_logo.svg', 'SKF-Logo.svg', 'Logo_SKF.svg'],
   hella: ['Hella_2011_logo.svg', 'Hella_Logo.svg', 'Hella-Logo.svg'],
-  trw: ['TRW_Automotive_logo.svg', 'TRW_Logo.svg', 'Trw-logo.svg'],
-  castrol: ['Castrol_logo.svg', 'Castrol-logo.svg', 'Logo_Castrol.svg'],
-  totalenergies: ['Logo_TotalEnergies.svg', 'TotalEnergies_logo.svg', 'TotalEnergies.svg'],
-  'mobil-1': ['Mobil_1_logo.svg', 'Mobil-1-logo.svg', 'Mobil1_logo.svg'],
+  trw: ['TRW_logo.svg', 'TRW_Auto.svg', 'ZF_TRW.svg'],
+  castrol: ['Castrol_logo_2023.svg', 'Castrol_textlogo.svg', 'Castrol_logo1968.svg'],
+  totalenergies: ['TotalEnergies_wordmark_(2021-present).svg', 'Logo_TotalEnergies.svg', 'TotalEnergies.svg'],
+  'mobil-1': ['Mobil_logo.svg', 'Mobil_1_logo.svg', 'Exxon_Mobil_Logo.svg'], // Mobil parent (Mobil 1 en SVG n'existe pas Commons)
 };
 
 const COMMONS_API = 'https://commons.wikimedia.org/w/api.php';

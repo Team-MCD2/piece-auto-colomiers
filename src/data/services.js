@@ -6,6 +6,8 @@
  * (le Mondial Relay est notre USP majeur — D17).
  */
 
+import { STORE } from './store.js';
+
 export const SERVICES = [
   {
     slug: 'devis-personnalise',
@@ -44,7 +46,7 @@ export const SERVICES = [
     desc: 'Un doute sur la référence ? Un véhicule atypique (4×4, japonaise, utilitaire) ? Appelez-nous. Notre équipe a la mécanique dans le sang et vous oriente vers la pièce qui convient — sans bullshit.',
     icon: 'PhoneCall',
     badge: '05 64 72 37 26',
-    cta: { label: 'Nous appeler', href: 'tel:+33564723726' },
+    cta: { label: 'Nous appeler', href: `tel:${STORE.contact.tel}` },
     usp: false,
   },
   {
