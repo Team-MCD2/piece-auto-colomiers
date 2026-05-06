@@ -37,11 +37,11 @@ const lastUpdate = '2025-01';
   <section class="bg-marine-800 text-white">
     <div class="container-tight py-12">
       <nav aria-label="Fil d'Ariane" class="text-sm text-offwhite-200 mb-4">
-        <a href="/" class="hover:text-signal-400">Accueil</a>
+        <a href="/" class="hover:text-sky-300">Accueil</a>
         <span class="mx-2 opacity-50">›</span>
         <span>Mentions légales</span>
       </nav>
-      <h1 class="text-h1 lg:text-display-2 mb-2">Mentions légales</h1>
+      <h1 class="title-accent on-marine text-h1 lg:text-display-2 mb-2">Mentions légales</h1>
       <p class="text-sm text-offwhite-200">Dernière mise à jour : {lastUpdate}</p>
     </div>
   </section>
@@ -61,7 +61,7 @@ const lastUpdate = '2025-01';
           <li><strong class="text-charcoal-800">Téléphone :</strong> {STORE.contact.telDisplay}</li>
           <li>
             <strong class="text-charcoal-800">Email :</strong> {STORE.contact.email}
-            {STORE.contact.emailIsPlaceholder && <span class="text-signal-600 ml-1 text-sm">(provisoire)</span>}
+            {STORE.contact.emailIsPlaceholder && <span class="text-charcoal-500 ml-1 text-sm">(provisoire)</span>}
           </li>
         </ul>
       </section>

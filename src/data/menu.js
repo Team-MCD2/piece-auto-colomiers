@@ -11,13 +11,27 @@ export const MAIN_NAV = [
 ];
 
 export const FOOTER_NAV = {
+  /**
+   * Col 2 — "Le site" : pages navigationnelles principales uniquement.
+   * Les mentions légales ont migré dans la col "Entreprise" (Oscaro 5-col).
+   */
   pages: [
     { href: '/', label: 'Accueil' },
     { href: '/catalogue', label: 'Catalogue' },
     { href: '/services', label: 'Services' },
     { href: '/notre-magasin', label: 'Notre magasin' },
     { href: '/contact', label: 'Contact' },
+  ],
+  /**
+   * Col 3 — "Entreprise" : about, légal, RGPD, avis.
+   * Pattern Oscaro-style — séparation claire pages produit / pages corporate.
+   */
+  entreprise: [
+    { href: '/notre-magasin', label: 'À propos' },
+    { href: '/services', label: 'Nos services' },
     { href: '/mentions-legales', label: 'Mentions légales' },
+    { href: '/mentions-legales#rgpd', label: 'RGPD' },
+    { href: '/mentions-legales#cookies', label: 'Cookies' },
   ],
 };
 

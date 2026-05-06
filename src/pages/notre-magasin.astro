@@ -10,6 +10,7 @@
 
 import Layout from '../layouts/Layout.astro';
 import StoreMap from '../components/StoreMap.tsx';
+import WhatsAppIcon from '../components/WhatsAppIcon.astro';
 import { STORE, telUrl, whatsappUrl } from '../data/store.js';
 
 const breadcrumb = [
@@ -28,17 +29,22 @@ const breadcrumb = [
     <div class="container-tight py-12 lg:py-20 relative grid lg:grid-cols-2 gap-10 items-center">
       <div>
         <nav aria-label="Fil d'Ariane" class="text-sm text-offwhite-200 mb-4">
-          <a href="/" class="hover:text-signal-400">Accueil</a>
+          <a href="/" class="hover:text-sky-300">Accueil</a>
           <span class="mx-2 opacity-50">›</span>
           <span>Notre magasin</span>
         </nav>
-        <span class="eyebrow-light">Au cœur de Toulouse Ouest</span>
-        <h1 class="text-h1 lg:text-display-2 mt-2 mb-4">Notre magasin à Colomiers.</h1>
-        <p class="text-lg text-offwhite-200 leading-relaxed mb-6">
+        <span class="eyebrow-light" data-reveal>Au cœur de Toulouse Ouest</span>
+        <h1
+          class="title-accent on-marine text-h1 lg:text-display-2 mt-2 mb-4"
+          data-reveal
+          data-reveal-delay="1"
+          style="view-transition-name: hero-title;"
+        >Notre magasin à Colomiers.</h1>
+        <p class="text-lg text-offwhite-200 leading-relaxed mb-6" data-reveal data-reveal-delay="2">
           {STORE.raisonSociale} est une entreprise familiale créée par deux co-fondateurs entrepreneurs locaux.
           Notre métier : la pièce auto neuve, multi-marques, accessible et bien conseillée.
         </p>
-        <p class="text-base text-offwhite-200 leading-relaxed">
+        <p class="text-base text-offwhite-200 leading-relaxed" data-reveal data-reveal-delay="3">
           Nous accueillons particuliers et professionnels, du tourisme aux véhicules japonais en passant
           par les utilitaires et les 4×4. Conseil humain, retrait sur place, expédition Mondial Relay.
         </p>
@@ -62,7 +68,7 @@ const breadcrumb = [
     <div class="container-tight grid lg:grid-cols-3 gap-6">
       {/* Adresse */}
       <article class="card p-6">
-        <div class="inline-flex size-12 items-center justify-center rounded-full bg-signal-400 text-marine-900 mb-4">
+        <div class="inline-flex size-12 items-center justify-center rounded-full bg-marine-800 text-white mb-4">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
         </div>
         <h2 class="font-display uppercase text-h3 mb-3">Adresse</h2>
@@ -99,14 +105,14 @@ const breadcrumb = [
           </li>
           <li>
             <a href={`mailto:${STORE.contact.email}`} class="link-inline break-all">{STORE.contact.email}</a>
-            {STORE.contact.emailIsPlaceholder && <span class="block text-xs text-signal-600">(adresse provisoire — à venir)</span>}
+            {STORE.contact.emailIsPlaceholder && <span class="block text-xs text-charcoal-500">(adresse provisoire — à venir)</span>}
           </li>
         </ul>
       </article>
 
       {/* Horaires */}
       <article class="card p-6">
-        <div class="inline-flex size-12 items-center justify-center rounded-full bg-signal-400 text-marine-900 mb-4">
+        <div class="inline-flex size-12 items-center justify-center rounded-full bg-marine-800 text-white mb-4">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
         </div>
         <h2 class="font-display uppercase text-h3 mb-3">Horaires</h2>
@@ -168,16 +174,19 @@ const breadcrumb = [
     </div>
   </section>
 
-  {/* CTA */}
-  <section class="bg-signal-400 text-marine-900">
+  {/* CTA (ADR-001 — marine bg, white + WhatsApp-brand CTAs) */}
+  <section class="bg-marine-800 text-white">
     <div class="container-tight section-y text-center max-w-2xl">
       <h2 class="text-h2">On vous attend en magasin.</h2>
-      <p class="text-lg mt-3 mb-6">
+      <p class="text-lg text-offwhite-200 mt-3 mb-6">
         Pas envie de bouger ? Demandez votre devis en ligne — on revient sous 24 h avec disponibilité, délai et prix.
       </p>
       <div class="flex flex-wrap justify-center gap-3">
-        <a href="/contact#devis" class="btn-md bg-marine-800 text-white shadow-lg hover:bg-marine-900">Demander un devis</a>
-        <a href={whatsappUrl()} target="_blank" rel="noopener" class="btn-md bg-white/30 text-marine-900 hover:bg-white/50">WhatsApp</a>
+        <a href="/contact#devis" class="btn-md bg-white text-marine-900 shadow-card hover:bg-offwhite-100 hover:shadow-card-hover hover:-translate-y-0.5">Demander un devis</a>
+        <a href={whatsappUrl()} target="_blank" rel="noopener" class="btn-whatsapp btn-md">
+          <WhatsAppIcon size={18} />
+          WhatsApp
+        </a>
       </div>
     </div>
   </section>

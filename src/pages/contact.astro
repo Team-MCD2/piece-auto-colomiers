@@ -24,7 +24,10 @@
 import Layout from '../layouts/Layout.astro';
 import StoreMap from '../components/StoreMap.tsx';
 import LucideIcon from '../components/LucideIcon.astro';
+import WhatsAppIcon from '../components/WhatsAppIcon.astro';
+import AvisWidget from '../components/AvisWidget.astro';
 import { STORE, telUrl, whatsappUrl } from '../data/store.js';
+import { VEHICLES, MARQUES } from '../data/vehicles.js';
 
 const breadcrumb = [
   { label: 'Accueil', href: '/' },
@@ -51,13 +54,18 @@ const emailjsEnabled = Boolean(
     <div class="absolute inset-0 bg-hex-pattern opacity-30" aria-hidden="true"></div>
     <div class="container-tight section-y relative max-w-3xl">
       <nav aria-label="Fil d'Ariane" class="text-sm text-offwhite-200 mb-4">
-        <a href="/" class="hover:text-signal-400">Accueil</a>
+        <a href="/" class="hover:text-sky-300">Accueil</a>
         <span class="mx-2 opacity-50">›</span>
         <span>Contact</span>
       </nav>
-      <span class="eyebrow-light">Parlons-nous</span>
-      <h1 class="text-h1 lg:text-display-2 mt-2 mb-4">Contact & devis.</h1>
-      <p class="text-lg text-offwhite-200 leading-relaxed">
+      <span class="eyebrow-light" data-reveal>Parlons-nous</span>
+      <h1
+        class="title-accent on-marine text-h1 lg:text-display-2 mt-2 mb-4"
+        data-reveal
+        data-reveal-delay="1"
+        style="view-transition-name: hero-title;"
+      >Contact & devis.</h1>
+      <p class="text-lg text-offwhite-200 leading-relaxed" data-reveal data-reveal-delay="2">
         Téléphone, WhatsApp Business, email, ou directement en magasin. Pour un devis, le formulaire ci-dessous est l'option la plus rapide.
       </p>
     </div>
@@ -73,7 +81,7 @@ const emailjsEnabled = Boolean(
           <ul class="space-y-4">
             <li>
               <a href={telUrl()} class="flex items-start gap-3 group hover:text-marine-700">
-                <span class="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-signal-400 text-marine-900">
+                <span class="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-marine-800 text-white">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
                 </span>
                 <span>
@@ -84,8 +92,8 @@ const emailjsEnabled = Boolean(
             </li>
             <li>
               <a href={whatsappUrl()} target="_blank" rel="noopener" class="flex items-start gap-3 group">
-                <span class="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-sky-400 text-marine-900">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.5 3.5A11.8 11.8 0 0 0 12 0C5.4 0 0 5.4 0 12c0 2.1.5 4.1 1.6 5.9L0 24l6.3-1.7C8 23.4 9.9 24 12 24c6.6 0 12-5.4 12-12 0-3.2-1.2-6.2-3.5-8.5"/></svg>
+                <span class="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-brand-whatsapp text-white">
+                  <WhatsAppIcon size={18} />
                 </span>
                 <span>
                   <span class="block font-semibold text-base text-charcoal-800 group-hover:text-marine-700">WhatsApp Business</span>
@@ -101,7 +109,7 @@ const emailjsEnabled = Boolean(
                 <span class="flex-1 min-w-0">
                   <span class="block font-semibold text-base text-charcoal-800 break-all group-hover:text-marine-700">{STORE.contact.email}</span>
                   {STORE.contact.emailIsPlaceholder && (
-                    <span class="block text-xs text-signal-600">(adresse provisoire — à venir)</span>
+                    <span class="block text-xs text-charcoal-500">(adresse provisoire — à venir)</span>
                   )}
                 </span>
               </a>
@@ -119,6 +127,9 @@ const emailjsEnabled = Boolean(
             </li>
           </ul>
         </div>
+
+        {/* Avis widget — rassure l'utilisateur avant qu'il soumette un devis */}
+        <AvisWidget variant="card" />
       </aside>
 
       {/* Form devis */}
@@ -129,6 +140,33 @@ const emailjsEnabled = Boolean(
           <p class="text-charcoal-500 mb-6">
             Plus le véhicule est précis, plus le devis est rapide. Réponse sous 24 h ouvrées.
           </p>
+
+          {/* === Bandeau "Mon véhicule" — préremplissage Oscaro (ADR-008) ====== */}
+          <div
+            id="vehicle-prefill-banner"
+            class="hidden mb-5 px-4 py-3 rounded-lg bg-sky-50 border border-sky-200 flex items-center gap-3"
+            aria-live="polite"
+          >
+            <span class="inline-flex items-center justify-center size-8 rounded-pill bg-sky-400/15 text-sky-700 shrink-0" aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L16 11l-2.7-3.6a1 1 0 0 0-.8-.4H5.24a2 2 0 0 0-1.8 1.1l-.8 1.63A6 6 0 0 0 2 12.42V16h2"/>
+                <circle cx="6.5" cy="16.5" r="2.5"/>
+                <circle cx="16.5" cy="16.5" r="2.5"/>
+              </svg>
+            </span>
+            <div class="flex-1 min-w-0 text-sm leading-snug">
+              <span class="text-charcoal-500">Votre véhicule :</span>{' '}
+              <strong data-vehicle-label class="text-marine-900">—</strong>
+              <span class="text-charcoal-500 hidden sm:inline"> · les champs marque, modèle et année sont pré-remplis</span>
+            </div>
+            <button
+              type="button"
+              data-open-vehicle
+              class="text-sky-600 hover:text-sky-700 text-sm font-semibold underline shrink-0"
+            >
+              Modifier
+            </button>
+          </div>
 
           <form
             id="devis-form"
@@ -163,18 +201,65 @@ const emailjsEnabled = Boolean(
                   <option value="pro">Professionnel (garage, flotte)</option>
                 </select>
               </label>
+              {/* === Marque (cascade + manual fallback — ADR-003) ============
+                   Le <select> et l'<input> partagent le name "marque". Un seul
+                   est "actif" (= porte l'attribut name) à la fois, via
+                   swapping JS. FormData ne récolte que l'actif — pas de double
+                   valeur. Pattern Oscaro avec escape hatch manual. */}
               <label class="block">
                 <span class="block text-sm font-semibold mb-1.5 text-charcoal-700">Marque véhicule</span>
-                <input type="text" name="marque" placeholder="Ex. Renault, Toyota, Iveco…" class="w-full px-4 py-2.5 rounded-lg border-2 border-charcoal-100 focus:border-marine-700 focus:outline-none transition-colors" />
+                <select
+                  id="devis-marque-select"
+                  name="marque"
+                  class="w-full px-4 py-2.5 rounded-lg border-2 border-charcoal-100 focus:border-marine-700 focus:outline-none transition-colors bg-white"
+                >
+                  <option value="">— Choisir —</option>
+                  {MARQUES.map((m) => <option value={m}>{m}</option>)}
+                  <option value="__manual__">Autre marque…</option>
+                </select>
+                <input
+                  id="devis-marque-manual"
+                  type="text"
+                  placeholder="Ex. Skoda, Alfa Romeo, Iveco…"
+                  class="mt-2 w-full px-4 py-2.5 rounded-lg border-2 border-sky-300 focus:border-marine-700 focus:outline-none transition-colors hidden"
+                  disabled
+                  aria-label="Saisir la marque manuellement"
+                />
               </label>
+
+              {/* === Modèle (cascade basée sur marque) ======================= */}
               <label class="block">
                 <span class="block text-sm font-semibold mb-1.5 text-charcoal-700">Modèle</span>
-                <input type="text" name="modele" placeholder="Ex. Clio IV, RAV4, Daily…" class="w-full px-4 py-2.5 rounded-lg border-2 border-charcoal-100 focus:border-marine-700 focus:outline-none transition-colors" />
+                <select
+                  id="devis-modele-select"
+                  name="modele"
+                  class="w-full px-4 py-2.5 rounded-lg border-2 border-charcoal-100 focus:border-marine-700 focus:outline-none transition-colors bg-white disabled:bg-charcoal-50 disabled:cursor-not-allowed"
+                  disabled
+                >
+                  <option value="">— Choisir une marque d'abord —</option>
+                </select>
+                <input
+                  id="devis-modele-manual"
+                  type="text"
+                  placeholder="Ex. Clio IV, RAV4, Daily…"
+                  class="mt-2 w-full px-4 py-2.5 rounded-lg border-2 border-sky-300 focus:border-marine-700 focus:outline-none transition-colors hidden"
+                  disabled
+                  aria-label="Saisir le modèle manuellement"
+                />
               </label>
+
+              {/* === Année (cascade basée sur marque+modèle) ================= */}
               <label class="block">
                 <span class="block text-sm font-semibold mb-1.5 text-charcoal-700">Année</span>
-                <input type="number" name="annee" min="1950" max="2030" placeholder="Ex. 2018" class="w-full px-4 py-2.5 rounded-lg border-2 border-charcoal-100 focus:border-marine-700 focus:outline-none transition-colors" />
+                <select
+                  id="devis-annee-select"
+                  name="annee"
+                  class="w-full px-4 py-2.5 rounded-lg border-2 border-charcoal-100 focus:border-marine-700 focus:outline-none transition-colors bg-white"
+                >
+                  <option value="">— Choisir —</option>
+                </select>
               </label>
+
               <label class="block">
                 <span class="block text-sm font-semibold mb-1.5 text-charcoal-700">Code moteur / VIN</span>
                 <input type="text" name="motorisation" placeholder="Ex. K9K-636, VIN" class="w-full px-4 py-2.5 rounded-lg border-2 border-charcoal-100 focus:border-marine-700 focus:outline-none transition-colors" />
@@ -239,7 +324,8 @@ const emailjsEnabled = Boolean(
                 <span data-submit-label>Envoyer ma demande</span>
                 <LucideIcon name="Loader2" size={18} class="hidden animate-spin" />
               </button>
-              <a href={whatsappUrl('Bonjour, je souhaite un devis pour une pièce auto.')} target="_blank" rel="noopener" class="btn-secondary btn-lg w-full sm:w-auto">
+              <a href={whatsappUrl('Bonjour, je souhaite un devis pour une pièce auto.')} target="_blank" rel="noopener" class="btn-whatsapp btn-lg w-full sm:w-auto">
+                <WhatsAppIcon size={20} />
                 Plutôt par WhatsApp
               </a>
             </div>
@@ -289,6 +375,278 @@ const emailjsEnabled = Boolean(
     </div>
   </section>
 </Layout>
+
+{/*
+  Mon véhicule — cascade marque/modèle/année + prefill depuis localStorage.
+
+  ADR-003 (cascade) + ADR-008 (my-vehicle bus). Ce script :
+    1. Initialise la cascade : marque <select> → modèle <select> → année <select>.
+    2. Gère l'escape hatch "Autre marque/modèle…" en switchant dynamiquement
+       l'attribut `name` entre le <select> et un <input type="text">
+       adjacent (un seul des deux porte name="marque" à la fois, donc
+       FormData ne récolte qu'une valeur).
+    3. Pré-remplit depuis `pac-last-vehicle` au chargement + sur
+       l'événement `pac:vehicle-changed` (synchro cross-page).
+    4. Affiche le banner "Votre véhicule: X — Modifier" quand un véhicule
+       est actif (UX cohérente avec catalogue/[slug]).
+
+  is:inline + define:vars parce que VEHICLES est un gros objet JSON (~4 KB)
+  qu'on veut inliner plutôt que charger via import runtime — déjà payé par
+  le HTML static de la page contact.
+*/}
+<script is:inline define:vars={{ VEHICLES_DATA: VEHICLES, MARQUES_DATA: MARQUES }}>
+  (function () {
+    var STORAGE_KEY = 'pac-last-vehicle';
+    var CURRENT_YEAR = new Date().getFullYear();
+
+    var banner    = document.getElementById('vehicle-prefill-banner');
+    var labelEl   = banner && banner.querySelector('[data-vehicle-label]');
+    var openBtn   = banner && banner.querySelector('[data-open-vehicle]');
+
+    var marqueSel = document.getElementById('devis-marque-select');
+    var marqueInp = document.getElementById('devis-marque-manual');
+    var modeleSel = document.getElementById('devis-modele-select');
+    var modeleInp = document.getElementById('devis-modele-manual');
+    var anneeSel  = document.getElementById('devis-annee-select');
+    var motoInp   = document.querySelector('#devis-form [name="motorisation"]');
+
+    if (!marqueSel || !marqueInp || !modeleSel || !modeleInp || !anneeSel) return;
+
+    // -------------------------------------------------------------------
+    // Mode swaps : swap `name` attribute between <select> and manual <input>
+    // so only one is submitted (FormData ignores unnamed + disabled fields).
+    // -------------------------------------------------------------------
+    function setMarqueMode(mode) {
+      if (mode === 'manual') {
+        marqueSel.removeAttribute('name');
+        marqueInp.setAttribute('name', 'marque');
+        marqueInp.disabled = false;
+        marqueInp.classList.remove('hidden');
+        marqueSel.classList.add('opacity-70');
+      } else {
+        marqueInp.removeAttribute('name');
+        marqueInp.disabled = true;
+        marqueInp.value = '';
+        marqueInp.classList.add('hidden');
+        marqueSel.setAttribute('name', 'marque');
+        marqueSel.classList.remove('opacity-70');
+      }
+    }
+
+    function setModeleMode(mode) {
+      if (mode === 'manual') {
+        modeleSel.removeAttribute('name');
+        modeleInp.setAttribute('name', 'modele');
+        modeleInp.disabled = false;
+        modeleInp.classList.remove('hidden');
+        modeleSel.classList.add('opacity-70');
+      } else {
+        modeleInp.removeAttribute('name');
+        modeleInp.disabled = true;
+        modeleInp.value = '';
+        modeleInp.classList.add('hidden');
+        modeleSel.setAttribute('name', 'modele');
+        modeleSel.classList.remove('opacity-70');
+      }
+    }
+
+    // -------------------------------------------------------------------
+    // Cascade repopulation
+    // -------------------------------------------------------------------
+    function populateModeles(marque) {
+      modeleSel.innerHTML = '';
+      var placeholder = document.createElement('option');
+      placeholder.value = '';
+      placeholder.textContent = marque ? '— Choisir un modèle —' : "— Choisir une marque d'abord —";
+      modeleSel.appendChild(placeholder);
+
+      var models = marque && VEHICLES_DATA[marque]
+        ? Object.keys(VEHICLES_DATA[marque]).sort(function (a, b) { return a.localeCompare(b, 'fr'); })
+        : [];
+
+      if (marque && models.length) {
+        models.forEach(function (m) {
+          var opt = document.createElement('option');
+          opt.value = m;
+          opt.textContent = m;
+          modeleSel.appendChild(opt);
+        });
+        var manual = document.createElement('option');
+        manual.value = '__manual__';
+        manual.textContent = 'Autre modèle…';
+        modeleSel.appendChild(manual);
+        modeleSel.disabled = false;
+      } else {
+        modeleSel.disabled = true;
+      }
+
+      setModeleMode('cascade');
+    }
+
+    function populateAnnees(marque, modele, broadRange) {
+      anneeSel.innerHTML = '';
+      var placeholder = document.createElement('option');
+      placeholder.value = '';
+      placeholder.textContent = '— Choisir —';
+      anneeSel.appendChild(placeholder);
+
+      var start = 1990;
+      var end = CURRENT_YEAR;
+      if (!broadRange && marque && modele && VEHICLES_DATA[marque] && VEHICLES_DATA[marque][modele]) {
+        var range = VEHICLES_DATA[marque][modele];
+        start = range[0];
+        end = Math.min(range[1], CURRENT_YEAR);
+      }
+      for (var y = end; y >= start; y--) {
+        var opt = document.createElement('option');
+        opt.value = String(y);
+        opt.textContent = String(y);
+        anneeSel.appendChild(opt);
+      }
+    }
+
+    // -------------------------------------------------------------------
+    // Event wiring
+    // -------------------------------------------------------------------
+    marqueSel.addEventListener('change', function () {
+      var val = marqueSel.value;
+      if (val === '__manual__') {
+        setMarqueMode('manual');
+        populateModeles('');
+        setModeleMode('manual');
+        modeleSel.disabled = true;
+        populateAnnees('', '', true);
+        marqueInp.focus();
+      } else {
+        setMarqueMode('cascade');
+        populateModeles(val);
+        populateAnnees(val, '', !val);
+      }
+    });
+
+    modeleSel.addEventListener('change', function () {
+      var val = modeleSel.value;
+      if (val === '__manual__') {
+        setModeleMode('manual');
+        populateAnnees('', '', true);
+        modeleInp.focus();
+      } else {
+        setModeleMode('cascade');
+        populateAnnees(marqueSel.value, val, false);
+      }
+    });
+
+    // When user types in the manual marque input, widen the année range.
+    marqueInp.addEventListener('input', function () {
+      populateAnnees('', '', true);
+    });
+
+    // Initial empty state.
+    populateModeles('');
+    populateAnnees('', '', true);
+
+    // -------------------------------------------------------------------
+    // Prefill from stored vehicle (localStorage / bus).
+    // Strategy :
+    //   - If marque is in our MARQUES list → use cascade mode.
+    //   - Else → manual mode for marque + modele.
+    //   - If year not in the generated option list, inject it as the
+    //     first concrete year (handles pre-1990 edge cases gracefully).
+    // -------------------------------------------------------------------
+    function read() {
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null'); }
+      catch (e) { return null; }
+    }
+
+    function prefill(v) {
+      if (!v || !v.marque) return;
+
+      if (MARQUES_DATA.indexOf(v.marque) !== -1) {
+        // Cascade-known marque.
+        marqueSel.value = v.marque;
+        setMarqueMode('cascade');
+        populateModeles(v.marque);
+
+        var knownModels = Object.keys(VEHICLES_DATA[v.marque] || {});
+        if (v.modele && knownModels.indexOf(v.modele) !== -1) {
+          modeleSel.value = v.modele;
+          setModeleMode('cascade');
+          populateAnnees(v.marque, v.modele, false);
+        } else if (v.modele) {
+          modeleSel.value = '__manual__';
+          setModeleMode('manual');
+          modeleInp.value = v.modele;
+          populateAnnees(v.marque, '', true);
+        }
+      } else {
+        // Unknown marque — manual mode.
+        marqueSel.value = '__manual__';
+        setMarqueMode('manual');
+        marqueInp.value = v.marque;
+        setModeleMode('manual');
+        modeleInp.value = v.modele || '';
+        populateAnnees('', '', true);
+      }
+
+      if (v.annee) {
+        var yearStr = String(v.annee);
+        var hasYear = false;
+        for (var i = 0; i < anneeSel.options.length; i++) {
+          if (anneeSel.options[i].value === yearStr) { hasYear = true; break; }
+        }
+        if (!hasYear) {
+          var opt = document.createElement('option');
+          opt.value = yearStr;
+          opt.textContent = yearStr;
+          // Insert right after the placeholder.
+          anneeSel.insertBefore(opt, anneeSel.options[1] || null);
+        }
+        anneeSel.value = yearStr;
+      }
+
+      if (v.motorisation && motoInp && !motoInp.value) {
+        motoInp.value = v.motorisation;
+      }
+    }
+
+    // -------------------------------------------------------------------
+    // Banner UI (compatibility with existing markup).
+    // -------------------------------------------------------------------
+    function renderBanner(v) {
+      if (!banner) return;
+      var has = v && v.marque && v.modele;
+      banner.classList.toggle('hidden', !has);
+      if (has && labelEl) {
+        labelEl.textContent = [v.marque, v.modele, v.annee].filter(Boolean).join(' ');
+      }
+    }
+
+    // Boot : apply prefill + banner + register bus listeners.
+    var current = read();
+    if (current) {
+      prefill(current);
+      renderBanner(current);
+    }
+
+    window.addEventListener('pac:vehicle-changed', function (e) {
+      var v = e.detail;
+      // Re-prefill only when user actually changes vehicle — and do not
+      // clobber fields they've already edited manually after load.
+      if (v) {
+        prefill(v);
+        renderBanner(v);
+      } else {
+        renderBanner(null);
+      }
+    });
+
+    if (openBtn) {
+      openBtn.addEventListener('click', function () {
+        window.dispatchEvent(new CustomEvent('pac:vehicle-open'));
+      });
+    }
+  })();
+</script>
 
 {/*
   DevisForm controller — vanilla TS, lazy-loaded EmailJS.

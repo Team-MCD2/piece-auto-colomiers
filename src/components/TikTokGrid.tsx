@@ -171,7 +171,7 @@ export default function TikTokGrid({ tiktoks, profileUrl }: Props) {
                 onTouchStart={() => handleEnter(idx)}
                 onFocus={() => handleEnter(idx)}
                 onBlur={() => handleLeave(idx)}
-                className="group relative block w-full aspect-[9/16] overflow-hidden rounded-card bg-charcoal-900 shadow-card hover:shadow-card-lg focus-visible:ring-2 focus-visible:ring-signal-400 focus-visible:ring-offset-2 transition-all duration-300"
+                className="group relative block w-full aspect-[9/16] overflow-hidden rounded-card bg-charcoal-900 shadow-card hover:shadow-card-lg focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2 transition-all duration-300"
                 aria-label={`Ouvrir la vidéo : ${tok.title || 'TikTok Pièces Auto Colomiers'}`}
               >
                 <video
@@ -260,7 +260,7 @@ export default function TikTokGrid({ tiktoks, profileUrl }: Props) {
             type="button"
             data-modal-close
             onClick={close}
-            className="absolute top-4 right-4 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors focus-visible:ring-2 focus-visible:ring-signal-400"
+            className="absolute top-4 right-4 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors focus-visible:ring-2 focus-visible:ring-sky-400"
             aria-label="Fermer la vidéo"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-6 h-6" aria-hidden="true">
@@ -273,7 +273,7 @@ export default function TikTokGrid({ tiktoks, profileUrl }: Props) {
             <button
               type="button"
               onClick={prev}
-              className="absolute left-2 sm:left-4 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors focus-visible:ring-2 focus-visible:ring-signal-400"
+              className="absolute left-2 sm:left-4 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors focus-visible:ring-2 focus-visible:ring-sky-400"
               aria-label="Vidéo précédente"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-6 h-6" aria-hidden="true">
@@ -300,7 +300,7 @@ export default function TikTokGrid({ tiktoks, profileUrl }: Props) {
             <button
               type="button"
               onClick={next}
-              className="absolute right-2 sm:right-4 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors focus-visible:ring-2 focus-visible:ring-signal-400"
+              className="absolute right-2 sm:right-4 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors focus-visible:ring-2 focus-visible:ring-sky-400"
               aria-label="Vidéo suivante"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-6 h-6" aria-hidden="true">

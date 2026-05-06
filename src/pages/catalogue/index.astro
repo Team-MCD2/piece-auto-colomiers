@@ -42,18 +42,23 @@ const breadcrumb = [
     <div class="absolute inset-0 bg-hex-pattern opacity-30" aria-hidden="true"></div>
     <div class="container-tight section-y relative">
       <nav aria-label="Fil d'Ariane" class="text-sm text-offwhite-200 mb-4">
-        <a href="/" class="hover:text-signal-400">Accueil</a>
+        <a href="/" class="hover:text-sky-300">Accueil</a>
         <span class="mx-2 opacity-50">›</span>
         <span>Catalogue</span>
       </nav>
-      <span class="eyebrow-light">Catalogue complet</span>
-      <h1 class="text-h1 lg:text-display-2 mt-2 mb-4">Toutes nos catégories.</h1>
-      <p class="text-lg text-offwhite-200 max-w-prose">
+      <span class="eyebrow-light" data-reveal>Catalogue complet</span>
+      <h1
+        class="title-accent on-marine text-h1 lg:text-display-2 mt-2 mb-4"
+        data-reveal
+        data-reveal-delay="1"
+        style="view-transition-name: hero-title;"
+      >Toutes nos catégories.</h1>
+      <p class="text-lg text-offwhite-200 max-w-prose" data-reveal data-reveal-delay="2">
         {CATEGORIES.length} catégories de pièces auto neuves, multi-marques. Filtrez par véhicule ou famille,
         recherchez par mot-clé, ou cliquez sur une fiche pour découvrir notre offre détaillée.
       </p>
-      <div class="mt-6 flex flex-wrap gap-3">
-        <a href="/contact#devis" class="btn-primary btn-md">Demander un devis</a>
+      <div class="mt-6 flex flex-wrap gap-3" data-reveal data-reveal-delay="3">
+        <a href="/contact#devis" class="btn-primary-on-marine btn-md">Demander un devis</a>
         <a href="#families" class="btn-secondary-light btn-md">Parcourir les familles</a>
       </div>
     </div>
@@ -79,7 +84,7 @@ const breadcrumb = [
           <span id="catalog-count" class="text-sm text-charcoal-500 tabular-nums">
             <strong class="text-charcoal-800">{CATEGORIES.length}</strong> catégories
           </span>
-          <button id="catalog-reset" type="button" class="text-sm font-semibold text-marine-700 hover:text-signal-600 underline decoration-2 underline-offset-4 decoration-signal-400 hidden">
+          <button id="catalog-reset" type="button" class="text-sm font-semibold text-marine-700 hover:text-sky-600 underline decoration-2 underline-offset-4 decoration-sky-400 hidden">
             Réinitialiser
           </button>
         </div>
@@ -148,7 +153,7 @@ const breadcrumb = [
                   {cat.label}
                 </h3>
                 <p class="text-xs text-charcoal-500 mt-1.5 line-clamp-2 flex-1">{cat.desc}</p>
-                <span class="inline-flex items-center gap-1 mt-2 text-xs font-semibold text-marine-700 group-hover:text-signal-600">
+                <span class="inline-flex items-center gap-1 mt-2 text-xs font-semibold text-marine-700 group-hover:text-sky-600">
                   Voir la fiche →
                 </span>
               </a>
@@ -159,7 +164,7 @@ const breadcrumb = [
 
       {/* État vide */}
       <div id="catalog-empty" class="hidden text-center py-12 max-w-md mx-auto">
-        <div class="inline-flex size-14 items-center justify-center rounded-full bg-signal-400/15 text-signal-600 mb-4">
+        <div class="inline-flex size-14 items-center justify-center rounded-full bg-sky-400/15 text-sky-600 mb-4">
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
         </div>
         <h2 class="text-h3 mb-2">Aucune catégorie ne correspond.</h2>
@@ -178,7 +183,7 @@ const breadcrumb = [
       <p class="text-lg text-offwhite-200 mt-3 mb-6">
         Notre catalogue couvre les pièces les plus courantes. Mais on commande aussi sur référence OEM ou VIN. Demandez-nous, on cherche pour vous.
       </p>
-      <a href="/contact#devis" class="btn-primary btn-lg">Demander un devis</a>
+      <a href="/contact#devis" class="btn-primary-on-marine btn-lg">Demander un devis</a>
     </div>
   </section>
 </Layout>

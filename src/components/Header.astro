@@ -1,58 +1,101 @@
 ---
 /**
  * Header — barre supérieure :
- *   1) Bandeau marquee USP (top thin, marine, scrolling)
- *   2) Barre principale (sticky, logo + nav + CTAs tel/WA/devis)
+ *   1) Bandeau info fixe (ex-marquee) — OpeningBadge + USPs statiques (ADR-007)
+ *   2) Row "Mon véhicule" — chip Oscaro-style (ADR-008)
+ *   3) Barre principale (sticky, logo + nav + CTAs tel/WA/devis)
  *
- * Cf. plan.md §3.2 (header) et §4.2 (USPs marquee).
+ * Cf. plan.md §3.2 (header) ; ADR-007 (remove marquee → static strip) ;
+ *     ADR-008 (vehicle loop) ; proposal #7 (opening badge live).
  *
  * Mobile :
- *   - Le marquee reste visible (réduit en hauteur).
+ *   - Row 1 : seule l'OpeningBadge reste (USPs cachés).
+ *   - Row 2 : chip véhicule toujours visible.
  *   - La barre principale collapse les liens dans un menu burger.
- *   - Toggle vanilla JS (pas de React island nécessaire).
  */
 
 import Logo from './Logo.astro';
+import WhatsAppIcon from './WhatsAppIcon.astro';
+import VehiclePanel from './VehiclePanel.tsx';
+import OpeningBadge from './OpeningBadge.astro';
 import { STORE, telUrl, whatsappUrl } from '../data/store.js';
 import { MAIN_NAV } from '../data/menu.js';
 
 const currentPath = Astro.url.pathname;
 const isActive = (href: string) => currentPath === href || (href !== '/' && currentPath.startsWith(href));
 
+// 4 USPs statiques (remplace le marquee — ADR-007 "épurée, pas de scroll gratuit").
+// Chaque item = icon svg + label court. Desktop-only, masqué < lg pour ne pas
+// concurrencer l'OpeningBadge sur mobile où l'espace est précieux.
 const usps = [
-  { label: 'Mondial Relay' },
-  { label: 'Retrait magasin' },
-  { label: 'Devis sous 24 h' },
-  { label: 'Conseil pro' },
-  { label: 'Multi-marques' },
-  { label: '4×4 · Japonaises · Utilitaires' },
+  {
+    label: 'Mondial Relay',
+    svg: '<path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/>',
+  },
+  {
+    label: 'Retrait magasin',
+    svg: '<path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>',
+  },
+  {
+    label: 'Devis sous 24 h',
+    svg: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+  },
+  {
+    label: 'Conseil humain',
+    svg: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  },
 ];
-
-// Doublé pour l'effet marquee infini (translateX 0 → -50%)
-const marqueeItems = [...usps, ...usps];
 
 const waUrl = whatsappUrl();
 ---
 
 <header class="w-full">
-  {/* === 1) Marquee USPs (haut) ============================================= */}
+  {/* === 1) Bandeau info fixe — OpeningBadge + USPs statiques ============
+       Remplace l'ancien marquee (ADR-007 : "l'infinite-scroll USP est une
+       béquille esthétique, on s'en passe"). La pill "Ouvert maintenant"
+       donne un signal de vie plus fort qu'un défilement décoratif. */}
   <div
-    class="bg-marine-900 text-offwhite-50 border-b border-marine-700 overflow-hidden mask-fade-x"
+    class="bg-marine-900 text-offwhite-50 border-b border-marine-700"
     role="region"
-    aria-label="Avantages Pièces Auto Colomiers"
+    aria-label="Statut et avantages Pièces Auto Colomiers"
   >
-    <div class="container-tight py-2 flex items-center gap-3">
-      <span class="hidden sm:inline-flex eyebrow-light shrink-0">À votre service</span>
-      <div class="flex-1 overflow-hidden">
-        <div class="flex animate-marquee whitespace-nowrap will-change-transform">
-          {marqueeItems.map((usp) => (
-            <span class="inline-flex items-center gap-2 px-5 text-sm">
-              <span class="inline-block size-1.5 rounded-full bg-signal-400"></span>
-              <span class="font-medium">{usp.label}</span>
-            </span>
-          ))}
-        </div>
-      </div>
+    <div class="container-tight py-2 flex items-center justify-between gap-3">
+      {/* Left : live opening badge (always visible, even mobile) */}
+      <OpeningBadge variant="light" />
+
+      {/* Right : static USPs — desktop only, tight spacing, separators subtils */}
+      <ul class="hidden lg:flex items-center gap-5 text-xs text-offwhite-200" aria-label="Avantages">
+        {usps.map((usp, idx) => (
+          <li class="inline-flex items-center gap-1.5">
+            {idx > 0 && <span class="w-px h-3 bg-white/10 mr-3" aria-hidden="true"></span>}
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="text-sky-300 shrink-0" set:html={usp.svg}></svg>
+            <span class="font-medium whitespace-nowrap">{usp.label}</span>
+          </li>
+        ))}
+      </ul>
+
+      {/* Right-mobile : one-line compact call-out (replaces USPs < lg) */}
+      <a
+        href={telUrl()}
+        class="lg:hidden inline-flex items-center gap-1.5 text-xs font-semibold text-sky-300 hover:text-sky-200 whitespace-nowrap"
+        aria-label={`Appeler — ${STORE.contact.telDisplay}`}
+      >
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        {STORE.contact.telDisplay}
+      </a>
+    </div>
+  </div>
+
+  {/* === 1.5) Mon véhicule (chip Oscaro-style — ADR-008, Phase 5) ==========
+       IMPORTANT : ne PAS ajouter `backdrop-blur-*` / `transform` / `filter` sur
+       ce wrapper — cela crée un containing block pour les descendants
+       `position: fixed`, ce qui piégerait le modal <VehiclePanel /> dans
+       la bande (bug 2026-05-04). Le modal est de toute façon portal'd vers
+       document.body, mais on garde le wrapper "propre" par défense. */}
+  <div class="bg-marine-700/60 border-b border-white/10">
+    <div class="container-tight py-2 flex items-center justify-between gap-3">
+      <span class="hidden md:inline-flex eyebrow-light shrink-0 text-white/70">Pour un devis personnalisé</span>
+      <VehiclePanel client:load />
     </div>
   </div>
 
@@ -69,7 +112,7 @@ const waUrl = whatsappUrl();
             href={item.href}
             class={`px-4 py-2 rounded-lg font-display uppercase tracking-wide text-sm transition-colors duration-200 ${
               isActive(item.href)
-                ? 'bg-signal-400 text-marine-900'
+                ? 'bg-white text-marine-900 shadow-card'
                 : 'text-white hover:bg-white/10'
             }`}
             aria-current={isActive(item.href) ? 'page' : undefined}
@@ -93,24 +136,22 @@ const waUrl = whatsappUrl();
           {STORE.contact.telDisplay}
         </a>
 
-        {/* WhatsApp */}
+        {/* WhatsApp — vert de marque + glyphe authentique (ADR-006, F5) */}
         <a
           href={waUrl}
           target="_blank"
           rel="noopener"
-          class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-white/20 hover:bg-white/10 hover:border-white/40 transition-colors text-sm font-semibold"
+          class="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-brand-whatsapp text-white hover:bg-brand-whatsapp-dark transition-colors text-sm font-semibold"
           aria-label="Contacter via WhatsApp"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.71.306 1.263.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413"/>
-          </svg>
+          <WhatsAppIcon size={18} />
           <span class="hidden lg:inline">WhatsApp</span>
         </a>
 
-        {/* Devis primary */}
+        {/* Devis primary (ADR-001 — white pill sur fond marine, plus de jaune CTA) */}
         <a
           href="/contact#devis"
-          class="btn btn-sm md:btn-md bg-signal-400 text-marine-900 shadow-cta hover:bg-signal-300 hover:-translate-y-0.5 hover:shadow-cta-hover"
+          class="btn btn-sm md:btn-md bg-white text-marine-900 shadow-card hover:bg-offwhite-100 hover:-translate-y-0.5 hover:shadow-card-hover"
         >
           Devis 24 h
         </a>
@@ -163,7 +204,7 @@ const waUrl = whatsappUrl();
             href={item.href}
             class={`block px-4 py-3 rounded-lg font-display uppercase tracking-wide text-lg transition-colors ${
               isActive(item.href)
-                ? 'bg-signal-400 text-marine-900'
+                ? 'bg-white text-marine-900'
                 : 'hover:bg-white/10'
             }`}
             aria-current={isActive(item.href) ? 'page' : undefined}
@@ -175,8 +216,9 @@ const waUrl = whatsappUrl();
       </nav>
 
       <div class="flex flex-col gap-3 pt-6 border-t border-white/10">
-        <a href="/contact#devis" class="btn btn-lg bg-signal-400 text-marine-900 w-full">Devis 24 h</a>
-        <a href={waUrl} target="_blank" rel="noopener" class="btn btn-lg border-2 border-white/30 text-white w-full">
+        <a href="/contact#devis" class="btn btn-lg bg-white text-marine-900 w-full">Devis 24 h</a>
+        <a href={waUrl} target="_blank" rel="noopener" class="btn-whatsapp btn-lg w-full">
+          <WhatsAppIcon size={20} />
           WhatsApp Business
         </a>
         <a href={telUrl()} class="btn btn-lg bg-white/10 text-white w-full">

@@ -4,7 +4,8 @@
  * Architecture :
  *   - React island (client:visible) — Leaflet n'est pas SSR-safe
  *   - OSM tiles (gratuit, attribution OpenStreetMap requise)
- *   - Custom marker DivIcon : SVG signal-400 (cohérence DA)
+ *   - Custom marker DivIcon : pin sky-400 (#5BA8D9) sur liseré marine —
+ *     owner F8 strict logo palette, zero jaune. Reste visible sur tuiles OSM.
  *   - Popup avec adresse + horaires synthétiques + CTA Google Maps
  *   - Scroll-wheel zoom désactivé par défaut (a11y/UX) — activé sur click
  *   - dragging désactivé sur mobile pour ne pas piéger le scroll
@@ -45,7 +46,7 @@ const MARKER_SVG = `
   </defs>
   <path
     d="M20 0C9 0 0 9 0 20c0 11 20 30 20 30s20-19 20-30C40 9 31 0 20 0z"
-    fill="#FFD400"
+    fill="#5BA8D9"
     stroke="#0F2C5A"
     stroke-width="2.5"
     filter="url(#shadow)"
@@ -81,12 +82,34 @@ export default function StoreMap({
   }, []);
 
   if (!mounted) {
+    // Skeleton shimmering — matches the shimmer utility from globals.css.
+    // Keeps the same aspect as the final map so there's no layout shift
+    // when Leaflet hydrates. Polish per ADR-007 (Oscaro-grade loading).
     return (
       <div
         style={{ height }}
-        className="rounded-card bg-charcoal-50 flex items-center justify-center text-charcoal-400 text-sm"
+        className="skeleton flex items-center justify-center"
+        role="status"
+        aria-label="Chargement de la carte"
       >
-        Chargement de la carte…
+        <div className="flex items-center gap-2 text-charcoal-500 text-sm font-medium">
+          <svg
+            className="animate-pulse-soft"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" />
+            <circle cx="12" cy="10" r="3" />
+          </svg>
+          Chargement de la carte…
+        </div>
       </div>
     );
   }
@@ -141,7 +164,7 @@ export default function StoreMap({
         <button
           type="button"
           onClick={() => setScrollEnabled(true)}
-          className="absolute inset-0 z-[400] flex items-center justify-center bg-marine-900/0 hover:bg-marine-900/10 transition-colors group cursor-pointer"
+          className="absolute inset-0 z-10 flex items-center justify-center bg-marine-900/0 hover:bg-marine-900/10 transition-colors group cursor-pointer"
           aria-label="Activer le zoom à la molette"
         >
           <span className="opacity-0 group-hover:opacity-100 transition-opacity bg-marine-800 text-white text-xs font-semibold px-3 py-1.5 rounded-pill shadow-lg pointer-events-none">

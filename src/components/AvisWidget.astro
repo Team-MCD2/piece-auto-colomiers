@@ -1,0 +1,132 @@
+---
+/**
+ * AvisWidget — badge d'agrégation des avis Google.
+ *
+ * Source de données : `STORE.avis.google = { count, average }`
+ *   - count : nombre d'avis réels
+ *   - average : note moyenne (0-5)
+ *
+ * Variants :
+ *   - `inline`  (défaut) : ★★★★★ 5.0 · 1 avis Google · ↗ — usage sidebar/footer
+ *   - `card`             : card blanche avec CTA "Voir tous les avis" — usage page
+ *   - `dark`             : variant inline adapté aux fonds marine/sombre
+ *
+ * Liens Google Business : `STORE.avis.googleBusinessUrl` (share link Mappy).
+ *
+ * Cf. plan.md §4.7 (section avis) et ADR Avis (STORE.avis, D23/D32).
+ */
+
+import { STORE } from '../data/store.js';
+
+interface Props {
+  variant?: 'inline' | 'card' | 'dark';
+  /** Classe CSS additionnelle pour override cosmétique */
+  class?: string;
+}
+
+const { variant = 'inline', class: extraClass = '' } = Astro.props;
+
+const count = STORE.avis?.google?.count ?? 0;
+const average = STORE.avis?.google?.average ?? 0;
+const url = STORE.avis?.googleBusinessUrl ?? 'https://www.google.com/maps';
+
+// Stars : 5 étoiles, celles < average sont pleines, le reste vide.
+const fullStars = Math.floor(average);
+const hasHalf = average - fullStars >= 0.5;
+const emptyStars = 5 - fullStars - (hasHalf ? 1 : 0);
+
+// Format FR : 5,0 au lieu de 5.0
+const averageFmt = average.toFixed(1).replace('.', ',');
+const countLabel = count === 0 ? 'Premier avis bientôt' : count === 1 ? '1 avis Google' : `${count} avis Google`;
+---
+
+{variant === 'card' ? (
+  <a
+    href={url}
+    target="_blank"
+    rel="noopener noreferrer"
+    class:list={[
+      'group card p-5 flex items-center gap-4 hover:border-marine-700/30 hover:shadow-card-hover transition-all',
+      extraClass,
+    ]}
+    aria-label={`Consulter nos ${countLabel.toLowerCase()}`}
+  >
+    <span class="inline-flex items-center justify-center size-12 shrink-0 rounded-full bg-gradient-to-br from-sky-400 to-marine-700 text-white font-display text-xl tabular-nums">
+      {averageFmt}
+    </span>
+    <span class="flex-1 min-w-0">
+      <span class="flex items-center gap-0.5 text-amber-500">
+        {Array.from({ length: fullStars }).map(() => (
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+          </svg>
+        ))}
+        {hasHalf && (
+          <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
+            <defs>
+              <linearGradient id="halfStarCard">
+                <stop offset="50%" stop-color="currentColor"/>
+                <stop offset="50%" stop-color="transparent"/>
+              </linearGradient>
+            </defs>
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill="url(#halfStarCard)" stroke="currentColor" stroke-width="1"/>
+          </svg>
+        )}
+        {Array.from({ length: emptyStars }).map(() => (
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+          </svg>
+        ))}
+      </span>
+      <span class="block text-sm font-semibold text-charcoal-800 mt-1">{countLabel}</span>
+      <span class="block text-xs text-charcoal-500">Consulter sur Google Business Profile</span>
+    </span>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="shrink-0 text-charcoal-400 group-hover:text-marine-700 group-hover:translate-x-0.5 transition-all">
+      <path d="m9 18 6-6-6-6"/>
+    </svg>
+  </a>
+) : (
+  <a
+    href={url}
+    target="_blank"
+    rel="noopener noreferrer"
+    class:list={[
+      'inline-flex items-center gap-2 text-sm font-medium group',
+      variant === 'dark' ? 'text-offwhite-200 hover:text-sky-300' : 'text-charcoal-700 hover:text-marine-700',
+      extraClass,
+    ]}
+    aria-label={`Consulter nos ${countLabel.toLowerCase()}`}
+  >
+    <span class="flex items-center gap-0.5 text-amber-500">
+      {Array.from({ length: fullStars }).map(() => (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+        </svg>
+      ))}
+      {hasHalf && (
+        <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
+          <defs>
+            <linearGradient id="halfStarInline">
+              <stop offset="50%" stop-color="currentColor"/>
+              <stop offset="50%" stop-color="transparent"/>
+            </linearGradient>
+          </defs>
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill="url(#halfStarInline)" stroke="currentColor" stroke-width="1"/>
+        </svg>
+      )}
+      {Array.from({ length: emptyStars }).map(() => (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+        </svg>
+      ))}
+    </span>
+    <span class="tabular-nums font-semibold">{averageFmt}</span>
+    <span class:list={[
+      'text-xs',
+      variant === 'dark' ? 'text-offwhite-200/70' : 'text-charcoal-500',
+    ]}>· {countLabel}</span>
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="opacity-60 group-hover:opacity-100 transition-opacity">
+      <path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+    </svg>
+  </a>
+)}

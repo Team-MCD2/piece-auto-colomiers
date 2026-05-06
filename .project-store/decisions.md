@@ -494,6 +494,117 @@ that is captured but not validated against any DB).
 
 ---
 
+## ADR-009  Strict logo palette + `.title-accent` as DA signature    [STATUS: active · AMENDS ADR-001]
+
+- **date**          : 2026-05-04
+- **context**       : Owner re-emphasis (2026-05-04 afternoon) —
+                      *"i believe you should stick only to the
+                      colors on the logo"* + *"you still haven't
+                      done anything concerning la DA"*. ADR-001
+                      kept yellow as a legitimate micro-accent
+                      (focus ring on dark, warn badge). Owner
+                      rejects even that narrow carve-out: palette
+                      must be strictly the three logo colours
+                      (marine + sky + white) + brand-green
+                      exception for WhatsApp only. Additionally,
+                      prior rounds only shuffled colour tokens
+                      without delivering any **DA ornament** —
+                      synthesis §6 explicitly calls out a "trait
+                      courbe" below the pistons as the logo's
+                      signature graphic, and the UI shipped zero
+                      implementation of it.
+- **decision**      :
+    1. **Palette rule, strict form.** Zero yellow in UI.
+       Allowed colours: marine.* / sky.* / offwhite / charcoal /
+       white / brand.whatsapp (required exception). Focus rings
+       on dark backgrounds switch from `signal-400` to `sky-300`
+       (still meets WCAG contrast on marine). `badge-signal`
+       utility removed. Map marker switches from `#F5C518` to
+       `#5BA8D9`. 404 display digit switches from signal to
+       sky-300. `signal.*` tokens remain DEFINED in
+       `tailwind.config.mjs` for audit / rollback but are
+       tagged `DEPRECATED / DO NOT USE`.
+    2. **DA signature shipped: `.title-accent`.** New CSS
+       utility in `src/styles/globals.css` renders a gentle
+       parabola (the "trait courbe") beneath any H1/H2 via an
+       inline-SVG `::after` pseudo-element. Stroke sky-600 on
+       light backgrounds, sky-300 with `.on-marine` modifier,
+       auto-centered via `.centered` modifier. Applied to
+       every page hero title (index / catalogue index /
+       catalogue \[slug\] / services / contact / notre-magasin /
+       mentions-legales / 404) and to three high-visibility
+       section H2s on the homepage ("Trouvez votre pièce",
+       "Du devis à la livraison", "Premiers retours").
+    3. **DA textures made visible.** `bg-hex-pattern` stroke
+       alpha raised 0.06 → 0.14 + stroke width 1 → 1.25.
+       `bg-diagonal-stripe` alpha raised 0.08 → 0.14. The
+       textures were below perceptual threshold before;
+       they now read as intentional hex rhythm on marine sections.
+- **consequences** :
+  * positive : palette is now a hard rule; the DA has an
+    actual *graphic* signature (curved stroke) that re-uses
+    a logo motif without re-introducing yellow; textures
+    finally contribute to the automotive-plate DA mood.
+  * negative : eyebrow yellow briefly restored during ADR-001
+    review is gone again; any legacy page using `.badge-signal`
+    will fail silently (audited: only `TESTIMONIALS` placeholder
+    badge referenced it, already migrated to `badge bg-sky-400/
+    15`). Typography (Oswald + Inter self-hosted) was
+    audited as correctly wired; no change needed.
+  * reversibility: all palette references are Tailwind
+    utility swaps; `.title-accent` is a single CSS block
+    whose `content: ''` disables cleanly if removed.
+
+---
+
+## ADR-010  React 18.3.1 pin — `@astrojs/react@4.4.x` compat fix    [STATUS: active]
+
+- **date**          : 2026-05-06
+- **context**       : Production preview surfaced a fatal
+                      `TypeError: Cannot read properties of null
+                      (reading 'useState')` plus React minified
+                      error #423 (hydration recovered by client
+                      render → recovery render also threw).
+                      Reproduced on EVERY React island (VehiclePanel
+                      / Chatbot / TikTokGrid) and on a
+                      stripped-to-the-bone diagnostic island
+                      (`useState(0)` only). Bug present in both
+                      `astro dev` and `astro preview`. Build had no
+                      warnings, `npm ls react` confirmed a single
+                      React copy, and Vite's `dedupe` produced
+                      identical bundle hashes — ruling out duplicate-
+                      copy. Decisive evidence: `@astrojs/react@4.4.2`
+                      package.json `devDependencies` test against
+                      `react: ^18.3.1`; we were pinned to `18.2.0`.
+                      The internal `ReactCurrentDispatcher` shape
+                      shifted between 18.2 and 18.3 in a way that
+                      breaks 4.4.x's `hydrateRoot` wiring.
+- **decision**      :
+    1. Pin `react` and `react-dom` to `18.3.1` (exact, no caret —
+       this codebase pins React versions deliberately to avoid
+       silent minor bumps re-introducing the same class of bug).
+    2. Bump `@types/react` and `@types/react-dom` to `^18.3.0` to
+       match runtime types.
+    3. Keep Vite `resolve.dedupe: ['react', 'react-dom']` +
+       `optimizeDeps.include` defensively even though the
+       upgrade alone fixed the issue — they cost nothing and
+       prevent regressions if future deps re-pull a stray copy.
+    4. NOT upgrading to React 19: react-leaflet@4 peer-deps are
+       still `^17 || ^18`. Defer until react-leaflet ships a 19-
+       compatible release or we drop Leaflet.
+- **consequences** :
+  * positive : every island hydrates correctly in production;
+    home page (VehiclePanel + Chatbot + TikTokGrid) and every
+    other page no longer 423-recover-then-crash on first paint.
+  * negative : none observed. 18.2 → 18.3 is patch-level for
+    public API; no behavioural changes affecting any of our
+    components (verified: `useEffect`, `useState`, `useMemo`,
+    `useRef`, `forwardRef`, `createPortal` all unchanged).
+  * reversibility: revert package.json to `18.2.0` + `npm i`
+    re-introduces the bug. Don't.
+
+---
+
 ## Supersedes / amends register (cross-reference)
 
 | This ADR | Supersedes / amends                | Nature                    |
@@ -506,3 +617,5 @@ that is captured but not validated against any DB).
 | ADR-006  | Refines V1 D29                     | adds strict brand colour  |
 | ADR-007  | Amends V1 D35 (séparateurs)        | drops stripes + pattern   |
 | ADR-008  | New                                | V2 reference bench        |
+| ADR-009  | Amends ADR-001                     | strict logo palette + DA  |
+| ADR-010  | New                                | React 18.3.1 pin          |

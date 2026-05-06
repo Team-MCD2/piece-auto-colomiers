@@ -41,6 +41,9 @@ const sizeMap = {
 };
 
 const textColor = variant === 'light' ? 'text-white' : 'text-marine-800';
+// Accent du second mot ("Colomiers") : sky-blue (ADR-001 — plus de jaune
+// sur les surfaces de marque) ; teinte adaptée à la variant pour le contraste.
+const accentColor = variant === 'light' ? 'text-sky-300' : 'text-sky-600';
 const textSize = size === 'lg' ? 'text-xl' : size === 'sm' ? 'text-sm' : 'text-base';
 
 // Tag dynamique : <a> si href défini, <span> sinon. Évite la duplication JSX.
@@ -70,7 +73,7 @@ const wrapperProps = href
     <span class:list={['font-display font-bold uppercase tracking-tight leading-none', textColor, textSize]}>
       Pièces Auto
       <br />
-      <span class="text-signal-400">Colomiers</span>
+      <span class:list={[accentColor]}>Colomiers</span>
     </span>
   )}
 </Tag>

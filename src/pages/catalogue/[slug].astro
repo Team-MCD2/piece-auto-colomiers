@@ -10,6 +10,7 @@
  */
 
 import Layout from '../../layouts/Layout.astro';
+import WhatsAppIcon from '../../components/WhatsAppIcon.astro';
 import { CATEGORIES, FAMILIES, VEHICLE_TYPES } from '../../data/categories.js';
 import { BRANDS } from '../../data/brands.js';
 import { STORE, telUrl, whatsappUrl } from '../../data/store.js';
@@ -45,6 +46,9 @@ const breadcrumb = [
   { label: cat.label },
 ];
 
+// Message WhatsApp de base — sera enrichi côté client avec les infos véhicule
+// depuis `pac-last-vehicle` (localStorage) via le script `wa-enhance` en bas
+// de page. Les anchors sont taggés `data-wa-enhance` + `data-wa-category`.
 const waMessage = `Bonjour, je souhaite un devis pour ${cat.label.toLowerCase()}.`;
 
 const SITE_URL = import.meta.env.PUBLIC_SITE_URL || 'https://pieces-auto-colomiers.vercel.app';
@@ -90,20 +94,25 @@ const productSchema = {
     <div class="absolute inset-0 bg-hex-pattern opacity-30" aria-hidden="true"></div>
     <div class="container-tight section-y relative">
       <nav aria-label="Fil d'Ariane" class="text-sm text-offwhite-200 mb-4 flex flex-wrap items-center gap-x-1.5 gap-y-1">
-        <a href="/" class="hover:text-signal-400">Accueil</a>
+        <a href="/" class="hover:text-sky-300">Accueil</a>
         <span class="opacity-50">›</span>
-        <a href="/catalogue" class="hover:text-signal-400">Catalogue</a>
+        <a href="/catalogue" class="hover:text-sky-300">Catalogue</a>
         <span class="opacity-50">›</span>
-        <a href={`/catalogue#family-${cat.family}`} class="hover:text-signal-400">{familyLabel}</a>
+        <a href={`/catalogue#family-${cat.family}`} class="hover:text-sky-300">{familyLabel}</a>
         <span class="opacity-50">›</span>
         <span class="text-white">{cat.label}</span>
       </nav>
 
       <div class="grid lg:grid-cols-12 gap-8 lg:gap-12 items-center">
         <div class="lg:col-span-7">
-          <span class="eyebrow-light">{familyLabel}</span>
-          <h1 class="text-h1 lg:text-display-2 mt-2 mb-4">{cat.label}.</h1>
-          <p class="text-lg text-offwhite-200 leading-relaxed mb-6 max-w-prose">
+          <span class="eyebrow-light" data-reveal>{familyLabel}</span>
+          <h1
+            class="title-accent on-marine text-h1 lg:text-display-2 mt-2 mb-4"
+            data-reveal
+            data-reveal-delay="1"
+            style="view-transition-name: hero-title;"
+          >{cat.label}.</h1>
+          <p class="text-lg text-offwhite-200 leading-relaxed mb-6 max-w-prose" data-reveal data-reveal-delay="2">
             {cat.desc} Multi-marques, neuves, livrables en magasin ou en point relais Mondial Relay.
           </p>
 
@@ -116,15 +125,23 @@ const productSchema = {
           </div>
 
           <div class="flex flex-wrap items-center gap-3">
-            <a href={whatsappUrl(waMessage)} target="_blank" rel="noopener" class="btn-primary btn-lg">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.5 3.5A11.8 11.8 0 0 0 12 0C5.4 0 0 5.4 0 12c0 2.1.5 4.1 1.6 5.9L0 24l6.3-1.7C8 23.4 9.9 24 12 24c6.6 0 12-5.4 12-12 0-3.2-1.2-6.2-3.5-8.5"/></svg>
+            <a
+              href={whatsappUrl(waMessage)}
+              target="_blank"
+              rel="noopener"
+              class="btn-whatsapp btn-lg"
+              data-wa-enhance
+              data-wa-category={cat.label}
+              data-wa-base={waMessage}
+            >
+              <WhatsAppIcon size={20} />
               Devis WhatsApp
             </a>
             <a href="/contact#devis" class="btn-secondary-light btn-lg">Formulaire devis</a>
           </div>
           <p class="text-sm text-offwhite-200/80 mt-5">
             ou appelez le{' '}
-            <a href={telUrl()} class="text-signal-400 font-semibold hover:text-signal-300 underline decoration-2 underline-offset-4">{STORE.contact.telDisplay}</a>
+            <a href={telUrl()} class="text-sky-300 font-semibold hover:text-sky-200 underline decoration-2 underline-offset-4">{STORE.contact.telDisplay}</a>
           </p>
         </div>
 
@@ -132,7 +149,7 @@ const productSchema = {
         <div class="lg:col-span-5 hidden md:block">
           <div class="relative aspect-[4/3] max-w-md mx-auto md:ml-auto">
             <div class="absolute inset-0 rounded-card bg-gradient-to-br from-marine-700 to-marine-950 shadow-2xl shadow-marine-950/40 flex items-center justify-center" aria-hidden="true">
-              <span class="font-display uppercase text-signal-400/20 text-9xl leading-none">
+              <span class="font-display uppercase text-sky-400/20 text-9xl leading-none">
                 {cat.label.charAt(0)}
               </span>
             </div>
@@ -151,6 +168,80 @@ const productSchema = {
     </div>
   </section>
 
+  {/* === Compat banner — Mon véhicule (Oscaro pattern, ADR-008) =========== */}
+  <aside
+    id="vehicle-compat-banner"
+    class="bg-sky-50 border-b border-sky-200"
+    aria-label="Compatibilité avec votre véhicule"
+  >
+    <div class="container-tight py-3 lg:py-4 flex flex-wrap items-center justify-between gap-3 text-sm">
+      <div class="flex items-center gap-3 flex-1 min-w-0">
+        <span class="inline-flex items-center justify-center size-9 rounded-pill bg-sky-400/15 text-sky-700 shrink-0" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L16 11l-2.7-3.6a1 1 0 0 0-.8-.4H5.24a2 2 0 0 0-1.8 1.1l-.8 1.63A6 6 0 0 0 2 12.42V16h2"/>
+            <circle cx="6.5" cy="16.5" r="2.5"/>
+            <circle cx="16.5" cy="16.5" r="2.5"/>
+          </svg>
+        </span>
+        <div class="flex-1 min-w-0 leading-snug">
+          <span data-empty class="text-charcoal-700">
+            Renseignez votre véhicule — vos devis pour <strong class="text-marine-900">{cat.label.toLowerCase()}</strong> seront pré-remplis automatiquement.
+          </span>
+          <span data-set class="hidden text-charcoal-700">
+            <span class="text-sky-700 font-semibold">✓ Disponible</span> pour votre <strong data-vehicle-label class="text-marine-900">—</strong>. Demandez un devis personnalisé.
+          </span>
+        </div>
+      </div>
+      <button
+        data-empty
+        data-open-vehicle
+        type="button"
+        class="btn-primary btn-sm shrink-0"
+      >
+        Ajouter mon véhicule
+      </button>
+      <a
+        data-set
+        href="/contact#devis"
+        class="btn-primary btn-sm shrink-0 hidden"
+      >
+        Demander un devis
+      </a>
+    </div>
+  </aside>
+
+  <script is:inline>
+    (function () {
+      const banner = document.getElementById('vehicle-compat-banner');
+      if (!banner) return;
+      const KEY = 'pac-last-vehicle';
+      const empty = banner.querySelectorAll('[data-empty]');
+      const set = banner.querySelectorAll('[data-set]');
+      const labelEl = banner.querySelector('[data-vehicle-label]');
+      const openBtn = banner.querySelector('[data-open-vehicle]');
+
+      function read() {
+        try { return JSON.parse(localStorage.getItem(KEY) || 'null'); }
+        catch { return null; }
+      }
+
+      function render(v) {
+        const has = v && v.marque && v.modele;
+        empty.forEach((el) => el.classList.toggle('hidden', !!has));
+        set.forEach((el) => el.classList.toggle('hidden', !has));
+        if (has && labelEl) {
+          labelEl.textContent = [v.marque, v.modele, v.annee].filter(Boolean).join(' ');
+        }
+      }
+
+      render(read());
+      window.addEventListener('pac:vehicle-changed', (e) => render(e.detail));
+      openBtn?.addEventListener('click', () => {
+        window.dispatchEvent(new CustomEvent('pac:vehicle-open'));
+      });
+    })();
+  </script>
+
   {/* === Ce qu'on traite + Signes d'usure ================================== */}
   <section class="section-y bg-offwhite">
     <div class="container-tight grid lg:grid-cols-12 gap-8">
@@ -162,7 +253,7 @@ const productSchema = {
           <ul class="space-y-3">
             {copy.handle.map((line: string) => (
               <li class="flex items-start gap-3">
-                <span class="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-signal-400 text-marine-900 mt-0.5">
+                <span class="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-sky-400 text-marine-900 mt-0.5">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
                 </span>
                 <span class="text-charcoal-700 leading-relaxed">{line}</span>
@@ -226,14 +317,23 @@ const productSchema = {
       {/* Sidebar devis sticky */}
       <aside class="lg:col-span-4">
         <div class="lg:sticky lg:top-24 space-y-4">
-          <div class="card p-6 border-2 border-signal-400/40 bg-gradient-to-br from-white to-signal-50">
+          <div class="card p-6 border-2 border-sky-400/40 bg-gradient-to-br from-white to-sky-50">
             <span class="eyebrow">Devis 24 h</span>
             <h3 class="font-display uppercase text-h3 mt-2 mb-3">Demandez un prix.</h3>
             <p class="text-sm text-charcoal-600 mb-5 leading-relaxed">
               Précisez marque, modèle, année et code moteur. Réponse sous 24 h ouvrées avec disponibilité, délai et tarif.
             </p>
             <div class="space-y-2.5">
-              <a href={whatsappUrl(waMessage)} target="_blank" rel="noopener" class="btn-primary btn-md w-full">
+              <a
+                href={whatsappUrl(waMessage)}
+                target="_blank"
+                rel="noopener"
+                class="btn-whatsapp btn-md w-full"
+                data-wa-enhance
+                data-wa-category={cat.label}
+                data-wa-base={waMessage}
+              >
+                <WhatsAppIcon size={18} />
                 Devis WhatsApp
               </a>
               <a href="/contact#devis" class="btn-secondary btn-md w-full">Par formulaire</a>
@@ -245,15 +345,15 @@ const productSchema = {
             <h3 class="font-display uppercase text-base mb-3">Livraison & retrait</h3>
             <ul class="space-y-2 text-sm text-charcoal-600">
               <li class="flex items-start gap-2">
-                <span class="text-signal-600 font-bold shrink-0">→</span>
+                <span class="text-sky-600 font-bold shrink-0">→</span>
                 <span><strong class="text-charcoal-800">Retrait magasin</strong> — gratuit, {STORE.adresse.ville}</span>
               </li>
               <li class="flex items-start gap-2">
-                <span class="text-signal-600 font-bold shrink-0">→</span>
+                <span class="text-sky-600 font-bold shrink-0">→</span>
                 <span><strong class="text-charcoal-800">Mondial Relay</strong> — partout en France</span>
               </li>
               <li class="flex items-start gap-2">
-                <span class="text-signal-600 font-bold shrink-0">→</span>
+                <span class="text-sky-600 font-bold shrink-0">→</span>
                 <span><strong class="text-charcoal-800">Conseil pro</strong> — équipe humaine, pas de bot</span>
               </li>
             </ul>
@@ -279,7 +379,7 @@ const productSchema = {
                   {rc.label}
                 </h3>
                 <p class="text-xs text-charcoal-500 mt-1 line-clamp-2 flex-1">{rc.desc}</p>
-                <span class="inline-flex items-center gap-1 mt-2 text-xs font-semibold text-marine-700 group-hover:text-signal-600">
+                <span class="inline-flex items-center gap-1 mt-2 text-xs font-semibold text-marine-700 group-hover:text-sky-600">
                   Voir →
                 </span>
               </a>
@@ -290,22 +390,87 @@ const productSchema = {
     </section>
   )}
 
-  {/* === CTA final ========================================================= */}
-  <section class="bg-signal-400 text-marine-900 relative overflow-hidden">
-    <div class="absolute inset-0 bg-diagonal-stripe opacity-50" aria-hidden="true"></div>
+  {/* === CTA final (ADR-001 — marine bg + WhatsApp brand CTA + white secondary) */}
+  <section class="bg-marine-800 text-white relative overflow-hidden">
+    <div class="absolute inset-0 bg-hex-pattern opacity-20" aria-hidden="true"></div>
     <div class="container-tight section-y relative text-center max-w-3xl">
       <h2 class="text-h2 lg:text-display-2">Besoin de {cat.label.toLowerCase()} ?</h2>
-      <p class="text-lg mt-4 mb-8 leading-relaxed">
+      <p class="text-lg text-offwhite-200 mt-4 mb-8 leading-relaxed">
         Marque, modèle, année, code moteur ou référence OEM — partagez ce que vous avez. On revient sous 24 h.
       </p>
       <div class="flex flex-wrap justify-center items-center gap-3">
-        <a href={whatsappUrl(waMessage)} target="_blank" rel="noopener" class="btn-md bg-marine-800 text-white shadow-lg hover:bg-marine-900 hover:-translate-y-0.5">
-          Demander un devis
+        <a
+          href={whatsappUrl(waMessage)}
+          target="_blank"
+          rel="noopener"
+          class="btn-whatsapp btn-md"
+          data-wa-enhance
+          data-wa-category={cat.label}
+          data-wa-base={waMessage}
+        >
+          <WhatsAppIcon size={18} />
+          Devis WhatsApp
         </a>
-        <a href={telUrl()} class="btn-md bg-white/30 text-marine-900 hover:bg-white/50">
+        <a href="/contact#devis" class="btn-md bg-white text-marine-900 shadow-card hover:bg-offwhite-100 hover:shadow-card-hover hover:-translate-y-0.5">
+          Formulaire devis
+        </a>
+        <a href={telUrl()} class="btn-md border-2 border-white/40 text-white hover:bg-white/10">
           {STORE.contact.telDisplay}
         </a>
       </div>
     </div>
   </section>
 </Layout>
+
+{/*
+  WhatsApp enhancer — enrichit les anchors `[data-wa-enhance]` avec le
+  véhicule stocké (ADR-008 — my-vehicle bus). Ex. sans véhicule :
+    "Bonjour, je souhaite un devis pour plaquettes de frein."
+  Avec véhicule :
+    "Bonjour, je souhaite un devis pour plaquettes de frein pour ma Renault Clio 2018 (K9K-636)."
+
+  Réagit à l'événement `pac:vehicle-changed` pour rester synchro quand
+  l'utilisateur modifie son véhicule depuis le VehiclePanel (header).
+*/}
+<script is:inline define:vars={{ WA_BASE: STORE.social.whatsapp }}>
+  (function () {
+    var STORAGE_KEY = 'pac-last-vehicle';
+
+    function readVehicle() {
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null'); }
+      catch (e) { return null; }
+    }
+
+    function buildMessage(baseMsg, category, vehicle) {
+      if (!vehicle || !vehicle.marque) return baseMsg;
+      var vehLabel = [vehicle.marque, vehicle.modele, vehicle.annee]
+        .filter(Boolean)
+        .join(' ');
+      if (!vehLabel) return baseMsg;
+      // Strip trailing "." to re-append cleanly.
+      var core = baseMsg.replace(/\.\s*$/, '');
+      var extra = ' pour ma ' + vehLabel;
+      if (vehicle.motorisation) {
+        extra += ' (' + vehicle.motorisation + ')';
+      }
+      return core + extra + '.';
+    }
+
+    function apply(vehicle) {
+      var anchors = document.querySelectorAll('a[data-wa-enhance]');
+      anchors.forEach(function (a) {
+        var baseMsg = a.getAttribute('data-wa-base') || '';
+        var message = buildMessage(baseMsg, a.getAttribute('data-wa-category'), vehicle);
+        a.setAttribute('href', WA_BASE + '?text=' + encodeURIComponent(message));
+      });
+    }
+
+    // Initial pass — apply any stored vehicle.
+    apply(readVehicle());
+
+    // Live sync when user changes vehicle from the header panel.
+    window.addEventListener('pac:vehicle-changed', function (e) {
+      apply(e.detail || null);
+    });
+  })();
+</script>

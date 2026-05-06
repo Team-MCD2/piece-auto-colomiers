@@ -18,6 +18,7 @@ import '../styles/globals.css';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import StickyBar from '../components/StickyBar.astro';
+import Chatbot from '../components/Chatbot.astro';
 import { STORE } from '../data/store.js';
 
 interface Props {
@@ -78,6 +79,20 @@ const openingHoursSpec = STORE.horaires
     return [{ '@type': 'OpeningHoursSpecification', dayOfWeek: day, opens: h.open, closes: h.close }];
   });
 
+// AggregateRating — D23/D32 : on injecte la note Google réelle (même avec 1
+// seul avis, c'est valide pour Schema.org). Dès que le count dépasse 4-5,
+// les rich results deviennent éligibles côté Google.
+const aggregateRating =
+  STORE.avis?.google?.count > 0
+    ? {
+        '@type': 'AggregateRating',
+        ratingValue: STORE.avis.google.average,
+        reviewCount: STORE.avis.google.count,
+        bestRating: 5,
+        worstRating: 1,
+      }
+    : null;
+
 const storeSchema = {
   '@context': 'https://schema.org',
   '@type': 'AutoPartsStore',
@@ -106,6 +121,7 @@ const storeSchema = {
   paymentAccepted: STORE.paiement.join(', '),
   areaServed: STORE.zoneChalandise.map((v) => ({ '@type': 'City', name: v })),
   sameAs: [STORE.social.tiktok, STORE.social.instagram, STORE.social.facebook].filter(Boolean),
+  ...(aggregateRating && { aggregateRating }),
 };
 
 const breadcrumbSchema =
@@ -208,5 +224,19 @@ const faqSchema =
 
     <Footer />
     <StickyBar />
+
+    {/* Chatbot assistant — guided FSM island, `client:idle` hydration.
+        Rendered once per page via Layout to stay persistent on route
+        changes (when ClientRouter ships). Opt-out via
+        PUBLIC_CHATBOT_ENABLED=0 at build time. */}
+    <Chatbot />
+
+    {/* Reveal-on-scroll runtime — auto-initializes, SSR-safe, zero-cost
+        when no [data-reveal] elements are present. Also handles reduced
+        motion and cross-page navigation (both full reloads and future
+        ClientRouter). */}
+    <script>
+      import '../scripts/reveal';
+    </script>
   </body>
 </html>

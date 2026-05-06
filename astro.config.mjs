@@ -25,6 +25,13 @@ export default defineConfig({
     }),
   ],
   vite: {
+    // Defensive: force a single React copy across islands.
+    resolve: {
+      dedupe: ['react', 'react-dom'],
+    },
+    optimizeDeps: {
+      include: ['react', 'react-dom', 'react-dom/client'],
+    },
     ssr: {
       // Leaflet et react-leaflet ne sont pas SSR-safe (window/document references)
       noExternal: ['leaflet', 'react-leaflet'],

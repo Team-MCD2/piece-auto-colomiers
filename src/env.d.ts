@@ -10,6 +10,7 @@ interface ImportMetaEnv {
   readonly TIKTOK_USERNAME?: string;
   readonly TIKTOK_TOP_N?: string;
   readonly NOMINATIM_CONTACT_EMAIL?: string;
+  readonly PUBLIC_CHATBOT_ENABLED?: string;
 }
 
 interface ImportMeta {

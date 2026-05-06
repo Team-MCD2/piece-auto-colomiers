@@ -18,14 +18,14 @@ import { STORE, telUrl, whatsappUrl } from '../data/store.js';
   <section class="bg-gradient-hero text-white relative overflow-hidden min-h-[70vh] flex items-center">
     <div class="absolute inset-0 bg-hex-pattern opacity-30" aria-hidden="true"></div>
     <div class="container-tight section-y relative text-center max-w-2xl mx-auto">
-      <p class="font-display text-[8rem] md:text-[12rem] leading-none text-signal-400 mb-2 select-none">404</p>
-      <h1 class="text-h1 lg:text-display-2 mb-4">Cette page n'existe pas (ou plus).</h1>
+      <p class="font-display text-[8rem] md:text-[12rem] leading-none text-sky-300 mb-2 select-none">404</p>
+      <h1 class="title-accent on-marine centered text-h1 lg:text-display-2 mb-4">Cette page n'existe pas (ou plus).</h1>
       <p class="text-lg text-offwhite-200 mb-10 max-w-prose mx-auto">
         Pas de panique. Voici quelques pistes pour retrouver ce que vous cherchez :
       </p>
 
       <div class="grid sm:grid-cols-2 gap-3 max-w-lg mx-auto mb-8">
-        <a href="/" class="btn btn-md bg-signal-400 text-marine-900 shadow-cta hover:bg-signal-300 hover:-translate-y-0.5">
+        <a href="/" class="btn btn-md bg-white text-marine-900 shadow-card hover:bg-offwhite-100 hover:shadow-card-hover hover:-translate-y-0.5">
           Page d'accueil
         </a>
         <a href="/catalogue" class="btn btn-md border-2 border-white/30 text-white hover:bg-white/10">
@@ -41,7 +41,7 @@ import { STORE, telUrl, whatsappUrl } from '../data/store.js';
 
       <p class="text-sm text-offwhite-200/70">
         Si vous pensez qu'il y a une erreur,{' '}
-        <a href={whatsappUrl('Bonjour, je voulais accéder à une page introuvable sur votre site.')} target="_blank" rel="noopener" class="text-signal-400 hover:text-signal-300 underline decoration-2 underline-offset-4">
+        <a href={whatsappUrl('Bonjour, je voulais accéder à une page introuvable sur votre site.')} target="_blank" rel="noopener" class="text-sky-300 hover:text-sky-200 underline decoration-2 underline-offset-4">
           dites-le-nous sur WhatsApp
         </a>.
       </p>

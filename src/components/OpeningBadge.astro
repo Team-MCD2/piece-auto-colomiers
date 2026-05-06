@@ -1,0 +1,194 @@
+---
+/**
+ * OpeningBadge — live "Ouvert maintenant · ferme à 18h" pill.
+ *
+ * Renders a static server-computed badge + a tiny inline script that
+ * re-computes the state client-side (browser-local time, which matches
+ * the user's location better than any build-time computation).
+ *
+ * Two variants :
+ *   - <OpeningBadge variant="light" />  — dark bg (marine) → light dot + text
+ *   - <OpeningBadge variant="dark"  />  — light bg → marine text
+ *
+ * Cf. .project-store/roadmap.md proposal #7 ; uses `isOpenNow` from store.js.
+ */
+
+import { STORE, isOpenNow } from '../data/store.js';
+
+interface Props {
+  /** Colour variant ; defaults to `light` (for marine-bg headers). */
+  variant?: 'light' | 'dark';
+  /** Extra classes forwarded to the outer pill. */
+  class?: string;
+}
+
+const { variant = 'light', class: cls = '' } = Astro.props;
+
+// Compute the initial label server-side for SSR accuracy. Client-side
+// JS will refresh it at hydration + every 60s (below).
+const openNow = isOpenNow();
+
+// Find today's or next opening to build the companion text.
+const DAY_ORDER = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+const today = new Date();
+const todayKey = DAY_ORDER[today.getDay()];
+const todayEntry = STORE.horaires.find((h) => h.jour === todayKey);
+
+function nextOpening(): { label: string; when: string } {
+  for (let i = 0; i < 7; i++) {
+    const d = new Date();
+    d.setDate(today.getDate() + i);
+    const key = DAY_ORDER[d.getDay()];
+    const entry = STORE.horaires.find((h) => h.jour === key);
+    // `entry.open` est optionnel dans le type (les dimanches n'ont que
+    // `closed: true`) — on guarde pour satisfaire strict mode en plus de
+    // `closed`.
+    if (!entry || entry.closed || !entry.open) continue;
+    const when = i === 0 ? 'aujourd\'hui' : i === 1 ? 'demain' : entry.jour;
+    return { label: entry.open, when };
+  }
+  return { label: '08:30', when: 'lundi' };
+}
+
+let secondary: string;
+if (openNow && todayEntry && !todayEntry.closed) {
+  // Determine the next closing time (after pause, or main close).
+  const now = today.getHours() * 60 + today.getMinutes();
+  const toMin = (s: string) => {
+    const [h, m] = s.split(':').map(Number);
+    return h * 60 + m;
+  };
+  let closesAt = todayEntry.close;
+  if (todayEntry.mid) {
+    const [pauseStart] = todayEntry.mid;
+    if (now < toMin(pauseStart)) closesAt = pauseStart;
+  }
+  secondary = `ferme à ${closesAt}`;
+} else {
+  const nxt = nextOpening();
+  secondary = `ouvre ${nxt.when} à ${nxt.label}`;
+}
+
+const variantClasses =
+  variant === 'light'
+    ? 'bg-white/8 border-white/15 text-white'
+    : 'bg-sky-50 border-sky-200 text-marine-900';
+
+const dotClasses = openNow ? 'bg-brand-whatsapp' : 'bg-charcoal-400';
+---
+
+<span
+  data-opening-badge
+  data-variant={variant}
+  class:list={[
+    'inline-flex items-center gap-2 rounded-pill border px-3 py-1 text-xs font-semibold',
+    variantClasses,
+    cls,
+  ]}
+  role="status"
+  aria-live="polite"
+  aria-label={openNow ? `Magasin ouvert. ${secondary}` : `Magasin fermé. ${secondary}`}
+>
+  <span
+    class:list={['size-2 rounded-full shrink-0', dotClasses, openNow && 'animate-pulse-soft']}
+    aria-hidden="true"
+  ></span>
+  <span class="whitespace-nowrap">
+    <strong class="font-semibold" data-opening-label>
+      {openNow ? 'Ouvert' : 'Fermé'}
+    </strong>
+    <span class="opacity-80"> · </span>
+    <span data-opening-secondary>{secondary}</span>
+  </span>
+</span>
+
+<script is:inline define:vars={{ horaires: STORE.horaires }}>
+  /**
+   * Client refresh — re-computes on DOMContentLoaded + every 60s so the
+   * pill stays accurate across the 8:30, 12:00, 14:00, 18:00 boundaries
+   * without forcing a page reload.
+   */
+  (function () {
+    const DAY_ORDER = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+
+    function toMin(s) {
+      const [h, m] = s.split(':').map(Number);
+      return h * 60 + m;
+    }
+
+    function isOpenNow(now) {
+      const entry = horaires.find((h) => h.jour === DAY_ORDER[now.getDay()]);
+      if (!entry || entry.closed) return false;
+      const cur = now.getHours() * 60 + now.getMinutes();
+      if (entry.mid) {
+        const [p1, p2] = entry.mid;
+        return (
+          (cur >= toMin(entry.open) && cur < toMin(p1)) ||
+          (cur >= toMin(p2) && cur < toMin(entry.close))
+        );
+      }
+      return cur >= toMin(entry.open) && cur < toMin(entry.close);
+    }
+
+    function nextOpening(now) {
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(now);
+        d.setDate(now.getDate() + i);
+        const entry = horaires.find((h) => h.jour === DAY_ORDER[d.getDay()]);
+        if (!entry || entry.closed) continue;
+        const when = i === 0 ? "aujourd'hui" : i === 1 ? 'demain' : entry.jour;
+        return { when, label: entry.open };
+      }
+      return { when: 'lundi', label: '08:30' };
+    }
+
+    function computeSecondary(now) {
+      const entry = horaires.find((h) => h.jour === DAY_ORDER[now.getDay()]);
+      if (isOpenNow(now) && entry) {
+        const cur = now.getHours() * 60 + now.getMinutes();
+        let closes = entry.close;
+        if (entry.mid) {
+          const [pauseStart] = entry.mid;
+          if (cur < toMin(pauseStart)) closes = pauseStart;
+        }
+        return 'ferme à ' + closes;
+      }
+      const nxt = nextOpening(now);
+      return 'ouvre ' + nxt.when + ' à ' + nxt.label;
+    }
+
+    function refreshAll() {
+      const now = new Date();
+      const open = isOpenNow(now);
+      const secondary = computeSecondary(now);
+
+      document.querySelectorAll('[data-opening-badge]').forEach((el) => {
+        const label = el.querySelector('[data-opening-label]');
+        const sec = el.querySelector('[data-opening-secondary]');
+        const dot = el.querySelector('span.size-2');
+
+        if (label) label.textContent = open ? 'Ouvert' : 'Fermé';
+        if (sec) sec.textContent = secondary;
+        if (dot) {
+          dot.classList.toggle('bg-brand-whatsapp', open);
+          dot.classList.toggle('bg-charcoal-400', !open);
+          dot.classList.toggle('animate-pulse-soft', open);
+        }
+        el.setAttribute(
+          'aria-label',
+          (open ? 'Magasin ouvert. ' : 'Magasin fermé. ') + secondary,
+        );
+      });
+    }
+
+    refreshAll();
+    // Re-check every 60 s so the badge stays accurate at horaire
+    // boundaries without reloading the page. Cheap — runs on all pages.
+    setInterval(refreshAll, 60_000);
+    // Also refresh when the tab comes back into focus (user may leave
+    // the page open for hours).
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') refreshAll();
+    });
+  })();
+</script>

@@ -110,10 +110,15 @@
     --color-marine: #0F2C5A;
     --color-marine-700: #152E58;
     --color-sky: #5BA8D9;
-    --color-signal: #F5C518;
-    --color-signal-600: #B98A02;
     --color-offwhite: #F4F6F9;
     --color-charcoal: #1E2532;
+    /* WhatsApp brand colour — jamais teinté. ADR-006. */
+    --color-whatsapp: #25D366;
+    --color-whatsapp-dark: #128C7E;
+    /* Le jaune signal (#F5C518) est définitivement retiré du canon
+       (owner F8 2026-05-04 : "stick only to the colors on the logo").
+       Les tokens Tailwind `signal-*` restent mais sans variable CSS
+       globale → aucun fallback inline ne peut réintroduire le jaune. */
 
     /* Easings cohérents partout */
     --ease-brand: cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -123,6 +128,11 @@
     @apply scroll-smooth;
     -webkit-text-size-adjust: 100%;
     text-rendering: optimizeLegibility;
+    /* Pin native form controls (select, input, scrollbars) to the light
+       theme. Without this, Chrome/Edge on Windows dark mode render
+       native <select> with dark bg + light text regardless of bg-white.
+       Root cause of the "dark bar on MARQUE field" visual glitch (2026-05-04). */
+    color-scheme: light;
   }
 
   body {
@@ -156,19 +166,23 @@
     @apply transition-colors duration-200;
   }
 
-  /* Focus accessibility — anneau jaune signalétique sur fond clair, marine sur fond foncé */
+  /* Focus accessibility (ADR-001) — sky-blue anneau sur fond clair (palette
+     cohérence), jaune-signalétique sur fond marine (visibilité a11y maximale,
+     micro-usage permis). */
   :focus-visible {
-    @apply outline-none ring-2 ring-offset-2 ring-signal-400 ring-offset-offwhite;
+    @apply outline-none ring-2 ring-offset-2 ring-sky-400 ring-offset-offwhite;
   }
   .bg-marine-800 :focus-visible,
   .bg-marine-900 :focus-visible,
   .bg-gradient-hero :focus-visible {
-    @apply ring-offset-marine-800;
+    /* Owner F8 — strict logo palette : sky-300 reste lisible sur marine,
+       le jaune est banni même pour les focus rings. */
+    @apply ring-sky-300 ring-offset-marine-800;
   }
 
-  /* Sélection texte */
+  /* Sélection texte (ADR-001 — sky-tint plus sobre que jaune) */
   ::selection {
-    @apply bg-signal-400/40 text-marine-900;
+    @apply bg-sky-400/30 text-marine-900;
   }
 
   /* Scrollbar custom (subtle) */
@@ -212,12 +226,75 @@
     @apply py-section-sm md:py-section;
   }
 
-  /* Eyebrow — petite étiquette au-dessus du H2 */
+  /* Eyebrow — petite étiquette au-dessus du H2.
+     Owner F8 (2026-05-04) a rejeté l'accéent jaune historique de la DA :
+     "stick only to the colors on the logo". Le rythme visuel est rétabli
+     par `.title-accent` (trait courbe sky), pas par un eyebrow jaune. */
   .eyebrow {
-    @apply text-eyebrow uppercase tracking-widest text-signal-600 font-semibold;
+    @apply text-eyebrow uppercase tracking-widest text-sky-600 font-semibold;
   }
   .eyebrow-light {
-    @apply text-eyebrow uppercase tracking-widest text-signal-400 font-semibold;
+    @apply text-eyebrow uppercase tracking-widest text-sky-300 font-semibold;
+  }
+
+  /* ==================================================================
+     .title-accent — SIGNATURE DA "trait courbe sous les pistons"
+     ------------------------------------------------------------------
+     La synthèse §6 (analyse formelle du logo) isole comme élément
+     graphique distinctif un "trait courbe" qui passe sous les pistons
+     croisés. Il était resté lettre morte dans l'UI ; on le ré-injecte
+     en sky (owner F8 : strict logo palette, zero jaune) sous les H1/H2
+     porteurs pour rétablir le rythme visuel sans dériver du palette.
+
+     Usage :
+       <h1 class="text-display-2 title-accent on-marine">Titre.</h1>
+       <h2 class="text-h2 title-accent">Section.</h2>
+       <h2 class="text-h2 title-accent centered">Bloc centré.</h2>
+     ================================================================== */
+  .title-accent {
+    @apply relative;
+  }
+  .title-accent::after {
+    content: '';
+    display: block;
+    width: clamp(56px, 10vw, 112px);
+    height: 10px;
+    margin-top: 0.85rem;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 112 10' fill='none'><path d='M 2 7 Q 56 -1 110 7' stroke='%233076A8' stroke-width='2.5' stroke-linecap='round'/></svg>");
+    background-repeat: no-repeat;
+    background-position: left center;
+    background-size: 100% 100%;
+    transition:
+      background-size 0.9s cubic-bezier(.2, .8, .2, 1) 0.15s,
+      opacity 0.4s cubic-bezier(.2, .8, .2, 1) 0.1s;
+  }
+  /* Sur fond marine : stroke sky-300 (#7AB7DE) pour rester lisible. */
+  .title-accent.on-marine::after {
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 112 10' fill='none'><path d='M 2 7 Q 56 -1 110 7' stroke='%237AB7DE' stroke-width='2.5' stroke-linecap='round'/></svg>");
+  }
+  /* Pour les sections text-center (héro final, CTA). */
+  .title-accent.centered::after {
+    margin-left: auto;
+    margin-right: auto;
+  }
+  /* Draw-in effect when the title is revealed via IntersectionObserver.
+     Opt-in via `data-reveal` on the same element — the ornament grows
+     from 0% to 100% width once the title enters the viewport. Works
+     with the `[data-reveal]` scroll system from reveal.ts. */
+  .title-accent[data-reveal]::after {
+    background-size: 0% 100%;
+    opacity: 0;
+  }
+  .title-accent[data-reveal].revealed::after {
+    background-size: 100% 100%;
+    opacity: 1;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .title-accent[data-reveal]::after {
+      background-size: 100% 100%;
+      opacity: 1;
+      transition: none;
+    }
   }
 
   /* === Boutons =========================================================
@@ -234,9 +311,17 @@
   .btn-md  { @apply px-5 py-2.5 text-base; }
   .btn-lg  { @apply px-7 py-3.5 text-base md:text-lg; }
 
+  /* btn-primary V2 (ADR-001) : marine fill sur fond clair. Le pendant pour
+     usage SUR fond marine est .btn-primary-on-marine (white pill). */
   .btn-primary {
-    @apply btn btn-md bg-signal-400 text-marine-900 shadow-cta;
-    @apply hover:bg-signal-300 hover:-translate-y-0.5 hover:shadow-cta-hover;
+    @apply btn btn-md bg-marine-800 text-white shadow-cta;
+    @apply hover:bg-marine-700 hover:-translate-y-0.5 hover:shadow-cta-hover;
+    @apply active:translate-y-0 active:shadow-none;
+  }
+  /* CTA blanc inversé — à utiliser dans les sections à fond marine / hero. */
+  .btn-primary-on-marine {
+    @apply btn btn-md bg-white text-marine-900 shadow-card;
+    @apply hover:bg-offwhite-100 hover:-translate-y-0.5 hover:shadow-card-hover;
     @apply active:translate-y-0 active:shadow-none;
   }
   .btn-secondary {
@@ -251,11 +336,17 @@
     @apply btn btn-md bg-transparent text-marine-800;
     @apply hover:bg-marine-800/10;
   }
+  /* WhatsApp CTA (ADR-006) — brand green only, glyphe blanc. */
+  .btn-whatsapp {
+    @apply btn btn-md bg-brand-whatsapp text-white shadow-card;
+    @apply hover:bg-brand-whatsapp-dark hover:-translate-y-0.5 hover:shadow-card-hover;
+    @apply active:translate-y-0 active:shadow-none;
+  }
 
-  /* Liens textuels */
+  /* Liens textuels (ADR-001 : underline sky, plus jaune). */
   .link-inline {
-    @apply text-marine-700 underline decoration-signal-400 decoration-2 underline-offset-4;
-    @apply hover:text-marine-800 hover:decoration-signal-500;
+    @apply text-marine-700 underline decoration-sky-400 decoration-2 underline-offset-4;
+    @apply hover:text-marine-800 hover:decoration-sky-500;
   }
 
   /* Cards */
@@ -263,15 +354,65 @@
     @apply bg-white rounded-card shadow-card transition-all duration-300 ease-brand;
     @apply border border-charcoal-100;
   }
+  /* Base interactive card : lift + shadow + sky border on hover. */
   .card-interactive {
     @apply card hover:-translate-y-1 hover:shadow-card-hover hover:border-sky-400;
+  }
+  /* Image-zoom variant — used by category cards on home + catalogue.
+     Wrap the image inside `.card-media` ; group-hover target scales the
+     <img>. Pair with `.card-interactive` on the parent `<a>`. Keeps the
+     existing card mechanics but adds image motion + chevron slide. */
+  .card-media {
+    @apply relative overflow-hidden;
+  }
+  .card-media > img {
+    @apply transition-transform duration-500 ease-brand;
+  }
+  .group:hover .card-media > img,
+  .group:focus-visible .card-media > img {
+    @apply scale-105;
+  }
+  /* Chevron slide on hover — used inside card CTAs. Apply to a child
+     <svg>/<span> with class `card-chevron`. Avoids per-component
+     `group-hover:translate-x-1` repetition. */
+  .card-chevron {
+    @apply transition-transform duration-300 ease-brand;
+  }
+  .group:hover .card-chevron,
+  .group:focus-visible .card-chevron {
+    @apply translate-x-1;
+  }
+
+  /* === Skeletons ======================================================
+     Shimmering placeholder for loading states (TikTok grid, StoreMap,
+     any async React island). Use via `class="skeleton"` on a block-level
+     element with explicit height (e.g. aspect-ratio or h-*). */
+  .skeleton {
+    @apply relative overflow-hidden rounded-card bg-charcoal-50;
+    background-image: linear-gradient(
+      110deg,
+      rgba(15, 44, 90, 0.02) 0%,
+      rgba(15, 44, 90, 0.06) 45%,
+      rgba(91, 168, 217, 0.10) 50%,
+      rgba(15, 44, 90, 0.06) 55%,
+      rgba(15, 44, 90, 0.02) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.8s linear infinite;
+  }
+  /* Pill / text skeleton variants. */
+  .skeleton-text {
+    @apply skeleton rounded h-4;
+  }
+  .skeleton-pill {
+    @apply skeleton rounded-pill;
   }
 
   /* Badges */
   .badge {
     @apply inline-flex items-center gap-1.5 rounded-pill px-3 py-1 text-xs font-semibold uppercase tracking-wide;
   }
-  .badge-signal { @apply badge bg-signal-400 text-marine-900; }
+  /* badge-sky réemplace l'ancien badge-signal. Owner F8 : zero jaune dans l'UI. */
   .badge-sky    { @apply badge bg-sky-400/15 text-sky-700 border border-sky-400/30; }
   .badge-marine { @apply badge bg-marine-800 text-white; }
   .badge-soft   { @apply badge bg-charcoal-50 text-charcoal-600 border border-charcoal-100; }
@@ -282,6 +423,23 @@
   }
   .filter-pill[aria-pressed="true"]:hover {
     @apply bg-marine-900 border-marine-900;
+  }
+
+  /* === Form fields ====================================================
+     Réutilisable par <VehiclePanel />, formulaires devis / contact futurs.
+     Le contact form actuel utilise du Tailwind brut ; on peut le migrer
+     plus tard pour homogénéiser. */
+  .form-input,
+  .form-select {
+    @apply w-full px-3 py-2.5 rounded-lg border-2 border-charcoal-100 bg-white
+           text-charcoal-700 transition-colors;
+    @apply focus:outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-400/30;
+  }
+  .form-select {
+    @apply appearance-none bg-no-repeat pr-10 cursor-pointer;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%235F6E86'><path fill-rule='evenodd' d='M5.23 7.21a.75.75 0 011.06.02L10 11.06l3.71-3.83a.75.75 0 111.08 1.04l-4.25 4.39a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z' clip-rule='evenodd'/></svg>");
+    background-position: right 0.75rem center;
+    background-size: 1.1rem;
   }
 
   /* Section dividers (D35 — lignes diagonales subtiles) */
@@ -315,5 +473,95 @@
   /* Lock body scroll quand menu mobile ouvert */
   .scroll-locked {
     @apply overflow-hidden;
+  }
+
+  /* =============================================================
+     Reveal-on-scroll — pair with `src/scripts/reveal.ts`.
+     Each element starts fade-down-out ; `.revealed` class applied
+     by the IntersectionObserver transitions to normal. Stagger via
+     `--reveal-delay` (integer index, multiplied by 60ms).
+     ============================================================= */
+  [data-reveal] {
+    opacity: 0;
+    transform: translateY(12px);
+    transition:
+      opacity 0.65s cubic-bezier(.2, .8, .2, 1),
+      transform 0.65s cubic-bezier(.2, .8, .2, 1);
+    transition-delay: calc(var(--reveal-delay, 0) * 60ms);
+    will-change: opacity, transform;
+  }
+  [data-reveal].revealed {
+    opacity: 1;
+    transform: none;
+  }
+  /* No-JS / reduced-motion / fallback — ensure content is visible. */
+  @media (prefers-reduced-motion: reduce) {
+    [data-reveal] {
+      opacity: 1;
+      transform: none;
+      transition: none;
+    }
+  }
+
+  /* =============================================================
+     Count-up number — used on stats. Animates opacity + small
+     translate when revealed. Styled via `.num-count`.
+     ============================================================= */
+  .num-count[data-reveal].revealed {
+    animation: count-up 0.6s cubic-bezier(.2,.8,.2,1) both;
+  }
+}
+
+/* =====================================================================
+   Cross-document View Transitions (progressive enhancement).
+   ---------------------------------------------------------------------
+   In supporting browsers (Chromium 126+), same-origin navigations
+   automatically animate. Firefox & Safari degrade to normal reload
+   with zero visual regression. No SPA hack — real MPA navigation,
+   so every inline <script> keeps working exactly as before.
+
+   Named elements (hero titles, site chrome) morph across pages when
+   they share a `view-transition-name`. The shell (header / footer /
+   sticky bar) is named so the browser matches & holds those regions
+   instead of cross-fading them as part of "root" — reads as a
+   persistent UI around the swap-in content area.
+   ===================================================================== */
+@view-transition {
+  navigation: auto;
+}
+
+/* Fade the root on cross-page nav — subtle, ~200ms. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 240ms;
+  animation-timing-function: cubic-bezier(.2, .8, .2, 1);
+}
+
+/* Persistent shell — name the top-level chrome so it holds across
+   navigations. These selectors rely on the `Layout.astro` structure
+   (skip-link / Header / main / Footer / StickyBar / Chatbot). */
+body > header            { view-transition-name: site-header; }
+body > footer            { view-transition-name: site-footer; }
+body > nav[aria-label="Actions rapides"] { view-transition-name: sticky-bar; }
+
+/* Hero title — same name on every page H1 (set inline via `style=`).
+   Give it a dedicated, slightly longer curve for a premium feel. */
+::view-transition-group(hero-title) {
+  animation-duration: 420ms;
+  animation-timing-function: cubic-bezier(.2, .8, .2, 1);
+}
+::view-transition-old(hero-title),
+::view-transition-new(hero-title) {
+  animation-duration: 320ms;
+  animation-timing-function: cubic-bezier(.2, .8, .2, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root),
+  ::view-transition-old(hero-title),
+  ::view-transition-new(hero-title),
+  ::view-transition-group(hero-title) {
+    animation: none;
   }
 }

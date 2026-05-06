@@ -1,0 +1,45 @@
+---
+/**
+ * Chatbot.astro — thin Astro wrapper around the React island.
+ *
+ * Why a wrapper :
+ *   - Loads the conversation tree from `src/data/chatbot.js` server-side
+ *     and passes it as static props → the client JS bundle ships only the
+ *     UI machinery, not the dictionary source file.
+ *   - Centralises the hydration strategy (`client:idle`) so pages never
+ *     need to know about it.
+ *   - Lets Layout.astro toggle the bot via a single env flag without
+ *     touching islands.
+ *
+ * Feature flag :
+ *   - `PUBLIC_CHATBOT_ENABLED` — "0"/"false" to hide at build time.
+ *   - Any other value (including undefined) → chatbot mounted.
+ *   - Rationale : owner directive "chatbot shipped along with all other
+ *     sprints" → default ON, but we keep an opt-out in case of runtime
+ *     regression in production (Vercel env override, no redeploy needed).
+ *
+ * Cf. plan.md §4.8 and ADR D-chatbot-v1.
+ */
+
+import Chatbot from './Chatbot';
+import type { Greeting, Intent, RootLabel } from './Chatbot';
+import { GREETING, ROOT_LABELS, INTENTS } from '../data/chatbot.js';
+
+// The chatbot tree lives in plain JS for editor ergonomics — cast on
+// import to preserve the strict prop types of the React island.
+const greeting = GREETING as Greeting;
+const rootLabels = ROOT_LABELS as RootLabel[];
+const intents = INTENTS as Record<string, Intent>;
+
+const flag = import.meta.env.PUBLIC_CHATBOT_ENABLED;
+const enabled = flag === undefined || (flag !== '0' && flag !== 'false');
+---
+
+{enabled && (
+  <Chatbot
+    client:idle
+    greeting={greeting}
+    rootLabels={rootLabels}
+    intents={intents}
+  />
+)}
