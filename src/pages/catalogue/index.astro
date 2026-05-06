@@ -64,8 +64,12 @@ const breadcrumb = [
     </div>
   </section>
 
-  {/* Filtres sticky (search + vehicles + families) */}
-  <section class="bg-white border-b border-charcoal-100 sticky top-[60px] z-20 backdrop-blur-sm bg-white/95">
+  {/* Filtres sticky (search + vehicles + families)
+       top-[68px] = hauteur exacte de la sticky main bar du Header.astro
+       (py-3 + h-11 logo md = 12+44+12). Le `<header class="contents">`
+       garantit que la main bar s'épingle correctement à top-0 ; le filter-bar
+       s'épile juste en dessous. z-30 < header z-40 (priorité menu), > content. */}
+  <section class="bg-white/95 backdrop-blur-sm border-b border-charcoal-100 sticky top-[68px] z-30">
     <div class="container-tight py-4 lg:py-5 space-y-3">
       {/* Ligne 1 : search + reset + count */}
       <div class="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">

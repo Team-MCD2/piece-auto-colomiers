@@ -49,7 +49,13 @@ const usps = [
 const waUrl = whatsappUrl();
 ---
 
-<header class="w-full">
+<header class="contents">
+  {/* `display: contents` — le `<header>` ne crée AUCUNE box. Ses 3 enfants
+       (bandeau / véhicule / barre principale) deviennent enfants directs du
+       `<body class="flex flex-col">`. Conséquence : le containing block du
+       `position: sticky` sur la barre principale (row 3) devient `<body>`
+       (et non `<header>` qui était trop court → row 3 ne s'épinglait jamais).
+       Le rôle ARIA "banner" du `<header>` est conservé sémantiquement. */}
   {/* === 1) Bandeau info fixe — OpeningBadge + USPs statiques ============
        Remplace l'ancien marquee (ADR-007 : "l'infinite-scroll USP est une
        béquille esthétique, on s'en passe"). La pill "Ouvert maintenant"
@@ -99,9 +105,11 @@ const waUrl = whatsappUrl();
     </div>
   </div>
 
-  {/* === 2) Barre principale (sticky) ====================================== */}
+  {/* === 2) Barre principale (sticky) ======================================
+       Hauteur stable = 68px (py-3 + h-11 logo) sur tous breakpoints, pour que
+       l'offset `top-[68px]` du filter-bar catalogue corresponde exactement. */}
   <div class="bg-marine-800 text-white sticky top-0 z-40 shadow-lg shadow-marine-900/20">
-    <div class="container-tight flex items-center justify-between gap-4 py-3 lg:py-4">
+    <div class="container-tight flex items-center justify-between gap-4 py-3">
       {/* Logo */}
       <Logo size="md" variant="light" withText={true} href="/" class="shrink-0" />
 
