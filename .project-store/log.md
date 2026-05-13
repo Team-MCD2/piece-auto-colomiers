@@ -158,3 +158,316 @@
   * Verification at every step: 3-command stack + manual H2 count.
   * Owner preview review before merging the home rebuild to
     `main`.
+
+---
+
+## D-2026-05-13  Architectural pivot — 3-level catalog matrix charter
+
+- **context**  : Owner brief 2026-05-13 (paraphrased, not yet logged
+                 verbatim in `owner-feedback.md`): Oscaro-style
+                 macro-classification → micro-classification →
+                 matrix JOIN → filtered list → immersive fiche.
+                 Concrete UX flow described : (1) `/catalogue` shows
+                 famille blocks ; (2) click famille → sous-cats
+                 (plaquettes / disques / étriers / témoins
+                 d'usure) ; (3) click sous-cat with no vehicle →
+                 modal "Pour garantir la compatibilité" ; (4) click
+                 sous-cat with vehicle → matrix JOIN of
+                 `Pieces_Detachees × Vehicules_Compatibles` filtered
+                 by MMY + motorisation, grouped by mounting variant ;
+                 (5) result list = product cards (image / brand /
+                 green compat badge / criteria) ; (6) click card →
+                 immersive fiche (3D ou vidéo + tech + WhatsApp
+                 pré-rempli avec la référence). Owner explicitly
+                 framed this as "the bigger picture" vs the narrow
+                 implementation_plan.md at the repo root, and asked
+                 for a deep architectural analysis before any code
+                 work. No code changes this session, only durable
+                 project-store work.
+- **diagnosis** :
+  * Current site is a **directory** (47 L1.5 landing pages each
+    ending in a devis CTA), brief asks for a **database** shape
+    (3 levels, vehicle-gated leaf, fitment matrix at MMY ×
+    motorisation, variant grouping). The two are architecturally
+    distinct. Going from directory to database is not a polish
+    step.
+  * `categories.js:44-49` declares `vehicles: ALL` at vehicle-TYPE
+    bucket granularity (4 buckets) ; `vehicles.js` exposes MMY
+    granularity (~30 marques × ~10 modèles × year-range). The two
+    layers do not currently couple — the compatibility promise on
+    the leaf is broader than the data behind it.
+  * `implementation_plan.md` (root) is 11 tactical items (FAQs,
+    multi-select, brand SVG audit, YouTube embeds, …). All of them
+    operate at the existing 2-level altitude. None move toward the
+    3-level brief. Items E (per-cat FAQs) and G (per-cat videos)
+    are at the wrong altitude for the new architecture — they
+    should attach at L2 (sub-cat), not L1.5 (cat).
+  * Strategic tension surfaced explicitly : option A (stay vitrine,
+    defer brief), option B (become e-commerce — TecDoc ~€5-15k/yr,
+    PIM, ~€15-40k year-1 spend), option C (vitrine wearing Oscaro's
+    clothes — 3 levels + virtual product cards, no prices, no cart,
+    devis stays the conversion). Recommendation : option C.
+- **actions** :
+  * Wrote `.project-store\da-catalog-matrix-architecture.md` —
+    canonical IA / data model / routing brief. 11 sections :
+    diagnosis (§1), 3-level taxonomy (§2), strategic options
+    A/B/C (§3 — the owner gate), data model (§4 :
+    `subcategories.js` + `fitment-virtual.js` schemas), routing
+    (§5 : `/catalogue/[slug]` retrofit + new `[slug]/[sub].astro`
+    + `piece/[id].astro`), gating modal UX (§6),
+    L3 product card anatomy (§7), L4 fiche (§8), audit of
+    `implementation_plan.md` against this architecture (§9), risks
+    + open questions (§10), cross-references (§11). Companion to
+    `da-oscaro-playbook.md` (playbook = page rhythm ; arch brief =
+    information architecture).
+  * Appended ADR-012 to `.project-store\decisions.md` —
+    "3-level catalog matrix + vehicle-gated leaf,
+    vitrine-compatible". STATUS = `draft — owner sign-off
+    required`. Surfaces the A/B/C choice explicitly as a gating
+    decision for any code work on this axis. Cross-refs ADR-008
+    (parent — Oscaro pattern charter), ADR-011 (home overhaul —
+    orthogonal, can ship in parallel), `owner-feedback.md` F2
+    (vitrine charter — option B contradicts it, option C honors it).
+  * Expanded `.project-store\roadmap.md` — added Phase 7
+    (sub-phases 7.0 owner authoring sprint → 7.5 catalog matrix
+    QA + launch). 7.0 is BLOCKER for 7.1+ (owner must validate
+    draft `subcategories.js` line-by-line ; owner must name the
+    brand × sub-cat surface for `fitment-virtual.js` ; owner must
+    approve the ~80 piece images source).
+  * Wrote `.project-store\handoff-2026-05-13.md` — refreshed
+    handoff. Audits ADR 001-012 status, the two open architectural
+    pivots (Phase 5 home overhaul vs Phase 7 catalog matrix —
+    orthogonal, can ship in parallel), the audit of
+    `implementation_plan.md` items vs Phase 7's altitude (which
+    survive at L1.5, which re-level to L2), the next 5 actions
+    (action 1 = surface the strategic question to the owner ;
+    actions 2-5 = parallel Phase 5 work + no-regret items from
+    `implementation_plan.md`), things to NOT do, open questions.
+  * Updated this `log.md` entry.
+- **learnings** :
+  * The single deepest design decision in any catalog UX is the
+    **gating altitude** — at what level does "I need to know the
+    vehicle to show meaningful results" kick in. For Oscaro it's
+    at the L2 sub-cat (Plaquettes avant), not the L1 family
+    (Freinage). Our current implementation has no L2, so the gate
+    has nowhere to land — surfacing as a soft compat banner at L1.5
+    that promises more than the data delivers. Documented in
+    `da-catalog-matrix-architecture.md` §6. **Candidate for
+    promotion to `db.md` W04.13.D** as a new
+    `T-auto-parts-gating-altitude` tip.
+  * Vitrine-shaped sites can adopt e-commerce UX patterns
+    structurally (3 levels, gating modal, fitment cards) WITHOUT
+    becoming e-commerce, by populating the leaf with **virtual
+    product cards** hand-curated from the brands the site
+    genuinely sources. The cards display image / brand / compat
+    badge / criteria, but the click-through is to a WhatsApp
+    pre-fill carrying the exact triple — not to a basket. This is
+    the "option C" pattern in `da-catalog-matrix-architecture.md`
+    §3. **Candidate for promotion to `db.md` W04.13.D** as a new
+    `T-vitrine-virtual-product-cards` tip.
+  * `implementation_plan.md`-style root files (tactical, 10-15
+    items, ~5 min each) and architectural ADRs (durable,
+    multi-session) operate at incompatible altitudes. When both
+    exist, the ADR overrides the plan ; the plan is the working
+    tactical doc, the ADR is the contract. This session's
+    `handoff-2026-05-13.md` §7 makes that hierarchy explicit so
+    no future LLM gets confused about precedence.
+- **next session** :
+  * Action 1 (this session — last step) : surface the strategic
+    question to the owner via `ask_user_question` ; record the
+    pick in `owner-feedback.md` as F11 ; flip ADR-012 status from
+    `draft — owner sign-off required` to `accepted` / `rejected` /
+    `deferred`.
+  * If owner picks option C : Phase 7.0 begins. Draft
+    `subcategories.js` (~30-50 entries) at
+    `.project-store\drafts\subcategories-draft.js`, ask owner to
+    validate line-by-line. NO code under `src/` until approval.
+  * Regardless of option pick : Phase 5 home overhaul can proceed
+    per `handoff-2026-05-06.md` §4 actions 1-5 (still the right
+    sequence — `da-oscaro-playbook.md` §5.1 is the spec).
+  * Land the no-regret `implementation_plan.md` items (A multi-
+    select, B layout, C SVG, F reviews, H placeholder cleanup).
+    Hold E (per-cat FAQs) and G (per-cat videos) at L1.5 if
+    Phase 7 is greenlit ; otherwise ship them at L1.5 and accept
+    the lower granularity.
+  * Verification at every commit : 3-command stack +
+    Phase-specific manual checks (H2 count for Phase 5 ; gate
+    modal flow for Phase 7).
+
+---
+
+## D-2026-05-13b  Phase 5.1 partial ship + Phase 7.0 data layer landed
+
+- **context**  : Same day, second pass. Owner gave the green light to
+                 execute (« take your time and reason so you produce
+                 proper work, i give you the right to go ahead what your
+                 suggestions »). Continuing from D-2026-05-13a where
+                 ADR-012 was flipped to `accepted` and `subcategories-
+                 draft.js` was authored. This session's goal: convert
+                 paper plans into shipped code on the high-leverage axes
+                 — close ADR-007 (hex-pattern debt) and ADR-002
+                 (placeholder testimonials) on the home + the category
+                 page; promote the L2 draft to durable infrastructure;
+                 reshape the home from "vitrine corporate" to "Oscaro-
+                 shaped catalog entry-point" per
+                 `da-oscaro-playbook.md` §5.1.
+- **diff**     :
+  * `src/data/subcategories.js` (NEW, 575 lines) — promoted from
+    `.project-store/drafts/subcategories-draft.js` line-for-line, no
+    edits, on owner delegation. 41 L2 entries × schema per
+    `da-catalog-matrix-architecture.md` §4.1, plus 5 helpers:
+    `findSubcategory(slug)`, `getSubcategoriesForCategory(parentSlug)`,
+    `getSubcategoriesByFamily(familyId)`, `categoryHasSubcategories
+    (parentSlug)`, `getNavigableLeaves(categories)`,
+    `countSubcategoriesByParent()`. The `getNavigableLeaves` helper
+    is the routing-decision API that Phase 7.2 (vehicle-gated leaf)
+    will consume.
+  * `src/data/testimonials.js` (gutted, 19 lines) — array set to `[]`,
+    removed the synthesised `google-1` entry (had been cited as
+    " Très bon accueil et conseils précis…" since D23/D32). Doc-comment
+    explains the ADR-002/F3 lineage and points to a 1-line flip path
+    if owner ever decides to surface real avis via Place Details.
+  * `src/pages/index.astro` (~62 lines net change in a 569 → ~580
+    line file) — three structural moves:
+        1. **Hex-pattern audit** — dropped 4 `bg-hex-pattern` overlay
+           divs (Hero, Services, Testimonials wrapper, CTA final). The
+           `bg-gradient-hero` token kept on the hero section (it's a
+           flat 3-stop marine sweep, not decorative noise per ADR-007
+           reading).
+        2. **Catalog index refactor** — replaced the 12-card "Catégories
+           phares" featured grid with a family-grouped catalog index:
+           7 H2 family blocks (`Freinage`, `Moteur`, `Distribution`,
+           `Démarrage & charge`, `Éclairage`, `Suspension`,
+           `Échappement`), each with up to 4 category cards + a "Voir
+           tout en X" CTA + an anchor (`#family-<id>`) for in-page
+           navigation. The umbrella section H2 was demoted to a styled
+           `<p>` so the family titles become peer-level entry-points.
+           Removed the now-orphaned `HOME_FEATURED_SLUGS` import + the
+           `featured` derivation. Added `getCategoriesByFamily` import.
+        3. **Testimonials → AvisWidget standalone** — replaced the
+           conditional `{showTestimonials && (…)}` block (which would
+           never fire post-gut) with an unconditional standalone
+           section that ONLY shows `<AvisWidget variant="dark" />` +
+           a "Lire et laisser un avis" CTA pointing at the Google
+           Business profile. No on-site quoting, F3-clean.
+  * `src/pages/catalogue/[slug].astro` — dropped 2 `bg-hex-pattern`
+     overlay divs (hero + final CTA). No layout change.
+- **why**      :
+  * **Phase 7.0 data layer durable** : the L2 list is no longer a
+    draft in `.project-store/drafts/` (which an LLM might forget
+    about) — it's importable from `src/data/subcategories.js` like
+    any other data file. Phase 7.1 (L1.5 retrofit) and 7.2 (vehicle
+    gating) can now wire against the actual schema without further
+    owner authoring. The draft file in `.project-store/drafts/`
+    stays as a frozen "owner sign-off" artefact for the audit trail.
+  * **ADR-007 closed on the high-traffic surfaces** : the hex pattern
+    was pure decorative noise inherited from the V1 "warm vitrine"
+    DA. Removing it on the home + `[slug].astro` (the 2 surfaces
+    where the user spends 90 % of their time) is enough to discharge
+    the ADR for V2.5. Other lower-traffic pages (`services.astro`,
+    `notre-magasin.astro`) can be cleaned in passing or left alone —
+    not blocking.
+  * **ADR-002 closed on the home** : the synthesised "Client Google"
+    testimonial was a 2024-era band-aid that never sat right (D23
+    log entry already flagged the awkwardness). Replacing it with
+    the AvisWidget pointing at the live Google Business profile is
+    the F3-correct surface. Phase 5.6 (live Place Details fetch)
+    remains optional and owner-greenlit ; it's now a pure
+    enhancement, not a fix.
+  * **Catalog-first home is the Oscaro signature** : the V1
+    "Catégories phares" deck of 12 cards was a sampling of the
+    catalog with no architectural meaning ("phares" = featured = no
+    SEO weight, no scanability for the user who knows their need).
+    The new family-grouped grid mirrors Oscaro's exact pattern : the
+    user lands, sees their family in one scroll, clicks 1 of 4 cards
+    (or "Voir tout en X" if they want the full list). 28 entries
+    surfaced × 1 scroll = entry-point in 1 second instead of "click
+    Catalogue → scan 47 cats → click again".
+
+    ```
+    BEFORE                          AFTER
+    ┌──────────────────────────┐    ┌──────────────────────────┐
+    │ Catégories phares (12)   │    │ Trouvez votre pièce.     │
+    │  ┌──┐┌──┐┌──┐┌──┐        │    │ ┌─ Freinage ────── voir → │
+    │  │  ││  ││  ││  │        │    │ │ ┌──┐┌──┐┌──┐ (3)     │
+    │  └──┘└──┘└──┘└──┘        │    │ ├─ Moteur ──────── voir → │
+    │  ┌──┐┌──┐┌──┐┌──┐        │    │ │ ┌──┐┌──┐┌──┐┌──┐ (4)  │
+    │  │  ││  ││  ││  │        │    │ ├─ Distribution ── voir → │
+    │  └──┘└──┘└──┘└──┘        │    │ │ ┌──┐ (1)              │
+    │  ... × 12                │    │ ... × 7 H2 family blocks │
+    │  Voir toutes les cats →  │    │ Voir toutes les cats →   │
+    └──────────────────────────┘    └──────────────────────────┘
+    ```
+
+    Counted on the rendered HTML: **13 H2s** captured by simple regex
+    (the "Notre proximité" H2 has nested `<br/>` so it's skipped by
+    a content-only match — actual count ~14, well inside Phase 5.1
+    DoD range of 12-15).
+- **validation** :
+  * `npx astro check` → 0 errors, 0 warnings, 2 hints (pre-existing,
+    `contact.astro` unused imports — out of scope).
+  * `npm run build` → 54 pages, 0 errors, 0 warnings, 13.84 s wall.
+    All 47 `/catalogue/<slug>` URLs survive (no breaking change to
+    L1.5 routing). Home + every catalog page renders, no 500.
+  * Rendered `dist/index.html` grep: 7 family anchors present
+    (`family-freinage` … `family-echappement`), 0 occurrences of
+    `bg-hex-pattern`. Same audit on `dist/catalogue/plaquettes-de-
+    frein/index.html` → 0 hex-pattern.
+  * H2 count audit: 13 captured H2s + 1 with nested children =
+    ~14 total. Inside Phase 5.1 DoD range (12-15). ✓
+- **scope traded** :
+  * **NOT shipped this session** (deferred to next session, all of
+    them tracked in `roadmap.md` Phase 5):
+      - 5.1 hero swap (vehicle selector inline as the H1 surface).
+        Current hero kept (storefront image + brand prose). Big
+        change, deserves its own commit.
+      - 5.1 "Quelle marque conduisez-vous ?" wordmark grid + the
+        `data/vehicle-marques-shortcut.js` data file.
+      - 5.1 "Comment ça marche" 3-step replacing "Why choose us".
+      - 5.2 `?marque=<id>` query param wiring on
+        `catalogue/index.astro`.
+      - 5.3 Sticky 'Pour mon véhicule' rail on the category page.
+      - 5.4 Header row-0 collapse to 32 px utility row.
+      - 5.5 Token tightening (`marine.50`, `shadow.card-rest = none`,
+        new `.section-flat` utility).
+      - 5.6 Live Place Details fetch — owner-greenlit only.
+  * **Why this scope and not more** : the 4 axes shipped this session
+    (L2 promote + ADR-002 + ADR-007 + catalog-first home) are the
+    high-leverage / low-risk subset. The deferred items each touch
+    OTHER components or need a fresh data file (marques shortcut),
+    which means longer reviews and a higher risk surface. Splitting
+    them out keeps each commit reviewable.
+- **next session** :
+  * **Phase 5.1 hero swap** — the centerpiece. Extract `mode="hero"`
+    on `<VehiclePanel>` (or build an `<HeroVehicleHook />` thin
+    wrapper that calls `requestOpenVehicleModal()` on click and
+    listens to `pac:vehicle-changed` to display the saved vehicle).
+    Replace current hero (storefront image + brand prose) with: H1
+    "Trouvez votre pièce parmi {CATEGORIES.length} catégories." +
+    big vehicle selector card + 4-USP trust band. Move the
+    storefront image + "Toulouse Ouest" écusson + "Notre proximité"
+    stats to `notre-magasin.astro`.
+  * **Phase 5.1 marques shortcut grid** — author
+    `src/data/vehicle-marques-shortcut.js` (~16 most-common French-
+    market constructeurs, derived from the existing
+    `src/data/vehicles.js` MARQUES list, kept short for visual
+    density). New H2 "Quelle marque conduisez-vous ?" between
+    catalog index and brands grid. Each link → `/catalogue?marque=<id>`.
+  * **Phase 5.2** — wire the `?marque=<id>` reader on
+    `catalogue/index.astro`. Vanilla JS in `<script is:inline>` is
+    sufficient (no new island).
+  * **Phase 5.4** — header row-0 collapse. Verify `top-[68px]`
+    sticky offset still aligns on `catalogue/index.astro` after
+    the row-0 height drop.
+  * **Phase 7.1** can now proceed in parallel : `src/data/
+    subcategories.js` is live, the L1.5 page (`[slug].astro`) just
+    needs its prose body collapsed and an L2 grid added below the
+    intro paragraph. `getSubcategoriesForCategory(slug)` returns
+    the children ; if `categoryHasSubcategories(slug)` is false,
+    the page falls through to the existing L1.5 "fiche" layout
+    (no behaviour change for the 30 unsplit categories).
+  * **Verification at every commit** : 3-command stack
+    (`npx astro check` → `npm run build` → `npm run dev` spot-
+    check), plus the Phase 5.1 H2 audit (12-15 H2s on home) and
+    the Phase 7 navigability check (no broken `/catalogue/<slug>`
+    URL after L1.5 retrofit).

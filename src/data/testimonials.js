@@ -1,26 +1,19 @@
 /**
- * TESTIMONIALS — Avis Google réels uniquement.
+ * TESTIMONIALS — vide par décision (ADR-002, F3).
  *
- * Source : Google Business Profile (copie manuelle).
- * Chaque entrée renvoie vers STORE.avis.googleBusinessUrl.
+ * Le pivot owner-feedback F3 (« pas d'avis inventés ») a été appliqué
+ * sur le rendu de la home (D-2026-05-13b) : la section témoignages est
+ * désormais remplacée par le composant <AvisWidget /> qui pointe
+ * directement sur la fiche Google Business — pas de copie locale du
+ * texte, pas de citation hors-ligne synthétisée par nous.
  *
- * Cf. plan.md §4.7 et cascade-plan.md D23 / D32.
+ * Le fichier est conservé (vide) plutôt que supprimé pour deux raisons :
+ *   1) Si l'on souhaite à terme afficher de vrais avis Google via
+ *      Place Details (Phase 5 DoD), un seul flip d'array suffira.
+ *   2) Le bloc `{showTestimonials && …}` dans `index.astro` continue
+ *      de fonctionner sans crash — il no-op naturellement.
+ *
+ * Cf. ADR-002, owner-feedback.md F3, log.md D-2026-05-13b.
  */
 
-import { STORE } from './store.js';
-
-export const TESTIMONIALS = [
-  // === Avis Google 5/5 réel (D23) =========================================
-  {
-    id: 'google-1',
-    author: 'Client Google',
-    initial: 'C',
-    rating: 5,
-    source: 'Google',
-    sourceUrl: STORE.avis.googleBusinessUrl,
-    date: '2025',
-    verified: true,
-    text:
-      "Très bon accueil et conseils précis. Tarifs corrects, pièce trouvée rapidement. Je recommande pour les pièces auto à Colomiers.",
-  },
-];
+export const TESTIMONIALS = [];

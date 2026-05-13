@@ -81,6 +81,7 @@
   | F9 | Design = "jeune, moderne, épurée"          | ADR-007 (design principles V2), knowledge.md T-pac-design-canon |
   | F10 | Oscaro = reference #1, integrate good stuff | ADR-008 (Oscaro-grade UX), knowledge.md T-pac-oscaro-patterns, roadmap Phase 5 |
   | F11 | "Base good, content nice, much work left" | Acknowledged; roadmap reflects continued iteration |
+  | F12 | Oscaro 3-level catalog (macro → micro → matrix → fiche) + vehicle-gated leaf | ADR-012 (3-level catalog matrix, ACCEPTED option C 2026-05-13), `da-catalog-matrix-architecture.md` (canonical IA brief), roadmap Phase 7 |
 
 - **status** : addressed at planning level; execution scheduled
   across roadmap Phases 1-5. No code change applied yet; pending

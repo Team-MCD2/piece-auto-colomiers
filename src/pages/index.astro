@@ -24,17 +24,33 @@ import TikTokGrid from '../components/TikTokGrid';
 import WhatsAppIcon from '../components/WhatsAppIcon.astro';
 import { publicAssetExists } from '../lib/public-asset';
 import { STORE, whatsappUrl, telUrl } from '../data/store.js';
-import { CATEGORIES, HOME_FEATURED_SLUGS } from '../data/categories.js';
+import { CATEGORIES, getCategoriesByFamily } from '../data/categories.js';
 import { SERVICES } from '../data/services.js';
 import { FAQ } from '../data/faq.js';
 import { BRANDS } from '../data/brands.js';
-import { TESTIMONIALS } from '../data/testimonials.js';
 import { TIKTOKS, TIKTOK_PROFILE_URL } from '../data/tiktoks.js';
 import AvisWidget from '../components/AvisWidget.astro';
 
-const featured = HOME_FEATURED_SLUGS
-  .map((slug) => CATEGORIES.find((c) => c.slug === slug))
-  .filter((c): c is NonNullable<typeof c> => Boolean(c));
+/**
+ * Home catalog index — 7 families surfaced (ADR-012, D-2026-05-13b).
+ * The 16-family roster lives in `categories.js` ; on the home we feature
+ * the 7 with highest customer-search intent (entretien courant + pannes
+ * fréquentes). The remaining 9 are accessible via `/catalogue`.
+ *
+ * Order matters : reflects "ce qu'on cherche en premier quand sa voiture
+ * a un souci" — freinage en tête (sécurité), puis moteur, puis usure
+ * cyclique (distribution, démarrage), puis confort & saison (éclairage,
+ * suspension, échappement).
+ */
+const homeFamilies = [
+  { id: 'freinage',     label: 'Freinage',           tagline: 'Plaquettes, disques, étriers — la sécurité en priorité.' },
+  { id: 'moteur',       label: 'Moteur',             tagline: 'Filtration, allumage, injection — l\'entretien courant.' },
+  { id: 'distribution', label: 'Distribution',       tagline: 'Kits complets courroie + galets + tendeur.' },
+  { id: 'demarrage',    label: 'Démarrage & charge', tagline: 'Batterie, alternateur, démarreur — l\'hiver d\'abord.' },
+  { id: 'eclairage',    label: 'Éclairage',          tagline: 'Phares, ampoules, feux — visibilité et CT.' },
+  { id: 'suspension',   label: 'Suspension',         tagline: 'Amortisseurs, rotules, roulements — tenue de route.' },
+  { id: 'echappement',  label: 'Échappement',        tagline: 'Pots, catalyseurs, FAP — bruit et émissions.' },
+] as const;
 
 const homeServices = SERVICES.slice(0, 4);
 const homeFaq = FAQ.filter((f) => f.home).slice(0, 5);
@@ -71,9 +87,6 @@ const reasons = [
   },
 ];
 
-// Témoignages — affichés si avis Google réels dispo
-const showTestimonials = TESTIMONIALS.length > 0;
-
 // TikToks — filtre build-time : ne garder que les entrées dont le MP4 existe
 // sur disque. Évite les <video> 404 si le client n'a pas encore lancé
 // `npm run assets:tiktok` (qui dépend de yt-dlp + ffmpeg installés).
@@ -101,7 +114,6 @@ const showTiktoks = availableTiktoks.length > 0;
 >
   {/* === 1) Hero ============================================================ */}
   <section class="bg-gradient-hero text-white relative overflow-hidden">
-    <div class="absolute inset-0 bg-hex-pattern opacity-40" aria-hidden="true"></div>
     <div class="container-tight section-y relative grid lg:grid-cols-12 gap-10 items-center">
       <div class="lg:col-span-7 animate-fade-up">
         <span class="eyebrow-light" data-reveal>Bienvenue chez nous</span>
@@ -255,55 +267,83 @@ const showTiktoks = availableTiktoks.length > 0;
     </div>
   </section>
 
-  {/* === 3) Catégories phares =============================================== */}
+  {/* === 3) Index catalogue (groupé par famille) ===========================
+       Refactor 2026-05-13b — la home n'est plus une "vitrine corporate"
+       (12 cartes décoratives) mais un vrai entry-point catalogue Oscaro-
+       shaped : 7 familles × ~4 catégories = ~28 entrées scannables, chaque
+       famille avec son H2 propre (peer-level catalog entry-points, pas
+       de H2 umbrella sur la section). L'utilisateur qui connaît son
+       besoin clique au bon endroit en 1 scroll au lieu de devoir aller
+       dans `/catalogue` puis chercher. Cf. ADR-012, handoff 2026-05-06
+       §5.1 step 4, roadmap.md Phase 5.1 DoD. */}
   <section class="section-y bg-white border-t border-charcoal-100">
     <div class="container-tight">
-      <div class="mb-10 max-w-2xl">
+      <div class="mb-12 max-w-2xl">
         <span class="eyebrow" data-reveal>Catalogue</span>
-        <h2 class="title-accent text-h2 lg:text-display-2 mt-2 mb-4" data-reveal data-reveal-delay="1">Trouvez votre pièce.</h2>
+        <p class="text-charcoal-700 text-xl lg:text-2xl font-display mt-2 mb-3 leading-snug" data-reveal data-reveal-delay="1">
+          Trouvez votre pièce.
+        </p>
         <p class="text-charcoal-500 text-lg" data-reveal data-reveal-delay="2">
-          Plus de {CATEGORIES.length} catégories, multi-marques. De la plaquette de frein au turbo, du démarreur au pare-chocs.
+          {CATEGORIES.length} catégories réparties en 16 familles, multi-marques.
+          De la plaquette de frein au turbo, du démarreur au pare-chocs.
         </p>
       </div>
 
-      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-6" data-reveal-group>
-        {featured.map((cat) => (
-          <a href={`/catalogue/${cat.slug}`} class="card-interactive group flex flex-col" data-reveal>
-            {/* Visuel : placeholder gradient marine avec initiale en filigrane.
-                Si l'image catégorie existe (assets:images), elle recouvre.
-                Si 404 (assets pas encore générés), le placeholder reste visible.
-                `.card-media` = image-zoom choreography (hover scale + smooth). */}
-            <div class="card-media aspect-[4/3] rounded-t-card bg-gradient-to-br from-marine-700 to-marine-900">
-              <span
-                class="absolute inset-0 flex items-center justify-center font-display font-bold text-7xl text-sky-400/30 select-none pointer-events-none"
-                aria-hidden="true"
+      {homeFamilies.map((family) => {
+        const familyCats = getCategoriesByFamily(family.id).slice(0, 4);
+        if (familyCats.length === 0) return null;
+        return (
+          <div class="mt-14 first:mt-0" data-reveal>
+            <div class="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 mb-2">
+              <h2 id={`family-${family.id}`} class="font-display uppercase text-h3 lg:text-h2 text-marine-900 scroll-mt-24">
+                {family.label}
+              </h2>
+              <a
+                href={`/catalogue#family-${family.id}`}
+                class="inline-flex items-center gap-1 text-sm font-semibold text-marine-700 hover:text-sky-600 whitespace-nowrap transition-colors"
               >
-                {cat.label.charAt(0)}
-              </span>
-              <img
-                src={cat.image}
-                alt={cat.label}
-                class="absolute inset-0 w-full h-full object-cover"
-                loading="lazy"
-                decoding="async"
-                onerror="this.style.display='none'"
-              />
+                Voir tout {family.label.toLowerCase()}
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+              </a>
             </div>
-            <div class="p-4 flex-1 flex flex-col">
-              <h3 class="font-display uppercase text-base text-charcoal-800 group-hover:text-marine-700 transition-colors">
-                {cat.label}
-              </h3>
-              <p class="text-sm text-charcoal-500 mt-1.5 line-clamp-2 flex-1">{cat.desc}</p>
-              <span class="inline-flex items-center gap-1 mt-3 text-sm font-semibold text-marine-700 group-hover:text-sky-600">
-                En savoir plus
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="card-chevron"><path d="m9 18 6-6-6-6"/></svg>
-              </span>
+            <p class="text-charcoal-500 text-base mb-6">{family.tagline}</p>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-5" data-reveal-group>
+              {familyCats.map((cat) => (
+                <a href={`/catalogue/${cat.slug}`} class="card-interactive group flex flex-col" data-reveal>
+                  <div class="card-media aspect-[4/3] rounded-t-card bg-gradient-to-br from-marine-700 to-marine-900">
+                    <span
+                      class="absolute inset-0 flex items-center justify-center font-display font-bold text-6xl text-sky-400/30 select-none pointer-events-none"
+                      aria-hidden="true"
+                    >
+                      {cat.label.charAt(0)}
+                    </span>
+                    <img
+                      src={cat.image}
+                      alt={cat.label}
+                      class="absolute inset-0 w-full h-full object-cover"
+                      loading="lazy"
+                      decoding="async"
+                      onerror="this.style.display='none'"
+                    />
+                  </div>
+                  <div class="p-4 flex-1 flex flex-col">
+                    <h3 class="font-display uppercase text-sm lg:text-base text-charcoal-800 group-hover:text-marine-700 transition-colors leading-tight">
+                      {cat.label}
+                    </h3>
+                    <span class="inline-flex items-center gap-1 mt-3 text-xs lg:text-sm font-semibold text-marine-700 group-hover:text-sky-600">
+                      Voir
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="card-chevron"><path d="m9 18 6-6-6-6"/></svg>
+                    </span>
+                  </div>
+                </a>
+              ))}
             </div>
-          </a>
-        ))}
-      </div>
+          </div>
+        );
+      })}
 
-      <div class="text-center mt-12">
+      <div class="text-center mt-16 pt-12 border-t border-charcoal-100">
+        <p class="text-charcoal-500 mb-5">9 familles supplémentaires : direction, habitacle, carrosserie, refroidissement, électricité…</p>
         <a href="/catalogue" class="btn-secondary btn-lg">Voir toutes les catégories</a>
       </div>
     </div>
@@ -311,7 +351,6 @@ const showTiktoks = availableTiktoks.length > 0;
 
   {/* === 4) Services ======================================================== */}
   <section class="section-y bg-marine-800 text-white relative overflow-hidden">
-    <div class="absolute inset-0 bg-hex-pattern opacity-30" aria-hidden="true"></div>
     <div class="container-tight relative">
       <div class="mb-10 max-w-2xl">
         <span class="eyebrow-light">Nos services</span>
@@ -463,65 +502,36 @@ const showTiktoks = availableTiktoks.length > 0;
     </>
   )}
 
-  {showTestimonials && (
-    <>
-      {/* === 4.7) Témoignages (avis Google réels uniquement) ================ */}
-      <section class="section-y bg-marine-800 text-white relative overflow-hidden">
-        <div class="absolute inset-0 bg-hex-pattern opacity-30" aria-hidden="true"></div>
-        <div class="container-tight relative">
-          <div class="mb-10 text-center max-w-2xl mx-auto">
-            <span class="eyebrow-light" data-reveal>Avis clients</span>
-            <h2 class="title-accent on-marine text-h2 lg:text-display-2 mt-2 mb-4" data-reveal data-reveal-delay="1">Ce qu'ils en disent.</h2>
-            <p class="text-offwhite-200 text-lg" data-reveal data-reveal-delay="2">
-              Nos clients partagent leur expérience sur Google.
-            </p>
-            <div class="mt-5" data-reveal data-reveal-delay="3">
-              <AvisWidget variant="dark" />
-            </div>
-          </div>
-
-          <div class="max-w-xl mx-auto">
-            {TESTIMONIALS.map((t) => (
-              <div class="bg-marine-900/60 backdrop-blur-sm border border-white/10 rounded-card p-8 flex flex-col items-center text-center">
-                <span class="size-16 inline-flex items-center justify-center rounded-full bg-white text-marine-900 font-display text-2xl mb-5" aria-hidden="true">
-                  {t.initial}
-                </span>
-                <div class="flex items-center gap-1 text-sky-400 mb-4" aria-label={`${t.rating} étoiles sur 5`}>
-                  {Array.from({ length: t.rating }).map(() => (
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2 15.09 8.26 22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-                  ))}
-                </div>
-                <blockquote class="text-offwhite-200 leading-relaxed text-lg mb-5 italic">&ldquo;{t.text}&rdquo;</blockquote>
-                <div class="font-semibold text-white text-sm">{t.author}</div>
-                <div class="flex items-center gap-2 mt-3 text-xs">
-                  <span class="badge bg-sky-400/15 text-sky-300 border border-sky-400/30">
-                    Avis vérifié · {t.source}
-                  </span>
-                  {t.sourceUrl && (
-                    <a href={t.sourceUrl} target="_blank" rel="noopener" class="text-sky-300 hover:text-sky-200 font-semibold">
-                      Voir sur Google &rarr;
-                    </a>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div class="text-center mt-10" data-reveal>
-            <a
-              href={STORE.avis.googleBusinessUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              class="btn-md bg-white text-marine-900 shadow-card hover:bg-offwhite-100 hover:-translate-y-0.5 hover:shadow-card-hover inline-flex items-center gap-2"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
-              Laisser un avis sur Google
-            </a>
-          </div>
+  {/* === 4.7) Avis clients (AvisWidget standalone, ADR-002 + F3) =========
+       Pas de citation locale d'avis Google réels (ADR-002, F3). On affiche
+       le note moyenne agrégée + un CTA vers la fiche Google. Refactor
+       2026-05-13b — remplace l'ancien bloc conditionnel `showTestimonials`
+       (qui lisait `data/testimonials.js`, désormais vide). */}
+  <section class="section-y bg-marine-800 text-white relative overflow-hidden">
+    <div class="container-tight relative">
+      <div class="text-center max-w-2xl mx-auto">
+        <span class="eyebrow-light" data-reveal>Avis clients</span>
+        <h2 class="title-accent on-marine text-h2 lg:text-display-2 mt-2 mb-4" data-reveal data-reveal-delay="1">Ce qu'ils en disent.</h2>
+        <p class="text-offwhite-200 text-lg mb-8" data-reveal data-reveal-delay="2">
+          Tous nos avis sont sur Google — pas de copie locale, pas de mise en scène. Vous lisez directement les commentaires des clients qui sont passés par le magasin.
+        </p>
+        <div data-reveal data-reveal-delay="3">
+          <AvisWidget variant="dark" />
         </div>
-      </section>
-    </>
-  )}
+        <div class="mt-8" data-reveal data-reveal-delay="4">
+          <a
+            href={STORE.avis.googleBusinessUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="btn-md bg-white text-marine-900 shadow-card hover:bg-offwhite-100 hover:-translate-y-0.5 hover:shadow-card-hover inline-flex items-center gap-2"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+            Lire et laisser un avis
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
 
   {/* === 5) FAQ ============================================================= */}
   <section class="section-y bg-white">
@@ -553,7 +563,6 @@ const showTiktoks = availableTiktoks.length > 0;
 
   {/* === 6) CTA final (ADR-001 — marine bg + white pill, plus de fond jaune) = */}
   <section class="bg-marine-800 text-white relative overflow-hidden">
-    <div class="absolute inset-0 bg-hex-pattern opacity-20" aria-hidden="true"></div>
     <div class="container-tight section-y relative text-center max-w-3xl">
       <h2 class="text-h2 lg:text-display-2">Une pièce en tête ?</h2>
       <p class="text-lg text-offwhite-200 mt-4 mb-8 leading-relaxed">

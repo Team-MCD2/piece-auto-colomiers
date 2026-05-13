@@ -712,6 +712,144 @@ that is captured but not validated against any DB).
 
 ---
 
+## ADR-012  3-level catalog matrix + vehicle-gated leaf, vitrine-compatible    [STATUS: accepted — option C, 2026-05-13]
+
+- **date**          : 2026-05-13
+- **owner sign-off**: 2026-05-13 — owner picked option C ("vitrine
+                      wearing Oscaro's clothes") via the in-chat
+                      ask_user_question gate. Recorded as F11 in
+                      `owner-feedback.md`.
+- **context**       : Owner brief 2026-05-13 (verbatim, paraphrased
+                      because not yet logged in `owner-feedback.md`):
+                      *"L'entrée dans le catalogue = macro-classification
+                      par familles. Au clic = micro-classification (sous-
+                      catégories: plaquettes, disques, étriers, témoins
+                      d'usure). Au clic d'une sous-catégorie, blocage
+                      doux par modal si véhicule absent. Croisement
+                      matriciel (JOIN Pièces × Véhicules par MMY +
+                      motorisation, regroupement par variantes). Liste
+                      résultats avec image / marque / badge vert
+                      'compatible avec votre Peugeot 208' / critères
+                      distinctifs. Click → fiche immersive (3D ou vidéo
+                      + tech + WhatsApp pré-rempli avec la référence)."*
+                      Today the catalog is a **directory** (47 L1.5
+                      landing pages each ending in a devis CTA, no L2,
+                      no L3, no L4, vehicle-type compatibility at
+                      4-bucket granularity). The brief is a **database**
+                      shape (3 levels, vehicle-gated leaf, fitment
+                      matrix at MMY × motorisation, variant grouping).
+                      The two are architecturally distinct.
+                      `implementation_plan.md` (root, dated ~2026-05-12)
+                      is 11 tactical edits at the existing 2-level
+                      altitude — none of them moves toward the brief.
+- **strategic options** :
+    - **A**. Stay vitrine, keep current 2-level model, acknowledge
+      the brief but defer (silent default).
+    - **B**. Become e-commerce (TecDoc/TecAlliance fitment licence
+      ~€5-15k/year, PIM, photographers, supplier API, ~€15-40k year-1).
+      Requires business-model pivot owner has not committed to.
+    - **C**. *(this ADR)* Adopt the 3-level taxonomy + the gated-leaf
+      UX **structurally**, but populate L3 with **virtual product
+      cards** hand-curated from the brands we genuinely carry. NO
+      prices, NO cart — the conversion stays the WhatsApp / form
+      devis. Each card carries (image · brand · compat badge ·
+      criteria · CTA). Click-through to a vitrine-grade L4 fiche
+      (image · tech · YouTube · WhatsApp pre-fill with the exact
+      `(brand × subcategory × MMY)` triple).
+- **decision**      :
+    1. **Pick option C.** It honors the brief structurally without
+       lying about the catalog and without committing the SARL to
+       e-commerce ops. Option B remains a V3 path conditional on
+       owner business-model pivot; option A is the silent fallback
+       if the owner does not greenlight option C.
+    2. New data model:
+        * `src/data/subcategories.js` (NEW) — ~30-50 L2 entries
+          (avg 6 per family × 7 families). Each one is a leaf where
+          a vehicle-gating decision becomes meaningful (e.g.
+          "plaquettes-avant", not "plaquettes-de-frein").
+        * `src/data/fitment-virtual.js` (NEW) — ~80 rows of
+          `(subcategory × brand × MMY-acceptance map)` with
+          distinguishing criteria. Hand-curated, defensible,
+          NOT a TecDoc replacement.
+        * `categories.js`, `vehicles.js`, `brands.js` — unchanged.
+    3. New routing:
+        * `/catalogue` — unchanged (L1 grid).
+        * `/catalogue/[slug]` — RETROFIT from L1.5 leaf into an L2
+          list page (existing URLs preserved, hero + breadcrumb +
+          devis sidebar kept; prose body collapses into a 1-paragraph
+          intro and the rest becomes a grid of L2 sub-cat cards).
+        * `/catalogue/[slug]/[sub]` — NEW, the L3 product listing.
+        * `/piece/[id]` — NEW, the L4 fiche (one static page per
+          `(brand × subcategory)` pair from `fitment-virtual.js`,
+          ~80 generated at build time).
+    4. Vehicle gate at L2 → L3: extend `VehiclePanel.tsx` with a
+       `mode='gating'` prop + a `requestOpenVehicleModal({ reason,
+       context })` API on `my-vehicle.ts`. On L2 sub-cat card click:
+        * vehicle SET → direct nav to L3 with green ✓ badges.
+        * vehicle UNSET → modal, copy adapts to the sub-cat label.
+        * "Continuer sans véhicule" link is the soft-bypass — loads
+          L3 with yellow ⚠ "compatibilité à vérifier" badges.
+    5. The `implementation_plan.md` items E (per-category FAQs) and
+       G (YouTube videos per category) are **re-leveled** to L2 in
+       this ADR. All other items (A multi-select, B layout, C SVG,
+       D CTAs, F reviews, H placeholder cleanup) survive at their
+       current altitude.
+    6. Authoring discipline:
+        * The L2 list MUST be reviewed line-by-line with the owner
+          before any code lands — the owner knows what the magasin
+          actually quotes weekly.
+        * The L3 fitment matrix is hand-curated: every row reflects
+          a `(brand × sub-cat × MMY)` the owner will commit to
+          quoting on without further research. Anything outside the
+          matrix renders with the yellow ⚠ disclaimer.
+        * SKU-level fitment, real prices, real stock are **out of
+          scope**. Adding them would constitute option B and
+          requires a new ADR superseding this one.
+- **consequences** :
+  * positive : honors the owner's zoomed-out brief; keeps ADR-001
+    vitrine charter intact; gives the magasin a defensible
+    "compatible / à vérifier" signal at the right granularity;
+    extends the SEO surface (~80 long-tail L4 pages added);
+    surfaces the WhatsApp pre-fill at the deepest possible context
+    (`brand × sub-cat × MMY`).
+  * negative : ~1-2 owner-days of authoring (`subcategories.js` +
+    `fitment-virtual.js`) before code lands meaningfully; ~80 new
+    image assets to source/generate; potential SEO turbulence on
+    the 47 retrofitted L1.5 pages (mitigated by additive H2s and
+    zero URL deletion); the "yellow ⚠" UX must be reviewed on the
+    first preview to confirm it doesn't undermine confidence.
+  * reversibility : option C is **additive** to the current code
+    (new files + new routes + retrofit of one existing template).
+    Reverting = remove the new routes + restore L1.5 prose body. No
+    schema changes to existing data. Existing URLs survive.
+- **gating** : this ADR is **draft** until the owner explicitly
+                      picks option C over A or B. The architecture
+                      brief in `da-catalog-matrix-architecture.md` §3
+                      surfaces the choice. No code work begins until
+                      the owner picks AND validates the L2 list.
+- **cross-ref**     : `da-catalog-matrix-architecture.md` (the
+                      anchored architecture brief — companion to
+                      `da-oscaro-playbook.md`); `handoff-2026-05-13.md`
+                      §3 + §4 (current state + the next 5 actions
+                      contingent on owner sign-off); ADR-008 (parent
+                      Oscaro pattern charter — this ADR extends it
+                      from page rhythm to information architecture);
+                      ADR-011 (home overhaul — orthogonal, can ship
+                      in parallel); `roadmap.md` Phase 7 (executable
+                      steps for §4-§8 of the architecture brief);
+                      `owner-feedback.md` F2 (vitrine charter — option
+                      B contradicts it, option C honors it).
+- **evidence**      : current code audit (no L2 in `categories.js`,
+                      no fitment table, `[slug].astro` is the leaf,
+                      compatibility encoded at vehicle-TYPE bucket
+                      granularity at `categories.js:44-49`);
+                      `implementation_plan.md` (root) audit (11
+                      tactical items, all operating at the existing
+                      2-level altitude, two needing re-leveling per
+                      this ADR's decision §5).
+
+---
+
 ## Supersedes / amends register (cross-reference)
 
 | This ADR | Supersedes / amends                | Nature                    |
@@ -727,3 +865,4 @@ that is captured but not validated against any DB).
 | ADR-009  | Amends ADR-001                     | strict logo palette + DA  |
 | ADR-010  | New                                | React 18.3.1 pin          |
 | ADR-011  | Extends ADR-008; closes ADR-007 + ADR-002 | home overhaul exec |
+| ADR-012  | Extends ADR-008 + ADR-011; gated by owner sign-off | 3-level catalog matrix |

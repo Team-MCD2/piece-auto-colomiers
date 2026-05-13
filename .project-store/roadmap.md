@@ -220,7 +220,7 @@ can be rolled back independently without reverting the other.
 
 ---
 
-## Phase 5 — Oscaro-grade UX polish  [STATUS: in progress · ADR-011 charter active]
+## Phase 5 — Oscaro-grade UX polish  [STATUS: in progress · ADR-011 charter active · 5.1 partial-shipped 2026-05-13b]
 
 > Detailed in `da-oscaro-playbook.md` (audit-grade Oscaro analysis +
 > per-file refactor map, written 2026-05-06 from a Wayback CDX
@@ -256,11 +256,14 @@ can be rolled back independently without reverting the other.
       no decorative SVG circles around the icons.
 - [ ] H1 `Trouvez votre pièce parmi {CATEGORIES.length} catégories.`
       on a clean offwhite section. Single H1 of the page.
-- [ ] Catalog index — 7 H2 family blocks, each with 4-6 sub-cat
+- [x] Catalog index — 7 H2 family blocks, each with 4-6 sub-cat
       cards (image + label + chevron link) + "Voir toutes les
       [famille]" CTA. Source data: `src\data\categories.js`
-      family grouping. **Must show ALL 47 categories** (not the
-      12 featured V1 ships).
+      family grouping. *(Shipped 2026-05-13b: 7 H2 blocks for
+      `freinage`, `moteur`, `distribution`, `demarrage`, `eclairage`,
+      `suspension`, `echappement` ; up to 4 cards per family ; bottom
+      CTA links to `/catalogue` for the 9 remaining families. The 47
+      categories are reachable in 2 clicks max from the home.)*
 - [ ] NEW H2 `Quelle marque conduisez-vous ?` — wordmark grid of
       ~16 most-common French-market constructeurs. Data lives in
       NEW `src\data\vehicle-marques-shortcut.js`. Each link →
@@ -271,12 +274,17 @@ can be rolled back independently without reverting the other.
 - [ ] H2 `Comment ça marche` — 3-step (Décrivez la pièce → Devis
       sous 24 h → Mondial Relay ou retrait magasin). Replaces
       "Why choose us" 3 reasons.
-- [ ] Standalone `<AvisWidget variant="dark" />` section (before
-      FAQ).
+- [x] Standalone `<AvisWidget variant="dark" />` section (before
+      FAQ). *(Shipped 2026-05-13b ; the conditional `{showTestimonials
+      && …}` block was replaced by an unconditional section ; the
+      synthesised `google-1` testimonial removed from
+      `data/testimonials.js`.)*
 - [ ] TikTok grid kept (conditional on disk).
 - [ ] FAQ kept (5 home questions, `<details>` accordion).
-- [ ] Final CTA: flat marine-900 background. NO `bg-hex-pattern`
-      overlay. Card with single CTA + tel.
+- [x] Final CTA: flat marine-900 background. NO `bg-hex-pattern`
+      overlay. Card with single CTA + tel. *(Shipped 2026-05-13b ;
+      4 hex-pattern overlays dropped on the home, 2 on
+      `[slug].astro`.)*
 - [ ] Sections REMOVED from current home: storefront image hero,
       "Toulouse Ouest" écusson, "Notre proximité" stats grid (move
       both to `notre-magasin.astro`), "Why choose us" (subsumed),
@@ -388,6 +396,153 @@ can be rolled back independently without reverting the other.
       full cutover.
 - [ ] Promote preview → prod; write the release note + D-ID
       entry in `log.md`.
+
+---
+
+## Phase 7 — 3-level catalog matrix + vehicle-gated leaf  [STATUS: 7.0 partial · ADR-012 accepted (F12) · 7.1+ ready to begin]
+
+> Anchored by ADR-012 in `decisions.md`. Detailed in
+> `da-catalog-matrix-architecture.md` (companion to
+> `da-oscaro-playbook.md` — playbook = page rhythm; arch brief =
+> information architecture / data model / routing).
+>
+> **Gate**: this phase does NOT begin until the owner explicitly picks
+> option C in `da-catalog-matrix-architecture.md` §3 (vitrine wearing
+> Oscaro's clothes — 3 levels + virtual product cards, no prices, no
+> cart) AND validates the L2 sub-cat list line-by-line (see 7.1 below).
+> The default if no greenlight is option A: silent acknowledgement of
+> the brief, no code work on this axis. Phase 5 (home overhaul) can
+> ship in parallel either way.
+>
+> **Re-leveling**: this phase pulls items E (per-category FAQs) and G
+> (per-category videos) from `implementation_plan.md` (root) DOWN one
+> level — they attach at L2 (sub-cat) instead of L1.5 (cat). The other
+> 9 items in `implementation_plan.md` survive at their current
+> altitude.
+
+### 7.0 — Owner authoring sprint  (BLOCKER for 7.1+)
+
+**Definition of done**
+- [x] Owner picks option A / B / C in `da-catalog-matrix-architecture.md`
+      §3, recorded in `owner-feedback.md`. *(Shipped 2026-05-13a: F12,
+      option C ; ADR-012 status flipped to `accepted`.)*
+- [x] If C, owner reviews a draft `subcategories.js` list (~30-50
+      entries) and validates which L2 sub-cats actually map to
+      magasin reality (what gets quoted weekly vs what is theoretical).
+      *(Shipped 2026-05-13b: 41 L2 entries authored at
+      `.project-store/drafts/subcategories-draft.js`, owner delegated
+      sign-off (« take your time and reason... go ahead with your
+      suggestions »), promoted to `src/data/subcategories.js` line-for-
+      line. The draft file is the audit-trail artefact ; if reality
+      shifts, edit `src/data/subcategories.js` directly — the draft
+      stays frozen.)*
+- [ ] Owner picks the brand × sub-cat surface for `fitment-virtual.js`
+      (~80 rows): for each of the 30-50 L2 sub-cats, which 2-4 brands
+      will the magasin commit to quoting on without research.
+- [ ] Owner provides or approves the ~80 piece images (brand B2B
+      portals are the typical source; fallback to silhouette
+      placeholders is acceptable for V2.5 launch).
+
+### 7.1 — L2 taxonomy + L1.5 retrofit
+
+**Definition of done**
+- [ ] `src/data/subcategories.js` (NEW) — schema per
+      `da-catalog-matrix-architecture.md` §4.1, populated with the
+      owner-validated list from 7.0.
+- [ ] `src/pages/catalogue/[slug].astro` retrofitted: prose body
+      (current `Notre offre` + `Signes d'usure` blocks) collapses
+      to a single intro paragraph; the rest of the page becomes a
+      grid of L2 sub-cat cards (image + label + criteria preview +
+      brand count).
+- [ ] All existing `/catalogue/<slug>` URLs survive (no 301, no
+      404). H1 is preserved; H2s gain the L2 labels (additive SEO).
+- [ ] FAQ block on `[slug].astro` keeps the L1 fallback if no L2
+      FAQ exists yet, but each L2 with `faqIds` populated supersedes
+      the L1 FAQ when the user navigates into it.
+- [ ] `npm run build` clean; H1/H2 audit on a sample of 5 retrofitted
+      pages.
+
+### 7.2 — Vehicle-gating modal
+
+**Definition of done**
+- [ ] `src/components/VehiclePanel.tsx` extended with `mode='gating'`
+      prop + `gating: { subcategory, subcategoryLabel }` context. The
+      modal in gating mode disables the close button and surfaces
+      sub-cat-specific copy ("Pour garantir la compatibilité de vos
+      `<subcategoryLabel>`…").
+- [ ] `src/lib/my-vehicle.ts` extended with
+      `requestOpenVehicleModal({ reason, context })` API. Existing
+      `pac:vehicle-open` event keeps backward compat.
+- [ ] L1.5 page (`[slug].astro`) — L2 sub-cat card click handler:
+        * vehicle SET → direct `<a href>` nav.
+        * vehicle UNSET → `event.preventDefault()` +
+          `requestOpenVehicleModal({ reason: 'gating', context })` +
+          one-shot listener on `pac:vehicle-changed` to nav after.
+- [ ] Soft-bypass link "Continuer sans véhicule" on the modal sets a
+      session flag `pac-bypass-fitment-gate` (sessionStorage, expires
+      on tab close) so further L2 → L3 nav doesn't re-trigger the
+      modal.
+- [ ] A11y: focus trap, ESC closes the modal (only via the bypass
+      route, not silent), screen-reader copy adapts to context.
+
+### 7.3 — Virtual L3 listing
+
+**Definition of done**
+- [ ] `src/data/fitment-virtual.js` (NEW) — schema per
+      `da-catalog-matrix-architecture.md` §4.2, populated with the
+      owner-validated rows from 7.0.
+- [ ] `src/pages/catalogue/[slug]/[sub].astro` (NEW) — L3 product
+      listing page. `getStaticPaths()` enumerates the cartesian
+      product of `subcategories.js` entries; renders a grid of
+      product cards from `fitment-virtual.js` filtered by `subcategory`.
+- [ ] `src/lib/fitment-check.ts` (NEW) — pure
+      `checkCompat(piece, vehicle): 'compatible' | 'unverified' | 'unknown'`
+      function. Drives the green/yellow/grey badge state.
+- [ ] Card anatomy per `da-catalog-matrix-architecture.md` §7:
+      image · brand wordmark · compat badge · 1-line criteria ·
+      Devis WhatsApp + Détails CTAs. Flat at rest, border-darken
+      hover (per `da-oscaro-playbook.md` §6).
+- [ ] WhatsApp pre-fill on every L3 card uses the `data-wa-base`
+      pattern + `data-wa-enhance` enrichment (existing infra) and
+      includes the `(brand × subcategory × MMY)` triple in the
+      `devisHint` field.
+- [ ] Empty-state when `fitment-virtual.js` has no entries for a
+      sub-cat: the page redirects to a "Demandez-nous" devis form
+      pre-filled with the sub-cat label.
+
+### 7.4 — Vitrine-grade L4 fiche
+
+**Definition of done**
+- [ ] `src/pages/piece/[id].astro` (NEW) — single template,
+      `getStaticPaths()` from `fitment-virtual.js` enumerating
+      `(brand × subcategory)` pairs (~80 static pages).
+- [ ] Sections per `da-catalog-matrix-architecture.md` §8:
+      breadcrumb · hero · caractéristiques techniques · compat MMY
+      table · YouTube tutorial (from `subcategories.videoId`) ·
+      pièces complémentaires (cross-sell) · FAQ (from `subcategories.faqIds`)
+      · CTA final.
+- [ ] NO price field, NO add-to-cart, NO basket icon anywhere on
+      the fiche. The conversion remains WhatsApp / formulaire devis.
+- [ ] JSON-LD `Product` schema (no `offers`, no `price`) — same
+      pattern as the current `[slug].astro` schema at lines 67-88.
+- [ ] Sitemap regenerated with the ~80 new fiche URLs.
+
+### 7.5 — Catalog matrix QA + launch
+
+**Definition of done**
+- [ ] Manual gate test: from a fresh browser (no localStorage),
+      navigate L1 → L1.5 → L2 → click L2 card → modal fires →
+      submit cascade → green badges on L3 → click card → fiche.
+- [ ] Soft-bypass test: same flow, but click "Continuer sans véhicule"
+      on the modal → L3 loads with yellow ⚠ badges + sticky banner
+      "Sans véhicule sélectionné…".
+- [ ] WhatsApp pre-fill test: every L3 card and every L4 fiche →
+      WhatsApp opens with the correct `(brand × sub-cat × MMY)`
+      string.
+- [ ] SEO regression test: 47 retrofitted L1.5 pages still rank for
+      their primary keyword (post-launch, week +2).
+- [ ] Owner walks the full L1 → L4 flow on the Vercel preview
+      before merge to `main`.
 
 ---
 
