@@ -28,6 +28,7 @@ import WhatsAppIcon from '../components/WhatsAppIcon.astro';
 import AvisWidget from '../components/AvisWidget.astro';
 import { STORE, telUrl, whatsappUrl } from '../data/store.js';
 import { VEHICLES, MARQUES } from '../data/vehicles.js';
+import { CATEGORIES } from '../data/categories.js';
 
 const breadcrumb = [
   { label: 'Accueil', href: '/' },
@@ -72,10 +73,10 @@ const emailjsEnabled = Boolean(
   </section>
 
   <section class="section-y bg-offwhite">
-    <div class="container-tight grid lg:grid-cols-12 gap-8">
+    <div class="container-tight grid lg:grid-cols-12 gap-6 lg:gap-8">
 
       {/* Sidebar contact */}
-      <aside class="lg:col-span-4 space-y-4">
+      <aside class="lg:col-span-5 space-y-4">
         <div class="card p-6">
           <h2 class="font-display uppercase text-h3 mb-4">Joignez-nous</h2>
           <ul class="space-y-4">
@@ -107,10 +108,7 @@ const emailjsEnabled = Boolean(
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
                 </span>
                 <span class="flex-1 min-w-0">
-                  <span class="block font-semibold text-base text-charcoal-800 break-all group-hover:text-marine-700">{STORE.contact.email}</span>
-                  {STORE.contact.emailIsPlaceholder && (
-                    <span class="block text-xs text-charcoal-500">(adresse provisoire — à venir)</span>
-                  )}
+                  <span class="block font-semibold text-base text-charcoal-800 break-words group-hover:text-marine-700">{STORE.contact.email}</span>
                 </span>
               </a>
             </li>
@@ -133,7 +131,7 @@ const emailjsEnabled = Boolean(
       </aside>
 
       {/* Form devis */}
-      <div class="lg:col-span-8">
+      <div class="lg:col-span-7">
         <div id="devis" class="card p-6 lg:p-8">
           <span class="eyebrow">Formulaire</span>
           <h2 class="text-h2 mt-2 mb-2">Demander un devis</h2>
@@ -266,10 +264,37 @@ const emailjsEnabled = Boolean(
               </label>
             </div>
 
-            <label class="block">
+            <div class="block">
               <span class="block text-sm font-semibold mb-1.5 text-charcoal-700">Pièce(s) recherchée(s) <span class="text-red-500">*</span></span>
-              <textarea name="message" rows="5" required placeholder="Décrivez la ou les pièces souhaitées. Référence OEM si vous l'avez. Un photo, un signe d'usure, tout détail aide." class="w-full px-4 py-2.5 rounded-lg border-2 border-charcoal-100 focus:border-marine-700 focus:outline-none transition-colors"></textarea>
-            </label>
+
+              {/* Multi-select piece picker */}
+              <div id="piece-picker" class="relative">
+                {/* Selected tags */}
+                <div id="piece-tags" class="flex flex-wrap gap-2 mb-2 empty:mb-0"></div>
+
+                {/* Search + dropdown */}
+                <div class="relative">
+                  <input
+                    type="text"
+                    id="piece-search"
+                    autocomplete="off"
+                    placeholder="Rechercher une pièce (ex. plaquettes, batterie, phares…)"
+                    class="w-full px-4 py-2.5 rounded-lg border-2 border-charcoal-100 focus:border-marine-700 focus:outline-none transition-colors"
+                  />
+                  <svg class="absolute right-3 top-1/2 -translate-y-1/2 text-charcoal-400 pointer-events-none" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                  <ul id="piece-dropdown" class="absolute z-20 left-0 right-0 top-full mt-1 bg-white border-2 border-charcoal-100 rounded-lg shadow-card max-h-56 overflow-y-auto hidden"></ul>
+                </div>
+
+                {/* Hidden input that carries the structured pieces for FormData */}
+                <input type="hidden" name="pieces" id="piece-hidden" value="" />
+              </div>
+
+              {/* Small notes textarea */}
+              <label class="block mt-3">
+                <span class="block text-xs text-charcoal-500 mb-1">Notes complémentaires <span class="text-charcoal-400">(référence OEM, signe d'usure, détails…)</span></span>
+                <textarea name="message" rows="3" placeholder="Précisions libres : référence OEM, symptôme, etc." class="w-full px-4 py-2.5 rounded-lg border-2 border-charcoal-100 focus:border-marine-700 focus:outline-none transition-colors text-sm"></textarea>
+              </label>
+            </div>
 
             {/* === Smart Devis (Cross-selling Oscaro-style) === */}
             <div id="smart-devis-container" class="hidden mb-4 p-5 rounded-lg border-2 border-sky-400/40 bg-sky-50 shadow-inner">
@@ -723,14 +748,14 @@ const emailjsEnabled = Boolean(
 
     // === Smart Devis Logic ===================================================
     const CROSS_SELL_DATA: Record<string, string[]> = {
-      'plaquettes-de-frein': ['Disques de frein', 'Nettoyant freins', 'Repousse piston étrier'],
+      'plaquettes-de-frein': ['Disques de frein', 'Nettoyant freins', 'Repousse piston \u00e9trier'],
       'disques-de-frein': ['Plaquettes de frein', 'Nettoyant freins'],
-      'courroie-de-distribution': ['Pompe à eau', 'Courroie d\\'accessoire', 'Liquide de refroidissement'],
-      'amortisseurs': ['Coupelles d\\'amortisseur', 'Kit de protection (soufflets)'],
-      'embrayage': ['Volant moteur', 'Butée d\\'embrayage', 'Huile de boîte', 'Joint spi'],
-      'kit-embrayage': ['Volant moteur', 'Butée d\\'embrayage', 'Huile de boîte', 'Joint spi'],
-      'batterie': ['Nettoyant contacts', 'Graisse cuivrée pour cosses'],
-      'huile-moteur': ['Filtre à huile', 'Bouchon de vidange', 'Joint de vidange'],
+      'courroie-de-distribution': ['Pompe \u00e0 eau', 'Courroie d\u0027accessoire', 'Liquide de refroidissement'],
+      'amortisseurs': ['Coupelles d\u0027amortisseur', 'Kit de protection (soufflets)'],
+      'embrayage': ['Volant moteur', 'But\u00e9e d\u0027embrayage', 'Huile de bo\u00eete', 'Joint spi'],
+      'kit-embrayage': ['Volant moteur', 'But\u00e9e d\u0027embrayage', 'Huile de bo\u00eete', 'Joint spi'],
+      'batterie': ['Nettoyant contacts', 'Graisse cuivr\u00e9e pour cosses'],
+      'huile-moteur': ['Filtre \u00e0 huile', 'Bouchon de vidange', 'Joint de vidange'],
       'filtre-a-huile': ['Huile moteur', 'Bouchon de vidange'],
     };
 
@@ -959,7 +984,7 @@ const emailjsEnabled = Boolean(
       
       let finalMessage = String(fd.get('message') ?? '');
       if (checkedCrossSells.length > 0) {
-        finalMessage += '\\n\\n--- Articles complémentaires demandés ---\\n' + checkedCrossSells.map(c => '- ' + c).join('\\n');
+        finalMessage += '\n\n--- Articles compl\u00e9mentaires demand\u00e9s ---\n' + checkedCrossSells.map(c => '- ' + c).join('\n');
       }
 
       const params: Record<string, string> = {
