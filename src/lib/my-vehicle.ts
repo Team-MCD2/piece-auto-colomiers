@@ -20,7 +20,7 @@
  *     .project-store/roadmap.md Phase 5.
  */
 
-export type VehicleSource = 'cascade' | 'manual';
+export type VehicleSource = 'cascade' | 'manual' | 'plate';
 
 export interface Vehicle {
   /** Marque (constructeur) — ex. "Renault", "Toyota". */
@@ -66,7 +66,7 @@ export function readVehicle(): Vehicle | null {
       modele: parsed.modele,
       annee: parsed.annee,
       motorisation: parsed.motorisation,
-      source: parsed.source === 'manual' ? 'manual' : 'cascade',
+      source: parsed.source === 'manual' ? 'manual' : parsed.source === 'plate' ? 'plate' : 'cascade',
       savedAt: parsed.savedAt ?? new Date().toISOString(),
     };
   } catch {

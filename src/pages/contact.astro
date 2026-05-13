@@ -271,6 +271,20 @@ const emailjsEnabled = Boolean(
               <textarea name="message" rows="5" required placeholder="Décrivez la ou les pièces souhaitées. Référence OEM si vous l'avez. Un photo, un signe d'usure, tout détail aide." class="w-full px-4 py-2.5 rounded-lg border-2 border-charcoal-100 focus:border-marine-700 focus:outline-none transition-colors"></textarea>
             </label>
 
+            {/* === Smart Devis (Cross-selling Oscaro-style) === */}
+            <div id="smart-devis-container" class="hidden mb-4 p-5 rounded-lg border-2 border-sky-400/40 bg-sky-50 shadow-inner">
+              <span class="flex items-center gap-2 font-semibold text-marine-900 mb-3">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-sky-600"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                Recommandé pour votre montage
+              </span>
+              <p class="text-sm text-charcoal-600 mb-4 leading-relaxed">
+                Ajoutez ces articles fréquemment nécessaires pour ce type d'intervention à votre demande de devis :
+              </p>
+              <div id="smart-devis-checkboxes" class="space-y-3">
+                {/* Dynamically populated by JS */}
+              </div>
+            </div>
+
             {/* Honeypot anti-spam (champ caché que les bots remplissent) */}
             <input type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" class="absolute left-[-9999px] opacity-0 pointer-events-none" />
 
@@ -707,6 +721,42 @@ const emailjsEnabled = Boolean(
       if (sel) sel.value = 'pro';
     }
 
+    // === Smart Devis Logic ===================================================
+    const CROSS_SELL_DATA: Record<string, string[]> = {
+      'plaquettes-de-frein': ['Disques de frein', 'Nettoyant freins', 'Repousse piston étrier'],
+      'disques-de-frein': ['Plaquettes de frein', 'Nettoyant freins'],
+      'courroie-de-distribution': ['Pompe à eau', 'Courroie d\\'accessoire', 'Liquide de refroidissement'],
+      'amortisseurs': ['Coupelles d\\'amortisseur', 'Kit de protection (soufflets)'],
+      'embrayage': ['Volant moteur', 'Butée d\\'embrayage', 'Huile de boîte', 'Joint spi'],
+      'kit-embrayage': ['Volant moteur', 'Butée d\\'embrayage', 'Huile de boîte', 'Joint spi'],
+      'batterie': ['Nettoyant contacts', 'Graisse cuivrée pour cosses'],
+      'huile-moteur': ['Filtre à huile', 'Bouchon de vidange', 'Joint de vidange'],
+      'filtre-a-huile': ['Huile moteur', 'Bouchon de vidange'],
+    };
+
+    const urlCat = new URL(window.location.href).searchParams.get('cat');
+    const smartDevisContainer = document.getElementById('smart-devis-container');
+    const smartDevisCheckboxes = document.getElementById('smart-devis-checkboxes');
+
+    if (urlCat && CROSS_SELL_DATA[urlCat] && smartDevisContainer && smartDevisCheckboxes) {
+      const suggestions = CROSS_SELL_DATA[urlCat];
+      suggestions.forEach((item, idx) => {
+        const label = document.createElement('label');
+        label.className = 'flex items-start gap-3 cursor-pointer group';
+        label.innerHTML = `
+          <div class="relative flex items-center mt-0.5">
+            <input type="checkbox" name="cross_sells" value="${item}" class="peer sr-only" />
+            <div class="size-5 rounded border-2 border-sky-300 bg-white peer-checked:bg-sky-500 peer-checked:border-sky-500 transition-colors flex items-center justify-center">
+              <svg class="opacity-0 peer-checked:opacity-100 text-white" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+          </div>
+          <span class="text-sm font-medium text-charcoal-700 group-hover:text-marine-900 transition-colors">${item}</span>
+        `;
+        smartDevisCheckboxes.appendChild(label);
+      });
+      smartDevisContainer.classList.remove('hidden');
+    }
+
     // === Photos state ========================================================
     interface PhotoEntry {
       file: File;
@@ -904,6 +954,14 @@ const emailjsEnabled = Boolean(
       }
 
       // 4) Construction des params EmailJS (toutes les valeurs en string)
+      const checkedCrossSells = Array.from(form.querySelectorAll<HTMLInputElement>('input[name="cross_sells"]:checked'))
+        .map(input => input.value);
+      
+      let finalMessage = String(fd.get('message') ?? '');
+      if (checkedCrossSells.length > 0) {
+        finalMessage += '\\n\\n--- Articles complémentaires demandés ---\\n' + checkedCrossSells.map(c => '- ' + c).join('\\n');
+      }
+
       const params: Record<string, string> = {
         nom: String(fd.get('nom') ?? ''),
         email: String(fd.get('email') ?? ''),
@@ -913,7 +971,7 @@ const emailjsEnabled = Boolean(
         modele: String(fd.get('modele') ?? '—'),
         annee: String(fd.get('annee') ?? '—'),
         motorisation: String(fd.get('motorisation') ?? '—'),
-        message: String(fd.get('message') ?? ''),
+        message: finalMessage,
         photos_count: String(photos.length),
         photo_1_data: photos[0]?.compressed ?? '',
         photo_2_data: photos[1]?.compressed ?? '',

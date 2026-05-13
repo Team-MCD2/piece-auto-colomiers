@@ -42,7 +42,7 @@ import {
 } from '../lib/my-vehicle';
 import { MARQUES, getModeles, getYearsForModel } from '../data/vehicles';
 
-type Tab = 'cascade' | 'manual';
+type Tab = 'cascade' | 'manual' | 'plate';
 
 const CURRENT_YEAR = new Date().getFullYear();
 
@@ -50,7 +50,12 @@ export default function VehiclePanel() {
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const [isOpen, setOpen] = useState(false);
-  const [tab, setTab] = useState<Tab>('cascade');
+  const [tab, setTab] = useState<Tab>('plate');
+
+  // Plate state
+  const [plate, setPlate] = useState('');
+  const [plateLoading, setPlateLoading] = useState(false);
+  const [plateError, setPlateError] = useState('');
 
   // Cascade form state
   const [cMarque, setCMarque] = useState('');
@@ -85,6 +90,8 @@ export default function VehiclePanel() {
       setCMarque(vehicle.marque);
       setCModele(vehicle.modele);
       setCAnnee(String(vehicle.annee));
+    } else if (vehicle.source === 'plate') {
+      setTab('plate');
     } else {
       setTab('manual');
       setMMarque(vehicle.marque);
@@ -157,6 +164,30 @@ export default function VehiclePanel() {
     setMMarque('');
     setMModele('');
     setMAnnee('');
+    setPlate('');
+  };
+
+  const handleSearchPlate = async () => {
+    if (plate.trim().length < 5) return;
+    setPlateLoading(true);
+    setPlateError('');
+    try {
+      const res = await fetch(`/api/plate?plate=${encodeURIComponent(plate.trim())}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erreur lors de la recherche.');
+      
+      writeVehicle({
+        marque: data.marque,
+        modele: data.modele,
+        annee: parseInt(data.annee, 10) || CURRENT_YEAR,
+        source: 'plate',
+      });
+      setOpen(false);
+    } catch (err: any) {
+      setPlateError(err.message);
+    } finally {
+      setPlateLoading(false);
+    }
   };
 
   // Avoid a state-mismatch flash before localStorage hydrates
@@ -251,15 +282,58 @@ export default function VehiclePanel() {
 
             {/* Tabs */}
             <div className="px-5 sm:px-6 pt-4">
-              <div role="tablist" aria-label="Méthode de saisie" className="flex gap-1 p-1 bg-charcoal-50 rounded-pill">
+              <div role="tablist" aria-label="Méthode de saisie" className="flex gap-1 p-1 bg-charcoal-50 rounded-pill overflow-x-auto hide-scrollbar">
+                <TabButton active={tab === 'plate'} onClick={() => setTab('plate')} label="Plaque" />
                 <TabButton active={tab === 'cascade'} onClick={() => setTab('cascade')} label="Marque / Modèle" />
-                <TabButton active={tab === 'manual'} onClick={() => setTab('manual')} label="Saisie manuelle" />
+                <TabButton active={tab === 'manual'} onClick={() => setTab('manual')} label="Autre" />
               </div>
             </div>
 
             {/* Body */}
             <div className="px-5 sm:px-6 pb-6 pt-4">
-              {tab === 'cascade' ? (
+              {tab === 'plate' ? (
+                <div className="space-y-4">
+                  <div className="bg-sky-50/50 p-4 sm:p-5 rounded-lg border border-sky-200">
+                    <Field label="Numéro d'immatriculation" htmlFor="vp-plate">
+                      <div className="relative">
+                        <div className="absolute left-0 inset-y-0 w-8 sm:w-10 bg-blue-700 flex flex-col items-center justify-center rounded-l-md border-y border-l border-charcoal-300">
+                          <span className="text-[10px] text-white font-bold leading-none mt-1">F</span>
+                        </div>
+                        <input
+                          id="vp-plate"
+                          type="text"
+                          value={plate}
+                          onChange={(e) => setPlate(e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, ''))}
+                          placeholder="AB-123-CD"
+                          className="form-input uppercase font-bold text-lg tracking-widest pl-10 sm:pl-12 h-12 border-charcoal-300 focus:border-sky-500 focus:ring-sky-500"
+                          autoComplete="off"
+                          maxLength={10}
+                          onKeyDown={(e) => e.key === 'Enter' && handleSearchPlate()}
+                        />
+                      </div>
+                    </Field>
+                    {plateError && <p className="text-sm text-red-600 mt-2 flex items-center gap-1.5"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>{plateError}</p>}
+                    <button
+                      type="button"
+                      onClick={handleSearchPlate}
+                      disabled={plateLoading || plate.trim().length < 5}
+                      className="btn-primary btn-md w-full mt-4 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 h-12 text-base"
+                    >
+                      {plateLoading ? (
+                        <>
+                          <svg className="animate-spin size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                          Recherche...
+                        </>
+                      ) : (
+                        'Identifier ce véhicule'
+                      )}
+                    </button>
+                  </div>
+                  <p className="text-xs text-charcoal-400 leading-relaxed text-center px-4">
+                    Plaque d'immatriculation française uniquement.
+                  </p>
+                </div>
+              ) : tab === 'cascade' ? (
                 <div className="space-y-3">
                   <Field label="Marque" htmlFor="vp-marque">
                     <select

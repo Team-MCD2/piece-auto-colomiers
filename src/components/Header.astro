@@ -17,6 +17,7 @@
 import Logo from './Logo.astro';
 import WhatsAppIcon from './WhatsAppIcon.astro';
 import VehiclePanel from './VehiclePanel.tsx';
+import SearchBar from './SearchBar.tsx';
 import OpeningBadge from './OpeningBadge.astro';
 import { STORE, telUrl, whatsappUrl } from '../data/store.js';
 import { MAIN_NAV } from '../data/menu.js';
@@ -113,8 +114,11 @@ const waUrl = whatsappUrl();
       {/* Logo */}
       <Logo size="md" variant="light" withText={true} href="/" class="shrink-0" />
 
+      {/* Search Bar Desktop */}
+      <SearchBar client:load className="hidden lg:block flex-1 max-w-sm ml-2 mr-4" />
+
       {/* Nav desktop */}
-      <nav class="hidden lg:flex items-center gap-1" aria-label="Navigation principale">
+      <nav class="hidden xl:flex items-center gap-1" aria-label="Navigation principale">
         {MAIN_NAV.map((item) => (
           <a
             href={item.href}
@@ -204,7 +208,12 @@ const waUrl = whatsappUrl();
         </svg>
       </button>
 
-      <Logo size="md" variant="light" withText={true} href="/" class="mb-8" />
+      <Logo size="md" variant="light" withText={true} href="/" class="mb-6" />
+
+      {/* Search Bar Mobile */}
+      <div class="mb-6 relative z-10">
+        <SearchBar client:load className="w-full" />
+      </div>
 
       <nav class="flex flex-col gap-2 mb-8" aria-label="Navigation mobile">
         {MAIN_NAV.map((item) => (

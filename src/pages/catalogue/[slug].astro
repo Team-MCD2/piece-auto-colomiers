@@ -137,7 +137,7 @@ const productSchema = {
               <WhatsAppIcon size={20} />
               Devis WhatsApp
             </a>
-            <a href="/contact#devis" class="btn-secondary-light btn-lg">Formulaire devis</a>
+            <a href={`/contact?cat=${cat.slug}#devis`} class="btn-secondary-light btn-lg">Formulaire devis</a>
           </div>
           <p class="text-sm text-offwhite-200/80 mt-5">
             ou appelez le{' '}
@@ -188,7 +188,7 @@ const productSchema = {
             Renseignez votre véhicule — vos devis pour <strong class="text-marine-900">{cat.label.toLowerCase()}</strong> seront pré-remplis automatiquement.
           </span>
           <span data-set class="hidden text-charcoal-700">
-            <span class="text-sky-700 font-semibold">✓ Disponible</span> pour votre <strong data-vehicle-label class="text-marine-900">—</strong>. Demandez un devis personnalisé.
+            <span class="text-sky-700 font-semibold">✓ Catalogue filtré</span> pour votre <strong data-vehicle-label class="text-marine-900">—</strong>. Les pièces proposées seront 100% compatibles.
           </span>
         </div>
       </div>
@@ -202,7 +202,7 @@ const productSchema = {
       </button>
       <a
         data-set
-        href="/contact#devis"
+        href={`/contact?cat=${cat.slug}#devis`}
         class="btn-primary btn-sm shrink-0 hidden"
       >
         Demander un devis
@@ -336,7 +336,7 @@ const productSchema = {
                 <WhatsAppIcon size={18} />
                 Devis WhatsApp
               </a>
-              <a href="/contact#devis" class="btn-secondary btn-md w-full">Par formulaire</a>
+              <a href={`/contact?cat=${cat.slug}#devis`} class="btn-secondary btn-md w-full">Par formulaire</a>
               <a href={telUrl()} class="btn-ghost btn-md w-full">{STORE.contact.telDisplay}</a>
             </div>
           </div>
@@ -411,7 +411,7 @@ const productSchema = {
           <WhatsAppIcon size={18} />
           Devis WhatsApp
         </a>
-        <a href="/contact#devis" class="btn-md bg-white text-marine-900 shadow-card hover:bg-offwhite-100 hover:shadow-card-hover hover:-translate-y-0.5">
+        <a href={`/contact?cat=${cat.slug}#devis`} class="btn-md bg-white text-marine-900 shadow-card hover:bg-offwhite-100 hover:shadow-card-hover hover:-translate-y-0.5">
           Formulaire devis
         </a>
         <a href={telUrl()} class="btn-md border-2 border-white/40 text-white hover:bg-white/10">
