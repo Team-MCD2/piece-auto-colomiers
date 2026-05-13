@@ -154,6 +154,11 @@
     text-wrap: balance;
   }
 
+  /* Fix for headings on dark backgrounds: inherit white if parent sets text-white */
+  .text-white h1, .text-white h2, .text-white h3, .text-white h4, .text-white h5, .text-white h6 {
+    color: inherit;
+  }
+
   h1 { @apply text-h1 lg:text-display-2; }
   h2 { @apply text-h2; }
   h3 { @apply text-h3; }

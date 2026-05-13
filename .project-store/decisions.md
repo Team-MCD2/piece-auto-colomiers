@@ -605,6 +605,113 @@ that is captured but not validated against any DB).
 
 ---
 
+## ADR-011  Oscaro-grade home overhaul — catalog-first, not vitrine-first    [STATUS: active]
+
+- **date**          : 2026-05-06
+- **context**       : Owner verbatim brief F10 (`owner-feedback.md`):
+                      *"l'exemple numéro 1, c'est https://www.oscaro.com/.
+                      dig this website and get all its qualities all
+                      what makes it great, better, more easy to
+                      understand and use - and just all its
+                      functionalities and the display"* + F9 *"jeune,
+                      moderne, épurée"*. ADR-008 already lifted the
+                      Oscaro pattern bench at planning level; the
+                      home page implementation has not yet caught up
+                      and still reads as brand-vitrine
+                      (storefront image + big H1 + narrative copy)
+                      rather than catalog-first
+                      (vehicle selector + 19-block catalog index).
+                      Direct fetch of `oscaro.com` is Cloudflare-
+                      blocked; this session pulled an audit-ready
+                      snapshot via the Wayback CDX API
+                      (`web.archive.org/web/20240212200310/`) and
+                      stripped it to 73 KB
+                      (`references/oscaro-snapshot-2024-02-12.html`).
+                      Confirmed structural facts: ONE H1
+                      ("Toutes les pièces auto"), 22 H2s, the hero
+                      IS the vehicle selector (`<form class="plate">`
+                      + `<button class="car-link">`×2 tab toggle),
+                      4 USP trust band repeated twice (under hero +
+                      near footer), constructeur grid (24 wordmarks)
+                      + équipementier grid (15 logos) as separate
+                      H2 sections.
+- **decision**      :
+    1. The V2 home (`src/pages/index.astro`) is rebuilt as a
+       catalog-first page in 11 sections, mirroring Oscaro's
+       structural rhythm but keeping our marine + sky + white
+       identity (NOT Oscaro's red/orange).
+    2. Section order is fixed by `da-oscaro-playbook.md` §5.1.
+       Departures require an amending ADR.
+    3. Hero is the vehicle selector (`VehiclePanel` rendered inline,
+       not as a chip trigger). Hero height capped at ~ 360-400 px.
+       No storefront image, no full-screen brand prose. The
+       storefront image relocates to `notre-magasin.astro`'s hero.
+    4. The single H1 of the page is `"Trouvez votre pièce parmi
+       N catégories."` (N from `categories.js` length, currently 47).
+    5. The catalog body shows ALL 7 families as H2 blocks (not the
+       12 featured cards V1 ships). Each H2 = family + 4-6
+       sub-cat cards + "Voir toutes les [famille]" CTA.
+    6. New section: `H2 "Quelle marque conduisez-vous ?"` — wordmark
+       grid of ~16 most-common French-market constructeurs, each a
+       link to `/catalogue?marque=<id>`. The catalogue index reads
+       the query param and pre-filters its pill set on first paint.
+       Data lives in NEW `src/data/vehicle-marques-shortcut.js`.
+    7. Équipementier grid: drop the grayscale filter; render
+       supplier logos in colour (Oscaro pattern). Hover treatment
+       collapses to border-darken only.
+    8. Replace "Why choose us" (3 reasons) with "Comment ça marche"
+       (3 steps: Décrivez → Devis 24 h → Retrait ou Mondial Relay).
+    9. Trust strip (4 USPs) appears TWICE on the home: once after
+       the hero, once before the final CTA (Oscaro pattern P6).
+    10. ADR-007 closure: every `bg-hex-pattern` and
+        `bg-diagonal-stripe` use is removed from `index.astro`,
+        `[slug].astro`, `services.astro`, and any other consumer.
+        The utility classes themselves can stay defined (zero-cost
+        when unused) but no consumer references them.
+    11. ADR-002 closure: `src/data/testimonials.js` is gutted to
+        `[]`. Standalone `<AvisWidget />` card replaces the
+        testimonials slider on the home, before the FAQ.
+    12. Header (`Header.astro`) collapses row 0 (USP bandeau) into
+        a thin 32 px utility row (Aide / véhicule chip / tel only).
+        4 USPs live on the home, not in the header.
+    13. Visual rhythm targets (`da-oscaro-playbook.md` §6) are
+        DoD checks: home H2 count between 12-15; section vertical
+        padding 48-80 px (not 64-128); 0 decorative patterns; cards
+        flat at rest (no shadow); no full-screen hero.
+- **consequences** :
+  * positive : home becomes a tool (catalog finder), not a brochure;
+    aligns with owner's verbatim "Oscaro = exemple n°1" brief; the
+    `bg-hex-pattern` / `bg-diagonal-stripe` debt of ADR-007 is
+    discharged in the same commit set; ADR-002 (no fake testimonials)
+    is also discharged; SEO benefits from the long-tail catalog
+    index above the fold.
+  * negative : the rebuild touches the most visible page of the
+    site → owner preview review is mandatory before merge to `main`.
+    The "Notre proximité" narrative leaves the home — must land on
+    `notre-magasin.astro` so the brand story is not lost.
+  * reversibility: contained to `index.astro` + a few token tweaks.
+    Reverting is a single-file revert + a small `globals.css`
+    change. Roadmap Phase 6 launch gate verifies the rhythm rules.
+- **cross-ref**     : `da-oscaro-playbook.md` (the canonical
+                      implementation playbook anchored by this ADR);
+                      `handoff-2026-05-06.md` §4 (the next-5-actions
+                      executable plan); ADR-008 (parent — Oscaro
+                      pattern charter); ADR-007 (design canon —
+                      this ADR finally discharges the
+                      `bg-hex-pattern` debt); ADR-002 (testimonials
+                      — discharged in the same commit set);
+                      `roadmap.md` Phase 5 (executable steps).
+- **evidence**      : `references/oscaro-snapshot-2024-02-12.html`
+                      (verbatim Wayback snapshot, 73 KB stripped of
+                      `<script>`/`<style>`); in-repo audit confirming
+                      `bg-hex-pattern` on `index.astro:104, 314, 470,
+                      557` and on `[slug].astro` hero;
+                      `testimonials.js` still containing 3 entries
+                      with `placeholder: true` flags or
+                      `source: 'google-1'` synthesised content.
+
+---
+
 ## Supersedes / amends register (cross-reference)
 
 | This ADR | Supersedes / amends                | Nature                    |
@@ -619,3 +726,4 @@ that is captured but not validated against any DB).
 | ADR-008  | New                                | V2 reference bench        |
 | ADR-009  | Amends ADR-001                     | strict logo palette + DA  |
 | ADR-010  | New                                | React 18.3.1 pin          |
+| ADR-011  | Extends ADR-008; closes ADR-007 + ADR-002 | home overhaul exec |

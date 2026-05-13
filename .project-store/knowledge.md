@@ -261,31 +261,98 @@
 
 ### T-pac-oscaro-patterns  Patterns lifted from oscaro.com for V2
 
+> **2026-05-06 update** : this short summary is **superseded by**
+> `da-oscaro-playbook.md` for granularity. Read the playbook first.
+> What follows is the bullet-list cheat-sheet only; the playbook
+> has the audit-grade dissection (22 H2s, file-by-file refactor,
+> rhythm targets, etc.).
+
 - **vehicle-selector first** : every page carries a compact
     vehicle selector. Unset → inline "Renseignez votre véhicule"
     chip. Set → "Pour votre Clio IV 2018 • modifier" chip.
-- **four ID paths** (Oscaro FAQ) :
+    **Hero IS the selector** on the home, not a brand image
+    (playbook §2.4 + §7).
+- **four ID paths** (Oscaro FAQ "Demande de conseil") :
     1. plate (ADR-005)
     2. VIN / carte grise (deferred V3 — requires OCR or a
        paid VIN decoder API)
     3. MMY cascade (marque dropdown → modèle → année → moteur)
     4. "Mon garage" (V3)
 - **card-first layout** : image top + title + 1-line benefit +
-    single CTA. No price on cards (we are vitrine).
+    single CTA. No price on cards (we are vitrine). **Flat at
+    rest** : no shadow, ~6 px radius, hover = border-darken not
+    lift (playbook §6).
 - **one search bar** on the catalogue index (free text), plus
     pills for family filters. Complex filters collapse behind a
-    "Filtrer" button on mobile.
+    "Filtrer" / "Affiner" button on mobile.
 - **trust strip icons** : Mondial Relay · Retrait · Devis 24 h ·
-    Paiement magasin · Multi-marques. No marquee.
-- **footer depth** : 5 columns — Catégories · Services ·
+    Conseil pro. No marquee. **Repeated twice** on the home —
+    once under hero, once near the footer (Oscaro pattern P6).
+- **footer depth** : 5-6 columns — Catégories · Services ·
     Entreprise · Mentions · Contact — with a condensed
     sitemap-style list each.
 - **typography tightening** : 1-2 weights per page max, generous
     line-height (1.55-1.7 body).
+- **catalog density** : the home is a CATALOG INDEX, not a
+    brochure. Oscaro shows 22 H2s on the homepage; we target
+    12-15 H2s on ours (playbook §6 rhythm rule).
 - **what NOT to port** : Oscaro's red/orange brand palette, their
-    shopping cart, their pricing blocks. V2 stays marine + sky +
-    white, vitrine, no checkout.
-- **cross-ref** : ADR-008, roadmap Phase 5.
+    shopping cart, their pricing blocks, their newsletter
+    section, their app banner. V2 stays marine + sky + white,
+    vitrine, no checkout (playbook §4).
+- **cross-ref** : ADR-008 (charter), ADR-011 (execution),
+    `da-oscaro-playbook.md` (canonical), roadmap Phase 5.
+
+### T-pac-fetch-cf-via-wayback  Fetching CF-blocked sites via Wayback CDX
+
+- **why**     : Cloudflare / Akamai bot protection blocks the
+    Cascade `read_url_content` fetcher on most auto-parts
+    pure-players (Oscaro, Mister-Auto, Auto-Doc, Carter-Cash all
+    return a "Just a moment…" challenge stub of ~5 KB instead
+    of the real page). Same problem with `curl` + a real UA
+    (CF challenges JS, not just UA fingerprints).
+- **fix**     : the Internet Archive proxies the real content
+    via its Wayback Machine. Two-step :
+    1. Query the CDX API for a recent `200 OK` snapshot:
+       ```
+       curl "https://web.archive.org/cdx/search/cdx
+         ?url=<host>
+         &from=20240101&to=20260101
+         &limit=10
+         &output=json
+         &filter=statuscode:200
+         &filter=mimetype:text/html"
+       ```
+       The response is `[[fields...], [row...], …]`. Pick a row's
+       `timestamp` (column 1) and `original` URL (column 2).
+    2. Fetch the snapshot directly :
+       ```
+       curl -sL --compressed --max-time 60 \
+         -A "Mozilla/5.0 ..." \
+         "https://web.archive.org/web/<timestamp>/<original>" \
+         -o snapshot.html
+       ```
+       Returns the full HTML the visitor would have seen on
+       `<timestamp>`. ~ 280 KB raw for Oscaro home; ~ 73 KB once
+       `<script>` / `<style>` / `<!--…-->` are stripped.
+- **caveats** :
+    * Wayback can be 503 (`No server is available`) on the CDX
+      endpoint sporadically — retry a few times.
+    * Snapshots are stale by design. For UX patterns this is
+      fine (UI rhythm changes slowly); for live data (prices,
+      promo banners) use a different source.
+    * The snapshot HTML carries a `<script>` injection from
+      `web.archive.org` (the wombat banner) — strip it before
+      analysis.
+- **what we did 2026-05-06** : pulled
+    `web.archive.org/web/20240212200310/https://www.oscaro.com/`,
+    saved the stripped output at
+    `.project-store\references\oscaro-snapshot-2024-02-12.html`,
+    confirmed structural facts (22 H2s, vehicle-selector hero,
+    trust band repeat) — basis of `da-oscaro-playbook.md`.
+- **cross-ref** : `log.md` D-2026-05-06,
+    `da-oscaro-playbook.md` §1 (methodology), `db_store\db.md`
+    W05 candidate promotion as `T-fetch-cf-blocked-via-wayback`.
 
 ### T-pac-verification-stack  The 3-command close-out
 

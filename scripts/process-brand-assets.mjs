@@ -4,7 +4,7 @@
  * Génère les assets brand depuis le logo source.
  *
  * Entrée :
- *   - images/logo.jpg          (logo source fourni par le client)
+ *   - images/logo.png          (logo source fourni par le client)
  *   - images/Front_image.jpg   (storefront, copié tel quel)
  *
  * Sorties :
@@ -32,7 +32,7 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
 
-const SRC_LOGO = join(ROOT, 'images', 'logo.jpg');
+const SRC_LOGO = join(ROOT, 'images', 'logo.png');
 const SRC_FRONT = join(ROOT, 'images', 'Front_image.jpg');
 const PUBLIC = join(ROOT, 'public');
 
@@ -56,7 +56,7 @@ async function processLogos() {
 
   if (!(await exists(SRC_LOGO))) {
     console.error(`✗ Logo source introuvable : ${SRC_LOGO}`);
-    console.error(`  Placez le logo client dans /images/logo.jpg avant de relancer.`);
+    console.error(`  Placez le logo client dans /images/logo.png avant de relancer.`);
     return false;
   }
 

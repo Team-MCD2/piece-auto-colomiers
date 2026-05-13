@@ -49,5 +49,6 @@ public/icon-*.png
 # Décommenter la ligne suivante pour exclure du repo :
 # public/tiktoks/*.mp4
 
-
+.project-store/
+.vscode/
 plan/

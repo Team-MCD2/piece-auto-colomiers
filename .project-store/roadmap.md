@@ -220,37 +220,150 @@ can be rolled back independently without reverting the other.
 
 ---
 
-## Phase 5 — Oscaro-grade UX polish  [STATUS: planned · after Phases 1-4]
+## Phase 5 — Oscaro-grade UX polish  [STATUS: in progress · ADR-011 charter active]
+
+> Detailed in `da-oscaro-playbook.md` (audit-grade Oscaro analysis +
+> per-file refactor map, written 2026-05-06 from a Wayback CDX
+> snapshot). Anchoring decision: ADR-011. This phase also DISCHARGES
+> ADR-007 (design canon — `bg-hex-pattern` debt) and ADR-002
+> (testimonials — placeholder cards still rendered).
+
+**Already shipped before this phase opened**
+- [x] `src\lib\my-vehicle.ts` — `useMyVehicle()` hook + Astro helper.
+- [x] `src\components\VehiclePanel.tsx` — Oscaro-style cascade modal,
+      portal-rendered to `document.body`, persisted via
+      `my-vehicle.ts`.
+- [x] `Header.astro` row 1.5 — VehiclePanel chip (currently below the
+      USP bandeau; Phase 5.4 reshuffles).
+- [x] `Footer.astro` 5-column re-layout (Catégories / Services /
+      Entreprise / Mentions / Contact).
+- [x] `OpeningBadge.astro` — live "Ouvert maintenant" pill from
+      `STORE.horaires`.
+- [x] `AvisWidget.astro` — Google reviews CTA card (currently nested
+      inside testimonials slider header; Phase 5.1 promotes it to
+      its own section).
+- [x] (Infra, 2026-05-06) Sticky main bar fix (`<header
+      class="contents">`) + catalogue filter bar `top-[68px]`.
+
+### 5.1 — Home page rebuild (`src\pages\index.astro`)
 
 **Definition of done**
+- [ ] Hero is the vehicle selector (~ 360-400 px tall, white bg).
+      `VehiclePanel` rendered inline (extract `mode="inline"` if the
+      current chip-trigger render is not flexible enough). No
+      storefront image, no full-screen brand prose.
+- [ ] Trust band §2 — 4 USPs in a flat row, no gradient backgrounds,
+      no decorative SVG circles around the icons.
+- [ ] H1 `Trouvez votre pièce parmi {CATEGORIES.length} catégories.`
+      on a clean offwhite section. Single H1 of the page.
+- [ ] Catalog index — 7 H2 family blocks, each with 4-6 sub-cat
+      cards (image + label + chevron link) + "Voir toutes les
+      [famille]" CTA. Source data: `src\data\categories.js`
+      family grouping. **Must show ALL 47 categories** (not the
+      12 featured V1 ships).
+- [ ] NEW H2 `Quelle marque conduisez-vous ?` — wordmark grid of
+      ~16 most-common French-market constructeurs. Data lives in
+      NEW `src\data\vehicle-marques-shortcut.js`. Each link →
+      `/catalogue?marque=<id>`.
+- [ ] H2 `Nos équipementiers` — keep existing grid, REMOVE
+      `grayscale` filter, reduce hover treatment to border-darken
+      only.
+- [ ] H2 `Comment ça marche` — 3-step (Décrivez la pièce → Devis
+      sous 24 h → Mondial Relay ou retrait magasin). Replaces
+      "Why choose us" 3 reasons.
+- [ ] Standalone `<AvisWidget variant="dark" />` section (before
+      FAQ).
+- [ ] TikTok grid kept (conditional on disk).
+- [ ] FAQ kept (5 home questions, `<details>` accordion).
+- [ ] Final CTA: flat marine-900 background. NO `bg-hex-pattern`
+      overlay. Card with single CTA + tel.
+- [ ] Sections REMOVED from current home: storefront image hero,
+      "Toulouse Ouest" écusson, "Notre proximité" stats grid (move
+      both to `notre-magasin.astro`), "Why choose us" (subsumed),
+      placeholder testimonials slider.
+- [ ] Visual rhythm DoD: H2 count between 12-15; section vertical
+      padding 48-80 px; 0 decorative patterns; no full-screen hero.
 
-- [ ] `src\lib\my-vehicle.ts` — shared "Mon véhicule" state
-      provider. Reads / writes localStorage under
-      `pac-last-vehicle`. Exposes `useMyVehicle()` React hook
-      + Astro helper.
-- [ ] `src\components\VehicleChip.tsx` — compact header chip
-      rendering "🚘 Ma Clio IV 2018" with a pencil icon to
-      edit and an × to clear. Lazy-loaded (`client:idle`)
-      on every page.
-- [ ] `src\pages\catalogue\[slug].astro` — top-of-page
-      "Compatible avec votre véhicule" banner reads from the
-      shared provider; when present, sorts / filters the
-      brand-equipementiers grid to prioritise ones matching
-      the vehicle's family (requires a new
-      `src\data\vehicle-family-fitment.js` mapping, seeded
-      coarsely by `modele → family` where obvious).
-- [ ] Trust strip rewritten from marquee to static
-      5-icon strip (Mondial Relay · Retrait magasin · Devis
-      24 h · Paiement magasin sécurisé · Multi-marques).
-      Per ADR-007 design canon.
-- [ ] Footer re-layout in 5 columns per ADR-008 pattern
-      (Catégories / Services / Entreprise / Mentions / Contact).
-- [ ] Google Place Details live rating embed on home
-      testimonials section (build-time fetch → cached
-      JSON; optional Edge Function if we need daily refresh).
-      Fallback if the Place Details key is absent : static
-      rating badge as shipped in Phase 2.
-- [ ] `npx astro check`, `npm run build`, `npm run dev` clean.
+### 5.2 — Catalogue index (`src\pages\catalogue\index.astro`)
+
+**Definition of done**
+- [ ] Read `?marque=<id>` query param on first paint (vanilla JS in
+      a tiny `<script is:inline>` or in the existing reveal script).
+      Look up the matching pill, set `aria-pressed="true"`, apply
+      the filter. No new data needed.
+- [ ] Mobile "Affiner" collapse — filters in a bottom-sheet drawer
+      on `< md`, not always-visible. Existing pills are reused;
+      only the wrapper changes.
+- [ ] `npm run build` clean (test the query-param case in dev:
+      `?marque=renault`, `?marque=peugeot`).
+
+### 5.3 — Category fiche (`src\pages\catalogue\[slug].astro`)
+
+**Definition of done**
+- [ ] Drop `bg-hex-pattern` from the hero wrapper.
+- [ ] Tighten card padding (`p-6` → `p-4`), drop `shadow-card`
+      hover, replace with `border-marine-700` on hover.
+- [ ] Sticky 'Pour mon véhicule' rail on desktop ≥ lg. Reads from
+      `useMyVehicle()`. When unset, shows an inline VehiclePanel
+      trigger.
+- [ ] (Optional, lower-priority) `src\data\vehicle-family-fitment.js`
+      — coarse `modele → family` mapping. When `useMyVehicle()` is
+      set and the rail-card vehicle has a recognisable family,
+      sort the brand-equipementiers grid to prioritise ones
+      matching that family. Skip if the data is too sparse to be
+      useful.
+
+### 5.4 — Header reshuffle (`src\components\Header.astro`)
+
+**Definition of done**
+- [ ] Row 0 (current USP bandeau) collapsed to a thin 32 px
+      utility row: Aide / Mon véhicule chip / Tel only. The 4
+      USPs leave the header (they live on the home, §5.1).
+- [ ] Row 1.5 (vehicle panel chip) made the primary visual focus
+      of the top of the page. When unset, copy =
+      "🚘 Renseignez votre véhicule pour des devis personnalisés".
+      When set, copy = "🚘 Pour votre {marque} {modele} {annee}
+      · modifier · ✕".
+- [ ] Row 2 (sticky main bar) unchanged in height (h-68 px). After
+      the row-0 collapse, re-verify `top-[68px]` on
+      `catalogue\index.astro` filter bar still aligns. If
+      something shifted, update the offset constant.
+
+### 5.5 — Token tightening (`tailwind.config.mjs` + `globals.css`)
+
+**Definition of done**
+- [ ] Add `colors.marine.50: #EAF1F8` (near-white tint for selected
+      states on light surfaces).
+- [ ] `shadow.card-rest` = `none`; `shadow.card-hover` = `0 4px
+      12px rgba(15,44,90,0.08)`. Update `.card` and
+      `.card-interactive` consumers in `globals.css` accordingly.
+- [ ] New `.section-flat` utility — `py-12 md:py-16 lg:py-20`
+      (vs current `.section-y` `py-16 md:py-24 lg:py-32`). The
+      catalog index sections use `.section-flat`; brand-narrative
+      sections (storefront, services hero) keep `.section-y`.
+
+### 5.6 — Avis Google live rating (optional, owner-greenlight)
+
+**Definition of done**
+- [ ] Build-time Place Details fetch script in `scripts\fetch-avis-google.mjs`
+      that writes `src\data\avis-google.json` with
+      `{ count, average, fetchedAt }`. Re-run on every build (or
+      cached for 24 h via `Vercel KV` if quota becomes an issue).
+- [ ] `AvisWidget.astro` reads the JSON if present, falls back to
+      `STORE.avis.google` static values otherwise.
+- [ ] Add `GOOGLE_PLACES_API_KEY` to `.env.example`. Owner supplies
+      the key. Document the place ID resolution
+      (`STORE.avis.googleBusinessUrl` resolves to `kgmid /g/11yff9l5qb`).
+
+### Verification gate (every Phase 5 sub-step)
+- [ ] `npx astro check` → 0 errors
+- [ ] `npm run build` → 54 pages, 0 errors, 0 warnings
+- [ ] `npm run dev` → spot-check home + /catalogue + /catalogue/freinage
+      + /contact + /notre-magasin
+- [ ] Manual H2 count on home → between 12-15
+- [ ] Visual diff against `references\oscaro-snapshot-2024-02-12.html`
+      (open in browser, side-by-side check that the structural
+      rhythm matches without porting the red identity).
 
 ---
 
