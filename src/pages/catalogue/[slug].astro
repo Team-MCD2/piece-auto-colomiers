@@ -329,19 +329,46 @@ const productSchema = {
     </section>
   )}
 
-  {/* === 4) Comment ça se passe — guide texte par slug ===================
-       D-2026-05-13d : remplace l'ancien embed YouTube (toutes les URLs
-       étaient cassées, cf. category-videos.js désactivé). À la place :
-       guide texte 4 étapes spécifique au slug, sourcé depuis
-       category-content.js → intervention[]. Avantages :
-         - Fiable (pas de dépendance tierce)
-         - SEO+ (~400 mots de contenu spécifique par fiche)
-         - Mobile-friendly (pas d'iframe lourde)
-         - Pédagogique sans bruit (animation/pub YouTube)
-       La section ne s'affiche que si le slug a `intervention[]` (47/47
-       slugs en sont équipés via category-content.js). L'ancien embed
-       vidéo reste possible (fallback `catVideo`) si une URL est un
-       jour ré-activée après vérification humaine. */}
+  {/* === 4a) Tutoriel vidéo ============================================
+       D-2026-05-14 : 44/47 slugs ont une vidéo curée à la main (AUTODOC,
+       Oscaro, Ma Clé de 12, Mécanique Sportive). Owner brief : la vidéo
+       donne de la "vivacité" à la page, donc on la met AVANT le guide
+       texte. Le iframe est lazy + low-priority pour ne pas concurrencer
+       le hero LCP. */}
+  {catVideo && (
+    <section class="section-y bg-offwhite border-t border-charcoal-100">
+      <div class="container-narrow">
+        <div class="mb-8">
+          <span class="eyebrow">Tutoriel vidéo</span>
+          <h2 class="text-h2 mt-2">Voir l'intervention en vidéo.</h2>
+          <p class="text-charcoal-500 mt-3 max-w-prose">
+            Tutoriel sélectionné pour comprendre concrètement le geste —
+            le pas-à-pas écrit ci-dessous complète la vidéo.
+          </p>
+        </div>
+        <div class="relative w-full aspect-video rounded-card overflow-hidden shadow-card border border-charcoal-100">
+          <iframe
+            src={catVideo}
+            title={`Tutoriel ${cat.label}`}
+            class="absolute inset-0 w-full h-full"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen
+            loading="lazy"
+          ></iframe>
+        </div>
+        <p class="mt-4 text-xs text-charcoal-400">
+          Vidéo tierce hébergée par YouTube. À titre indicatif — votre véhicule
+          peut nécessiter une procédure légèrement différente.
+        </p>
+      </div>
+    </section>
+  )}
+
+  {/* === 4b) Comment ça se passe — guide texte par slug ==================
+       D-2026-05-13d : guide pédagogique 4 étapes par slug, sourcé depuis
+       category-content.js → intervention[]. Reste indépendant de la
+       vidéo : si la vidéo disparaît, le texte continue de répondre à
+       l'intention de recherche. Toujours rendu (47/47 slugs équipés). */}
   {intervention.length > 0 && (
     <section class="section-y bg-white border-t border-charcoal-100">
       <div class="container-narrow">
@@ -371,29 +398,6 @@ const productSchema = {
           réelle, faites monter la pièce par un garage qualifié — nous pouvons
           vous orienter vers un partenaire à {STORE.adresse.ville} ou Toulouse Ouest.
         </p>
-      </div>
-    </section>
-  )}
-
-  {/* Embed vidéo optionnel — réactivé seulement si un humain a vérifié
-       l'URL et l'a remise dans category-videos.js (cf. ADR-013). */}
-  {catVideo && (
-    <section class="section-y bg-offwhite border-t border-charcoal-100">
-      <div class="container-narrow">
-        <div class="mb-8">
-          <span class="eyebrow">Tutoriel vidéo</span>
-          <h2 class="text-h2 mt-2">Voir l'intervention en vidéo.</h2>
-        </div>
-        <div class="relative w-full aspect-video rounded-card overflow-hidden shadow-card border border-charcoal-100">
-          <iframe
-            src={catVideo}
-            title={`Tutoriel ${cat.label}`}
-            class="absolute inset-0 w-full h-full"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowfullscreen
-            loading="lazy"
-          ></iframe>
-        </div>
       </div>
     </section>
   )}
