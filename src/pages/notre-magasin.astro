@@ -175,6 +175,66 @@ const breadcrumb = [
     </div>
   </section>
 
+  {/* Notre proximité — migré depuis index.astro (Phase 5.1 D-2026-05-13d)
+       Intro narrative + stats grid + communes desservies. Renforce le
+       signal SEO local sur la page magasin (9 villes de Toulouse Ouest)
+       et donne du contenu substantiel entre la carte et la FAQ. */}
+  <section class="section-y bg-offwhite border-t border-charcoal-100">
+    <div class="container-tight">
+      <div class="grid lg:grid-cols-2 gap-10 lg:gap-16 items-start mb-12">
+        <div>
+          <span class="eyebrow">Notre proximité</span>
+          <h2 class="text-h2 lg:text-display-2 mt-2 mb-4">À deux pas de chez vous, à Toulouse Ouest.</h2>
+          <p class="text-charcoal-600 leading-relaxed mb-4">
+            Nous sommes implantés au cœur de {STORE.adresse.ville}, dans la zone d'activité
+            de l'Adour — à 15 minutes de Toulouse, à 5 minutes de Tournefeuille
+            et de Pibrac. Notre magasin physique vous accueille pour le conseil,
+            le retrait des pièces commandées, et la prise de devis sur place.
+          </p>
+          <p class="text-charcoal-600 leading-relaxed">
+            Pour ceux qui ne peuvent pas se déplacer : devis en ligne sous 24 h ouvrées,
+            expédition Mondial Relay vers toute la France, ou retrait planifié
+            au point relais le plus proche.
+          </p>
+        </div>
+        <div>
+          <h3 class="font-display uppercase text-h3 mb-4">Communes desservies.</h3>
+          <ul class="grid grid-cols-2 gap-x-4 gap-y-2 text-charcoal-700 leading-relaxed">
+            {STORE.zoneChalandise.map((ville) => (
+              <li class="flex items-center gap-2">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-sky-500 shrink-0" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>{ville}</span>
+              </li>
+            ))}
+          </ul>
+          <p class="text-sm text-charcoal-500 mt-4 italic">
+            Devis et expédition Mondial Relay possibles partout en France métropolitaine.
+          </p>
+        </div>
+      </div>
+
+      {/* Stats grid (4 colonnes) — chiffres clés crédibles */}
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+        <article class="card p-5 lg:p-6 text-center">
+          <div class="font-display text-display-2 lg:text-display-1 text-marine-700 leading-none mb-2">{STORE.zoneChalandise.length}</div>
+          <p class="text-sm lg:text-base text-charcoal-600 leading-snug">communes desservies en Toulouse Ouest.</p>
+        </article>
+        <article class="card p-5 lg:p-6 text-center">
+          <div class="font-display text-display-2 lg:text-display-1 text-marine-700 leading-none mb-2">24 h</div>
+          <p class="text-sm lg:text-base text-charcoal-600 leading-snug">délai max sous lequel nous revenons avec votre devis chiffré.</p>
+        </article>
+        <article class="card p-5 lg:p-6 text-center">
+          <div class="font-display text-display-2 lg:text-display-1 text-marine-700 leading-none mb-2">{STORE.specialites.length}</div>
+          <p class="text-sm lg:text-base text-charcoal-600 leading-snug">familles de véhicules couvertes : {STORE.specialites.join(', ').toLowerCase()}.</p>
+        </article>
+        <article class="card p-5 lg:p-6 text-center">
+          <div class="font-display text-display-2 lg:text-display-1 text-marine-700 leading-none mb-2">{STORE.avis.google.average}<span class="text-h2">/5</span></div>
+          <p class="text-sm lg:text-base text-charcoal-600 leading-snug">moyenne sur {STORE.avis.google.count} avis Google vérifiés.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
   {/* FAQ magasin */}
   <section class="section-y bg-white border-t border-charcoal-100">
     <div class="container-narrow">

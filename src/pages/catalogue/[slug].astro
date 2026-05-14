@@ -634,5 +634,24 @@ const productSchema = {
     window.addEventListener('pac:vehicle-changed', function (e) {
       apply(e.detail || null);
     });
+
+    // Phase 7.2 SOFT gate (D-2026-05-13d) — when the user clicks an
+    // [data-wa-enhance] CTA without a saved vehicle, briefly pulse the
+    // compat banner to draw attention to the "Renseigner mon véhicule"
+    // button. We deliberately DO NOT block the click — hard gating on
+    // every conversion would be hostile to users who want to just chat.
+    // The pulse is a visual nudge only; the WhatsApp tab still opens.
+    document.querySelectorAll('a[data-wa-enhance]').forEach(function (a) {
+      a.addEventListener('click', function () {
+        if (readVehicle()) return; // already enriched, no nudge needed
+        var banner = document.getElementById('vehicle-compat-banner');
+        if (!banner) return;
+        banner.classList.add('ring-2', 'ring-sky-400', 'ring-offset-2', 'animate-pulse');
+        // Auto-stop the pulse after 2 s so it stays subtle.
+        setTimeout(function () {
+          banner.classList.remove('ring-2', 'ring-sky-400', 'ring-offset-2', 'animate-pulse');
+        }, 2000);
+      });
+    });
   })();
 </script>

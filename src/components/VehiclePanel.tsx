@@ -72,10 +72,38 @@ export default function VehiclePanel() {
 
   // Hydrate from localStorage on mount + subscribe to external changes
   useEffect(() => {
-    setVehicle(readVehicle());
+    const existing = readVehicle();
+    setVehicle(existing);
     setHydrated(true);
     const unsubChange = onVehicleChange((v) => setVehicle(v));
     const unsubOpen = onOpenRequest(() => setOpen(true));
+
+    // Phase 5.2 — deep-link via `?marque=BMW`. If no vehicle is set yet
+    // and the URL carries a recognised brand, prefill the cascade tab
+    // and surface the modal. We do NOT persist a partial vehicle (the
+    // storage schema requires marque + modele + annee) — we just guide
+    // the user. The query param is intentionally NOT removed from the
+    // URL so a refresh keeps the helpful nudge.
+    if (!existing && typeof window !== 'undefined') {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const rawMarque = params.get('marque')?.trim();
+        if (rawMarque) {
+          // Case-insensitive match against our MMY brand list.
+          const matched = MARQUES.find(
+            (m) => m.toLowerCase() === rawMarque.toLowerCase(),
+          );
+          if (matched) {
+            setTab('cascade');
+            setCMarque(matched);
+            setOpen(true);
+          }
+        }
+      } catch {
+        // URLSearchParams should not throw in modern browsers; defensive only.
+      }
+    }
+
     return () => {
       unsubChange();
       unsubOpen();
@@ -175,7 +203,7 @@ export default function VehiclePanel() {
       const res = await fetch(`/api/plate?plate=${encodeURIComponent(plate.trim())}`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Erreur lors de la recherche.');
-      
+
       writeVehicle({
         marque: data.marque,
         modele: data.modele,

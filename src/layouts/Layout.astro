@@ -20,6 +20,7 @@ import Footer from '../components/Footer.astro';
 import StickyBar from '../components/StickyBar.astro';
 import Chatbot from '../components/Chatbot.astro';
 import { STORE } from '../data/store.js';
+import { TESTIMONIALS } from '../data/testimonials.js';
 
 interface Props {
   title?: string;
@@ -79,6 +80,34 @@ const openingHoursSpec = STORE.horaires
     return [{ '@type': 'OpeningHoursSpecification', dayOfWeek: day, opens: h.open, closes: h.close }];
   });
 
+// D-2026-05-13d : on enrichit le LocalBusiness schema avec les 8 avis
+// Google réels collés par l'owner (cf. testimonials.js).
+// Chaque entry verified=true devient un `<Review>` exposé à Google,
+// qui peut alors surfacer des review snippets ★★★★★ dans la SERP
+// locale "pièces auto Colomiers". `datePublished` omis volontairement
+// (owner : pas de timestamps affichés) — Schema.org ne l'exige pas.
+type Testimonial = {
+  author: string;
+  rating: number;
+  text: string;
+  source: string;
+  verified: boolean;
+  vehicle?: string;
+  part?: string;
+};
+const reviewSchema = (TESTIMONIALS as Testimonial[])
+  .filter((t: Testimonial) => t.verified)
+  .map((t: Testimonial) => ({
+    '@type': 'Review',
+    reviewRating: {
+      '@type': 'Rating',
+      ratingValue: t.rating,
+      bestRating: 5,
+    },
+    author: { '@type': 'Person', name: t.author },
+    reviewBody: t.text,
+  }));
+
 // AggregateRating — D23/D32 : on injecte la note Google réelle (même avec 1
 // seul avis, c'est valide pour Schema.org). Dès que le count dépasse 4-5,
 // les rich results deviennent éligibles côté Google.
@@ -122,6 +151,7 @@ const storeSchema = {
   areaServed: STORE.zoneChalandise.map((v) => ({ '@type': 'City', name: v })),
   sameAs: [STORE.social.tiktok, STORE.social.instagram, STORE.social.facebook].filter(Boolean),
   ...(aggregateRating && { aggregateRating }),
+  ...(reviewSchema.length > 0 && { review: reviewSchema }),
 };
 
 const breadcrumbSchema =
