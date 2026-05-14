@@ -59,6 +59,19 @@ async function loadCategories() {
 }
 
 /**
+ * Importe les requêtes Pexels curées par slug (corrige les homonymes FR).
+ * Cf. src/data/category-search-queries.js et log.md D-2026-05-13d.
+ */
+async function loadCuratedQueries() {
+  try {
+    const mod = await import(`file:///${join(ROOT, 'src', 'data', 'category-search-queries.js').replace(/\\/g, '/')}`);
+    return mod.CATEGORY_SEARCH_QUERIES || {};
+  } catch {
+    return {};
+  }
+}
+
+/**
  * Cherche une photo Pexels via mots-clés.
  * Retourne { url, photographer, photographer_url, src_url } ou null.
  */
@@ -124,7 +137,7 @@ function shouldFetch({ fileExists, existingCredit, apiKey, force }) {
   return { fetch: false, reason: 'no-upgrade-path' };
 }
 
-async function processCategory(cat, apiKey, existingCredit, force) {
+async function processCategory(cat, apiKey, existingCredit, force, curatedQueries) {
   const dest = join(OUT_DIR, `${cat.slug}.jpg`);
   const fileExists = await exists(dest);
   const decision = shouldFetch({ fileExists, existingCredit, apiKey, force });
@@ -142,8 +155,15 @@ async function processCategory(cat, apiKey, existingCredit, force) {
 
   let credit = null;
   if (apiKey) {
-    // Stratégie : essai 1 = label fr, essai 2 = mots-clés EN génériques
-    const queries = [cat.label, `car ${cat.slug.replace(/-/g, ' ')} part`];
+    // Stratégie 2026-05-13d :
+    //   - essai 1 = requête EN curée (corrige homonymes FR)
+    //   - essai 2 = même requête + suffixe "automotive" (filtre les ambigus)
+    //   - essai 3 = label FR (fallback historique)
+    //   - essai 4 = mots-clés EN génériques (dernier recours)
+    const curated = curatedQueries?.[cat.slug];
+    const queries = curated
+      ? [curated, `${curated} automotive`, cat.label, `car ${cat.slug.replace(/-/g, ' ')} part`]
+      : [cat.label, `car ${cat.slug.replace(/-/g, ' ')} part`];
     for (const q of queries) {
       const photo = await searchPexels(q, apiKey);
       if (photo) { credit = photo; break; }
@@ -197,6 +217,11 @@ async function main() {
 
   const categories = await loadCategories();
   const existing = await loadExistingCredits();
+  const curatedQueries = await loadCuratedQueries();
+  const curatedCount = Object.keys(curatedQueries).length;
+  if (curatedCount > 0) {
+    console.log(`🎯 ${curatedCount} requêtes Pexels curées chargées (corrige les homonymes FR).`);
+  }
 
   // Compter combien d'upgrades sont prévus pour le user
   const picsumCount = Object.values(existing).filter((c) => c?.source === 'picsum').length;
@@ -209,7 +234,7 @@ async function main() {
   const results = [];
 
   for (const cat of categories) {
-    const r = await processCategory(cat, apiKey, existing[cat.slug], force);
+    const r = await processCategory(cat, apiKey, existing[cat.slug], force, curatedQueries);
     results.push(r);
     if (r.credit) {
       credits[r.slug] = {

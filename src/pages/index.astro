@@ -30,6 +30,14 @@ import { FAQ } from '../data/faq.js';
 import { BRANDS } from '../data/brands.js';
 import { TIKTOKS, TIKTOK_PROFILE_URL } from '../data/tiktoks.js';
 import AvisWidget from '../components/AvisWidget.astro';
+import { MARQUES_SHORTCUTS } from '../data/vehicle-marques-shortcut.js';
+import { getTopTestimonials, hasTestimonials } from '../data/testimonials.js';
+
+// Phase 2 D-2026-05-13d (override ADR-002) — vrais avis Google copiés sur le
+// site quand l'owner en a collé. Vide tant que l'owner n'a pas paté — dans
+// ce cas la section se replie sur l'AvisWidget seul (badge agrégé).
+const topTestimonials = getTopTestimonials(3);
+const showTestimonials = hasTestimonials();
 
 /**
  * Home catalog index — 7 families surfaced (ADR-012, D-2026-05-13b).
@@ -55,35 +63,26 @@ const homeFamilies = [
 const homeServices = SERVICES.slice(0, 4);
 const homeFaq = FAQ.filter((f) => f.home).slice(0, 5);
 
-// "Notre proximité" — stats live depuis store.js
-// Owner F8 : `accent: 'signal'` est historique (jaune). On le garde pour l'API
-// mais le rendu est strictement marine/sky (ADR-009). Plus tard on peut renommer.
-const stats = [
-  { value: STORE.zoneChalandise.length, label: 'communes desservies', accent: 'marine' },
-  { value: CATEGORIES.length,             label: 'catégories',          accent: 'sky'    },
-  { value: BRANDS.length,                 label: 'équipementiers',      accent: 'marine' },
-  { value: '24h',                         label: 'devis',               accent: 'sky'    },
-];
-
-// "Why choose us" — 3 raisons (D17)
-const reasons = [
+// "Comment ça marche" — 3-step Oscaro-style (D-2026-05-13d, Phase 5.1).
+// Remplace l'ancien bloc "Why choose us" (subsumed dans le hero + trust strip).
+const howSteps = [
   {
-    icon: 'users',
-    title: 'Conseil humain',
-    desc: 'Une équipe locale qui prend le temps. Marque, modèle, code moteur — on cherche avec vous, pas à votre place.',
-    accent: 'marine',
+    n: 1,
+    title: 'Décrivez la pièce',
+    desc: 'Marque, modèle, année, et la pièce recherchée. Par formulaire, WhatsApp ou téléphone.',
+    cta: { label: 'Demander un devis', href: '/contact#devis' },
   },
   {
-    icon: 'layers',
-    title: 'Multi-marques',
-    desc: `${BRANDS.length} équipementiers de référence : Bosch, Valeo, Brembo, NGK, MANN, Continental, et bien d'autres. Le bon compromis qualité/prix.`,
-    accent: 'sky',
+    n: 2,
+    title: 'Devis sous 24 h',
+    desc: 'Notre équipe vérifie la compatibilité multi-marques et revient avec un prix ferme.',
+    cta: null,
   },
   {
-    icon: 'zap',
-    title: 'Réactivité',
-    desc: 'Devis sous 24 h ouvrées. Retrait magasin gratuit ou expédition Mondial Relay partout en France.',
-    accent: 'marine',
+    n: 3,
+    title: 'Retrait ou Mondial Relay',
+    desc: 'Retrait gratuit au magasin de Colomiers ou expédition en point Mondial Relay partout en France.',
+    cta: { label: 'Notre magasin', href: '/notre-magasin' },
   },
 ];
 
@@ -112,27 +111,33 @@ const showTiktoks = availableTiktoks.length > 0;
   description="Vendeur de pièces auto neuves multi-marques à Colomiers. Devis sous 24 h, retrait magasin, expédition Mondial Relay. Tourisme, 4×4, japonaises, utilitaires."
   faq={homeFaq.map((f) => ({ q: f.q, a: f.a }))}
 >
-  {/* === 1) Hero ============================================================ */}
-  <section class="bg-gradient-hero text-white relative overflow-hidden">
-    <div class="container-tight section-y relative grid lg:grid-cols-12 gap-10 items-center">
-      <div class="lg:col-span-7 animate-fade-up">
-        <span class="eyebrow-light" data-reveal>Bienvenue chez nous</span>
+  {/* === 1) Hero — vehicle-first (Phase 5.1, D-2026-05-13d) ================
+       L'ancien hero (gradient marine + photo storefront + écusson "Toulouse
+       Ouest") a été retiré au profit de la framing Oscaro "véhicule
+       d'abord". La photo magasin et l'écusson reviennent sur /notre-magasin
+       (Phase 5.1 DoD). Le bouton CTA "Choisir mon véhicule" dispatch le
+       custom-event `pac:vehicle-open` qu'écoute <VehiclePanel /> monté dans
+       le Header — ouvre la modal cascade/manuelle/plaque. */}
+  <section class="bg-offwhite border-b border-charcoal-100">
+    <div class="container-tight pt-10 pb-14 md:pt-16 md:pb-20 grid lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+      <div class="lg:col-span-7 max-w-2xl">
+        <span class="eyebrow" data-reveal>Spécialiste pièces auto · Colomiers</span>
         <h1
-          class="title-accent on-marine font-display text-display-1 uppercase leading-[0.95] mt-3 mb-6"
+          class="title-accent font-display uppercase text-h1 lg:text-display-1 leading-[1.02] mt-3 mb-5"
           data-reveal
           data-reveal-delay="1"
           style="view-transition-name: hero-title;"
         >
-          Pièces auto neuves,<br />
-          <span class="text-sky-300">multi-marques,</span><br />
-          à Colomiers.
+          Trouvez votre pièce<br />
+          <span class="text-marine-700">parmi {CATEGORIES.length} catégories.</span>
         </h1>
-        <p class="text-lg text-offwhite-200 max-w-prose mb-8 leading-relaxed" data-reveal data-reveal-delay="3">
-          Tourisme, 4×4, japonaises, utilitaires. Devis sous 24 heures.
-          Retrait en magasin ou expédition Mondial Relay dans toute la France.
+        <p class="text-lg text-charcoal-600 max-w-prose mb-7 leading-relaxed" data-reveal data-reveal-delay="2">
+          Tourisme, 4×4, japonaises, utilitaires — multi-marques.
+          Devis sous 24 heures, retrait magasin ou expédition Mondial Relay
+          partout en France.
         </p>
-        <div class="flex flex-wrap items-center gap-3" data-reveal data-reveal-delay="4">
-          <a href="/contact#devis" class="btn-primary-on-marine btn-lg">
+        <div class="flex flex-wrap items-center gap-3" data-reveal data-reveal-delay="3">
+          <a href="/contact#devis" class="btn-primary btn-lg">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
             Demander un devis
           </a>
@@ -141,45 +146,38 @@ const showTiktoks = availableTiktoks.length > 0;
             WhatsApp Business
           </a>
         </div>
-        <p class="text-sm text-offwhite-200/80 mt-6">
+        <p class="text-sm text-charcoal-500 mt-5">
           ou appelez le{' '}
-          <a href={telUrl()} class="text-sky-300 font-semibold hover:text-sky-200 underline decoration-2 underline-offset-4">{STORE.contact.telDisplay}</a>
+          <a href={telUrl()} class="link-inline">{STORE.contact.telDisplay}</a>
         </p>
       </div>
 
-      {/* Visual côté droit — storefront + écusson "Toulouse Ouest" */}
-      <div class="lg:col-span-5 hidden md:block">
-        <div class="relative aspect-square max-w-md mx-auto md:mx-0 md:ml-auto">
-          {/* Placeholder gradient derrière l'image (visible si l'image manque) */}
-          <div class="absolute inset-0 rounded-card bg-gradient-to-br from-marine-700 via-marine-800 to-marine-950 shadow-2xl shadow-marine-950/40 flex items-center justify-center" aria-hidden="true">
-            <span class="font-display uppercase text-sky-400/20 text-[8rem] leading-none">PAC</span>
+      {/* Véhicule CTA card — déclenche la VehiclePanel modal via event API. */}
+      <aside class="lg:col-span-5" data-reveal data-reveal-delay="4" aria-labelledby="hero-vehicle-title">
+        <div class="card p-6 md:p-7 border-2 border-sky-200 hover:border-sky-400 transition-colors">
+          <div class="flex items-start gap-4 mb-5">
+            <span class="inline-flex items-center justify-center size-12 rounded-pill bg-marine-800 text-white shrink-0" aria-hidden="true">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></svg>
+            </span>
+            <div>
+              <h2 id="hero-vehicle-title" class="font-display uppercase text-base lg:text-lg text-charcoal-800 leading-tight">Pour quel véhicule ?</h2>
+              <p class="text-sm text-charcoal-500 mt-1">Devis personnalisé, compatibilité garantie.</p>
+            </div>
           </div>
-          <img
-            src="/assets/store/storefront.jpg"
-            alt="Notre magasin à Colomiers"
-            class="absolute inset-0 rounded-card shadow-2xl shadow-marine-950/40 object-cover w-full h-full"
-            loading="eager"
-            decoding="async"
-            fetchpriority="high"
-            onerror="this.style.display='none'"
-          />
-          {/* Écusson "Toulouse Ouest" — V2 : pill blanche sur l'image (ADR-001 — plus
-               de fond jaune sur les surfaces de marque). */}
-          <div class="absolute -bottom-4 -left-4 bg-white text-marine-900 px-5 py-3 rounded-card shadow-card">
-            <div class="font-display uppercase text-xs tracking-wider">Au cœur de</div>
-            <div class="font-display uppercase text-xl">Toulouse Ouest</div>
-          </div>
-          {/* Badge "ouvert maintenant" — coin haut/droit */}
-          <div class="absolute top-3 right-3 bg-marine-900/85 backdrop-blur-sm text-white px-3 py-1.5 rounded-pill text-xs font-semibold inline-flex items-center gap-2">
-            <span class="size-2 rounded-full bg-sky-400 animate-pulse" aria-hidden="true"></span>
-            <span>Magasin ouvert</span>
-          </div>
+          <button
+            type="button"
+            class="btn-primary btn-md w-full justify-center"
+            data-vehicle-open
+            aria-label="Renseigner mon véhicule — ouvre la fenêtre de sélection"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+            Choisir mon véhicule
+          </button>
+          <p class="text-xs text-charcoal-400 mt-3 text-center">
+            Cascade marque/modèle/année · saisie libre · plaque d'immatriculation
+          </p>
         </div>
-      </div>
-    </div>
-    {/* Watermark écusson PAC en bas-droite du hero, très subtil */}
-    <div class="absolute bottom-0 right-0 pointer-events-none select-none opacity-[0.04] hidden lg:block" aria-hidden="true">
-      <span class="font-display uppercase text-[18rem] leading-none text-sky-400">PAC</span>
+      </aside>
     </div>
   </section>
 
@@ -227,45 +225,10 @@ const showTiktoks = availableTiktoks.length > 0;
     </div>
   </section>
 
-  {/* === 2.5) Notre proximité (narrative + stats) =========================== */}
-  <section class="section-y bg-offwhite">
-    <div class="container-tight grid lg:grid-cols-12 gap-10 lg:gap-16 items-center">
-      <div class="lg:col-span-7 max-w-prose">
-        <span class="eyebrow">Notre proximité</span>
-        <h2 class="text-h2 lg:text-display-2 mt-2 mb-5">Une équipe locale.<br/><span class="text-marine-700">Au cœur de Toulouse Ouest.</span></h2>
-        <p class="text-lg text-charcoal-700 leading-relaxed mb-4">
-          Pièces Auto Colomiers, c'est une entreprise familiale créée par <strong class="text-charcoal-800">deux entrepreneurs locaux</strong> qui connaissent leur métier — la pièce auto neuve, multi-marques, accessible.
-        </p>
-        <p class="text-base text-charcoal-600 leading-relaxed mb-6">
-          On accueille particuliers, garages et flottes. Tourisme, japonaises, 4×4, utilitaires. Conseil humain, retrait magasin, expédition Mondial Relay partout en France.
-        </p>
-        <div class="flex flex-wrap items-center gap-3">
-          <a href="/notre-magasin" class="btn-secondary btn-md">Notre magasin</a>
-          <a href="/services" class="btn-ghost btn-md">Nos services</a>
-        </div>
-      </div>
-      <div class="lg:col-span-5">
-        <ul class="grid grid-cols-2 gap-4 sm:gap-5" data-reveal-group>
-          {stats.map((s) => (
-            <li
-              class={`card p-5 sm:p-6 text-center border-l-4 ${
-                s.accent === 'marine' ? 'border-marine-800' : 'border-sky-400'
-              }`}
-              data-reveal
-            >
-              <div class="font-display text-4xl sm:text-5xl text-marine-800 leading-none mb-2 tabular-nums num-count" data-reveal>
-                {s.value}
-              </div>
-              <div class="text-xs sm:text-sm text-charcoal-500 uppercase tracking-wide">{s.label}</div>
-            </li>
-          ))}
-        </ul>
-        <p class="text-xs text-charcoal-400 mt-3 text-center sm:text-right">
-          Zone de chalandise : {STORE.zoneChalandise.slice(0, 4).join(' · ')} et plus.
-        </p>
-      </div>
-    </div>
-  </section>
+  {/* Phase 5.1 D-2026-05-13d : la section "Notre proximité" (intro narrative
+       + stats grid) a été retirée d'ici. Elle revivra sur /notre-magasin
+       quand cette page sera enrichie (Phase 5.1 DoD : "move both to
+       notre-magasin.astro"). La home reste centrée sur le parcours pièce. */}
 
   {/* === 3) Index catalogue (groupé par famille) ===========================
        Refactor 2026-05-13b — la home n'est plus une "vitrine corporate"
@@ -349,6 +312,55 @@ const showTiktoks = availableTiktoks.length > 0;
     </div>
   </section>
 
+  {/* === 3.5) Marques constructeurs (shortcut grid) ========================
+       Phase 5.1 D-2026-05-13d. Wordmark + logo grid des 16 constructeurs les
+       plus représentés en France. Clic → /catalogue?marque=<id> qui est
+       traité par le script inline de catalogue/index.astro (Phase 5.2). */}
+  <section class="section-y bg-offwhite border-t border-charcoal-100">
+    <div class="container-tight">
+      <div class="mb-10 text-center max-w-2xl mx-auto">
+        <span class="eyebrow" data-reveal>Par marque de véhicule</span>
+        <h2 class="text-h2 lg:text-display-2 mt-2 mb-3" data-reveal data-reveal-delay="1">Quelle marque conduisez-vous ?</h2>
+        <p class="text-charcoal-500 text-lg" data-reveal data-reveal-delay="2">
+          Multi-marques sur toute la gamme constructeur — cliquez pour cibler votre catalogue.
+        </p>
+      </div>
+
+      <ul class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3 lg:gap-4" data-reveal-group>
+        {MARQUES_SHORTCUTS.map((m) => {
+          const hasLogo = publicAssetExists(m.logo);
+          return (
+            <li data-reveal>
+              <a
+                href={`/catalogue?marque=${encodeURIComponent(m.id)}`}
+                class="group relative aspect-[3/2] flex items-center justify-center bg-white rounded-card border border-charcoal-100 hover:border-marine-700 hover:shadow-card hover:-translate-y-0.5 transition-all duration-300 ease-brand p-3"
+                title={`Catalogue pour ${m.name}`}
+                aria-label={`Voir le catalogue pour ${m.name}`}
+              >
+                {hasLogo ? (
+                  <img
+                    src={m.logo}
+                    alt={m.name}
+                    class="max-h-full max-w-full object-contain transition-all duration-300"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                ) : (
+                  <span class="font-display uppercase text-charcoal-700 group-hover:text-marine-800 text-center text-xs sm:text-sm leading-tight px-2 transition-colors">
+                    {m.name}
+                  </span>
+                )}
+              </a>
+            </li>
+          );
+        })}
+      </ul>
+      <p class="text-xs text-charcoal-400 mt-6 text-center">
+        Votre marque n'est pas listée ? <a href="/contact#devis" class="link-inline text-xs">Demandez un devis</a> — nous couvrons l'ensemble du marché européen + japonais.
+      </p>
+    </div>
+  </section>
+
   {/* === 4) Services ======================================================== */}
   <section class="section-y bg-marine-800 text-white relative overflow-hidden">
     <div class="container-tight relative">
@@ -384,43 +396,35 @@ const showTiktoks = availableTiktoks.length > 0;
     </div>
   </section>
 
-  {/* === 4.5) Why choose us ================================================= */}
+  {/* === 4.5) Comment ça marche (3 étapes Oscaro-style) ====================
+       Refactor D-2026-05-13d (Phase 5.1) : remplace l'ancien "Why choose us"
+       (3 raisons) par un parcours-pièce explicite — c'est ce que l'utilisateur
+       qui découvre la marque cherche à comprendre avant de déclencher un devis. */}
   <section class="section-y bg-white">
     <div class="container-tight">
-      <div class="mb-10 text-center max-w-2xl mx-auto">
-        <span class="eyebrow">Pourquoi nous choisir</span>
-        <h2 class="text-h2 lg:text-display-2 mt-2 mb-4">Le bon choix, en trois mots.</h2>
-        <p class="text-charcoal-500 text-lg">
-          Conseil, multi-marques, réactivité. C'est ce que nos clients viennent chercher — c'est ce qu'on s'engage à délivrer.
-        </p>
+      <div class="mb-12 text-center max-w-2xl mx-auto">
+        <span class="eyebrow" data-reveal>Comment ça marche</span>
+        <h2 class="text-h2 lg:text-display-2 mt-2 mb-3" data-reveal data-reveal-delay="1">3 étapes, c'est tout.</h2>
       </div>
 
-      <ul class="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8" data-reveal-group>
-        {reasons.map((r) => (
-          <li
-            class={`card p-6 lg:p-8 text-center md:text-left flex flex-col items-center md:items-start ${
-              r.accent === 'marine' ? 'border-t-4 border-t-marine-800' : 'border-t-4 border-t-sky-400'
-            }`}
-            data-reveal
-          >
-            <div class={`size-14 inline-flex items-center justify-center rounded-card mb-5 shrink-0 ${
-              r.accent === 'marine' ? 'bg-marine-800 text-white' : 'bg-sky-400 text-marine-900'
-            }`}>
-              {r.icon === 'users' && (
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-              )}
-              {r.icon === 'layers' && (
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12.83 2.18 8.55 4.275a2 2 0 0 1 0 3.578l-8.55 4.275a2 2 0 0 1-1.794 0l-8.55-4.275a2 2 0 0 1 0-3.578L11.036 2.18a2 2 0 0 1 1.794 0Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/></svg>
-              )}
-              {r.icon === 'zap' && (
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></svg>
-              )}
-            </div>
-            <h3 class="font-display uppercase text-h3 text-charcoal-800 mb-3">{r.title}</h3>
-            <p class="text-charcoal-600 leading-relaxed">{r.desc}</p>
+      <ol class="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8" data-reveal-group>
+        {howSteps.map((step) => (
+          <li class="card p-6 lg:p-8 relative flex flex-col" data-reveal>
+            <span class="absolute top-4 right-5 font-display text-7xl text-marine-100 leading-none select-none pointer-events-none" aria-hidden="true">{step.n}</span>
+            <span class="inline-flex items-center justify-center size-10 rounded-pill bg-marine-800 text-white font-display text-lg mb-5 z-10 relative">
+              {step.n}
+            </span>
+            <h3 class="font-display uppercase text-h3 text-charcoal-800 mb-3 leading-tight">{step.title}</h3>
+            <p class="text-charcoal-600 leading-relaxed flex-1">{step.desc}</p>
+            {step.cta && (
+              <a href={step.cta.href} class="inline-flex items-center gap-1 mt-5 text-sm font-semibold text-marine-700 hover:text-sky-600">
+                {step.cta.label}
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="card-chevron"><path d="m9 18 6-6-6-6"/></svg>
+              </a>
+            )}
           </li>
         ))}
-      </ul>
+      </ol>
     </div>
   </section>
 
@@ -452,7 +456,7 @@ const showTiktoks = availableTiktoks.length > 0;
                 <img
                   src={b.logo}
                   alt={`Logo ${b.name}`}
-                  class="max-h-full max-w-full object-contain md:grayscale md:group-hover:grayscale-0 transition-all duration-300"
+                  class="max-h-full max-w-full object-contain transition-all duration-300"
                   loading="lazy"
                   decoding="async"
                 />
@@ -502,22 +506,53 @@ const showTiktoks = availableTiktoks.length > 0;
     </>
   )}
 
-  {/* === 4.7) Avis clients (AvisWidget standalone, ADR-002 + F3) =========
-       Pas de citation locale d'avis Google réels (ADR-002, F3). On affiche
-       le note moyenne agrégée + un CTA vers la fiche Google. Refactor
-       2026-05-13b — remplace l'ancien bloc conditionnel `showTestimonials`
-       (qui lisait `data/testimonials.js`, désormais vide). */}
+  {/* === 4.7) Avis clients (AvisWidget + carousel conditionnelle) =========
+       D-2026-05-13d (override F-2026-05-13d) : l'array `TESTIMONIALS` peut
+       maintenant contenir 3-5 meilleurs avis Google copiés manuellement
+       par l'owner (consent wall bloque tout scraping). Quand l'array est
+       vide (`!showTestimonials`), la section se replie sur l'AvisWidget
+       seul, comme dans le pivot 2026-05-13b. */}
   <section class="section-y bg-marine-800 text-white relative overflow-hidden">
     <div class="container-tight relative">
-      <div class="text-center max-w-2xl mx-auto">
+      <div class="text-center max-w-2xl mx-auto mb-10">
         <span class="eyebrow-light" data-reveal>Avis clients</span>
         <h2 class="title-accent on-marine text-h2 lg:text-display-2 mt-2 mb-4" data-reveal data-reveal-delay="1">Ce qu'ils en disent.</h2>
-        <p class="text-offwhite-200 text-lg mb-8" data-reveal data-reveal-delay="2">
-          Tous nos avis sont sur Google — pas de copie locale, pas de mise en scène. Vous lisez directement les commentaires des clients qui sont passés par le magasin.
+        <p class="text-offwhite-200 text-lg" data-reveal data-reveal-delay="2">
+          {showTestimonials
+            ? "Quelques retours de clients passés par le magasin. L'intégralité des avis reste consultable sur Google."
+            : "Tous nos avis sont sur Google — pas de copie locale, pas de mise en scène. Vous lisez directement les commentaires des clients qui sont passés par le magasin."}
         </p>
-        <div data-reveal data-reveal-delay="3">
-          <AvisWidget variant="dark" />
-        </div>
+      </div>
+
+      {showTestimonials && (
+        <ul class="grid grid-cols-1 md:grid-cols-3 gap-5 lg:gap-6 mb-10 max-w-5xl mx-auto" data-reveal-group>
+          {topTestimonials.map((t) => (
+            <li class="bg-marine-700/40 backdrop-blur-sm border border-white/10 rounded-card p-5 lg:p-6 flex flex-col text-left" data-reveal>
+              <div class="flex items-center gap-1 text-amber-300 mb-3" aria-label={`${t.rating} étoiles sur 5`}>
+                {Array.from({ length: t.rating }).map(() => (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                ))}
+              </div>
+              <blockquote class="text-sm lg:text-base text-offwhite-100 leading-relaxed flex-1 mb-4 italic">« {t.text} »</blockquote>
+              <div class="flex items-center justify-between text-xs text-offwhite-200/80">
+                <span class="font-semibold text-white">{t.author}</span>
+                <time datetime={t.date}>{new Date(t.date).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long' })}</time>
+              </div>
+              {(t.vehicle || t.part) && (
+                <div class="mt-3 pt-3 border-t border-white/10 text-xs text-offwhite-200/70">
+                  {t.vehicle && <span>{t.vehicle}</span>}
+                  {t.vehicle && t.part && <span class="mx-1.5">·</span>}
+                  {t.part && <span>{t.part}</span>}
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <div class="text-center" data-reveal data-reveal-delay="3">
+        <AvisWidget variant="dark" />
+      </div>
         <div class="mt-8" data-reveal data-reveal-delay="4">
           <a
             href={STORE.avis.googleBusinessUrl}
@@ -578,4 +613,16 @@ const showTiktoks = availableTiktoks.length > 0;
       </div>
     </div>
   </section>
+  {/* Wires every [data-vehicle-open] button to the VehiclePanel modal open event.
+     The panel itself lives in Header.astro (client:load), so by the time any
+     click fires the listener is registered. Cf. src/lib/my-vehicle.ts. */}
+  <script is:inline>
+    (function () {
+      document.querySelectorAll('[data-vehicle-open]').forEach(function (el) {
+        el.addEventListener('click', function () {
+          window.dispatchEvent(new CustomEvent('pac:vehicle-open'));
+        });
+      });
+    })();
+  </script>
 </Layout>

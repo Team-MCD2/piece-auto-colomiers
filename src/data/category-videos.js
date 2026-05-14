@@ -1,12 +1,48 @@
 /**
  * CATEGORY_VIDEOS — YouTube embed URLs par catégorie.
  *
- * Chaque clé est un slug de catégorie (cf. categories.js).
- * Les vidéos sont des tutoriels pertinents en français trouvés sur YouTube.
- * Utilisé dans catalogue/[slug].astro pour l'embed responsive.
+ * ⚠️  TOUTES LES VIDÉOS SONT DÉSACTIVÉES (D-2026-05-13d).
+ *
+ * Constat owner (screenshots D-2026-05-13d) : sur les 35+ entrées qui
+ * peuplaient cette table, ABSOLUMENT TOUTES rendaient soit "Video
+ * unavailable" (vidéos supprimées par leurs auteurs ou rendues privées)
+ * soit du contenu hors-sujet (le pire : `dLBJA8SlH2w` censé être un
+ * tutoriel embrayage → en fait un parapente suisse qui se crashe).
+ *
+ * Root cause : les IDs YouTube avaient été choisis sans vérification
+ * humaine. Personne n'a ouvert chaque URL pour confirmer qu'elle joue
+ * encore et qu'elle est pertinente. Les IDs YouTube survivent rarement
+ * plus de 6-12 mois sur des chaînes amateur.
+ *
+ * Décision (Phase 5.x, ADR-013) :
+ *   1. Désactiver toutes les entrées en attendant une curation humaine.
+ *   2. [slug].astro respecte `null` et ne rend pas la section "Comment
+ *      ça se passe ?" quand la vidéo est absente.
+ *   3. La section pédagogique est désormais remplacée par un guide
+ *      texte par slug (cf. `data/category-content.js` → `intervention[]`).
+ *   4. Pour réactiver une vidéo : VISITER l'URL dans un navigateur
+ *      neuf (incognito), confirmer qu'elle joue + qu'elle est en
+ *      français + qu'elle correspond au slug, PUIS la remettre ici.
+ *      Si possible privilégier des chaînes garage pro long-running
+ *      (Garage AVD, Le Cardan, Mécanique Pro, etc.) plutôt que des
+ *      vidéos amateur isolées.
+ *
+ * Cf. ADR-013, owner brief 2026-05-14, log D-2026-05-13d.
  */
 
 export const CATEGORY_VIDEOS = {
+  // Toutes les entrées commentées ci-dessous étaient cassées au
+  // 2026-05-14. Le format est conservé pour ré-activation rapide
+  // quand un humain aura vérifié les URLs.
+  //
+  // 'plaquettes-de-frein':       'https://www.youtube.com/embed/<VERIFY>',
+  // 'disques-de-frein':          'https://www.youtube.com/embed/<VERIFY>',
+  // 'etriers-de-frein':          'https://www.youtube.com/embed/<VERIFY>',
+  // ... (cf. git history pour le full set précédent)
+};
+
+/* Anciennes entrées désactivées (D-2026-05-13d) — référence git history.
+const LEGACY_BROKEN_VIDEOS = {
   // Freinage
   'plaquettes-de-frein':       'https://www.youtube.com/embed/hKSAxtRnIXo',  // Changer plaquettes de frein
   'disques-de-frein':          'https://www.youtube.com/embed/hKSAxtRnIXo',  // Changer disques + plaquettes
@@ -86,6 +122,7 @@ export const CATEGORY_VIDEOS = {
   'pieces-japonaises':         'https://www.youtube.com/embed/O1hF25Cowv8',  // Entretien voiture japonaise
   'pieces-utilitaires':        'https://www.youtube.com/embed/dLBJA8SlH2w',  // Entretien utilitaire
 };
+*/
 
 /** Helper : récupérer la vidéo pour un slug de catégorie. */
 export function getCategoryVideo(slug) {

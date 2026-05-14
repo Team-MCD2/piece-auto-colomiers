@@ -1,0 +1,150 @@
+---
+/**
+ * L2VariantCard — variant card for the L1.5 → L2 grid (Phase 7.1).
+ *
+ * Renders one subcategory as an Oscaro-style variant card with :
+ *   1. Image (or gradient + first-letter fallback)
+ *   2. Label + 1-line description
+ *   3. Criteria pills (max 2, the `value`-typed criteria only)
+ *   4. Brand badges in FULL COLOR (no grayscale — ADR-007 + owner brief)
+ *   5. WhatsApp devis CTA pre-filled with L2 context
+ *
+ * The CTA carries `data-wa-enhance` so the page-level enhancer in
+ * `[slug].astro` automatically injects the saved vehicle on top of the
+ * base message (consistent with the L1.5-level CTAs).
+ *
+ * Cf. roadmap.md Phase 7.1, ADR-012, da-catalog-matrix-architecture.md,
+ * D-2026-05-13c.
+ */
+import { BRANDS } from '../data/brands.js';
+import { whatsappUrl } from '../data/store.js';
+import { publicAssetExists } from '../lib/public-asset';
+import WhatsAppIcon from './WhatsAppIcon.astro';
+
+interface SubcatCriterion {
+  key: string;
+  value?: string;
+  options?: string[];
+  label: string;
+}
+
+interface Subcategory {
+  slug: string;
+  parent: string;
+  family: string;
+  label: string;
+  desc: string;
+  image: string;
+  criteria: SubcatCriterion[];
+  brands: string[];
+  faqIds: string[];
+  videoId: string;
+}
+
+interface Props {
+  subcategory: Subcategory;
+  /** L1.5 label (e.g. "Huile moteur") — used in the WhatsApp prefill so
+   *  the magasin sees "Huile 5W-30 (huile moteur)" not just "Huile 5W-30". */
+  parentLabel: string;
+}
+
+const { subcategory, parentLabel } = Astro.props;
+
+const hasImage = publicAssetExists(subcategory.image);
+
+const brandObjects = subcategory.brands
+  .map((id) => BRANDS.find((b) => b.id === id))
+  .filter((b): b is typeof BRANDS[number] => Boolean(b))
+  .slice(0, 4);
+
+// Surface only the `value`-typed criteria as visible pills (the
+// `options`-typed ones become filters on the L3 listing in Phase 7.3).
+const previewCriteria = subcategory.criteria
+  .filter((c) => c.value)
+  .slice(0, 2);
+
+const waMessage = `Bonjour, je souhaite un devis pour ${subcategory.label.toLowerCase()} (${parentLabel.toLowerCase()}).`;
+---
+
+<article class="card group flex flex-col h-full overflow-hidden hover:-translate-y-1 hover:shadow-card-hover hover:border-sky-400">
+  {/* Image */}
+  <div class="card-media aspect-[4/3] bg-gradient-to-br from-marine-700 to-marine-950 relative">
+    <span
+      class="absolute inset-0 flex items-center justify-center font-display font-bold text-7xl text-sky-400/30 select-none pointer-events-none"
+      aria-hidden="true"
+    >
+      {subcategory.label.charAt(0)}
+    </span>
+    {hasImage && (
+      <img
+        src={subcategory.image}
+        alt={subcategory.label}
+        class="absolute inset-0 w-full h-full object-cover"
+        loading="lazy"
+        decoding="async"
+        onerror="this.style.display='none'"
+      />
+    )}
+  </div>
+
+  {/* Body */}
+  <div class="p-5 flex-1 flex flex-col">
+    <h3 class="font-display uppercase text-base lg:text-lg text-charcoal-800 group-hover:text-marine-700 transition-colors leading-tight">
+      {subcategory.label}
+    </h3>
+    <p class="text-sm text-charcoal-500 mt-2 leading-relaxed line-clamp-2">
+      {subcategory.desc}
+    </p>
+
+    {previewCriteria.length > 0 && (
+      <div class="flex flex-wrap gap-1.5 mt-3">
+        {previewCriteria.map((c) => (
+          <span class="inline-flex items-center px-2 py-0.5 rounded-pill bg-sky-50 text-sky-700 text-xs font-semibold border border-sky-200">
+            {c.value}
+          </span>
+        ))}
+      </div>
+    )}
+
+    {brandObjects.length > 0 && (
+      <div class="mt-4 pt-3 border-t border-charcoal-100">
+        <p class="text-xs uppercase tracking-wider text-charcoal-400 mb-2">
+          Marques disponibles
+        </p>
+        <ul class="flex flex-wrap items-center gap-2.5">
+          {brandObjects.map((b) => (
+            <li class="flex items-center" title={b.name}>
+              {publicAssetExists(b.logo) ? (
+                <img
+                  src={b.logo}
+                  alt={b.name}
+                  class="h-5 w-auto max-w-[64px] object-contain"
+                  loading="lazy"
+                  decoding="async"
+                />
+              ) : (
+                <span class="text-xs font-display uppercase text-charcoal-700 px-1.5 py-0.5 border border-charcoal-200 rounded">
+                  {b.name}
+                </span>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
+    )}
+
+    <a
+      href={whatsappUrl(waMessage)}
+      target="_blank"
+      rel="noopener"
+      class="btn-whatsapp btn-sm mt-5 self-stretch justify-center"
+      data-wa-enhance
+      data-wa-category={subcategory.label}
+      data-wa-base={waMessage}
+      aria-label={`Demander un devis pour ${subcategory.label}`}
+    >
+      <WhatsAppIcon size={16} />
+      Devis WhatsApp
+    </a>
+  </div>
+</article>

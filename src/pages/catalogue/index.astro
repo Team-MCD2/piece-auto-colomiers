@@ -43,7 +43,6 @@ const breadcrumb = [
 >
   {/* Hero court */}
   <section class="bg-gradient-hero text-white relative overflow-hidden">
-    <div class="absolute inset-0 bg-hex-pattern opacity-30" aria-hidden="true"></div>
     <div class="container-tight section-y relative">
       <nav aria-label="Fil d'Ariane" class="text-sm text-offwhite-200 mb-4">
         <a href="/" class="hover:text-sky-300">Accueil</a>
@@ -67,6 +66,24 @@ const breadcrumb = [
       </div>
     </div>
   </section>
+
+  {/* Marque shortcut banner (Phase 5.2 partial, D-2026-05-13d).
+       Affiché via JS quand `?marque=<id>` arrive depuis la home (marques
+       shortcut grid). Soft awareness band, pas de re-rendu serveur. */}
+  <div id="marque-banner" class="hidden bg-sky-50 border-b border-sky-200" role="status" aria-live="polite">
+    <div class="container-tight py-3 flex flex-wrap items-center gap-3">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-marine-700 shrink-0" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+      <p class="text-sm text-charcoal-700 flex-1 min-w-0">
+        Catalogue pour <strong id="marque-banner-label" class="text-marine-800">votre marque</strong>. Complétez votre véhicule pour des devis précis.
+      </p>
+      <button type="button" class="text-sm font-semibold text-marine-700 hover:text-sky-600 underline decoration-2 underline-offset-4 decoration-sky-400" data-vehicle-open>
+        Renseigner mon véhicule
+      </button>
+      <button id="marque-banner-dismiss" type="button" class="inline-flex items-center justify-center size-7 rounded-pill hover:bg-sky-100 text-charcoal-500" aria-label="Masquer la bannière">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+    </div>
+  </div>
 
   {/* Filtres sticky (search + vehicles + families)
        top-[68px] = hauteur exacte de la sticky main bar du Header.astro
@@ -207,7 +224,6 @@ const breadcrumb = [
 
   {/* CTA final */}
   <section class="bg-marine-800 text-white relative overflow-hidden">
-    <div class="absolute inset-0 bg-hex-pattern opacity-20" aria-hidden="true"></div>
     <div class="container-tight section-y relative text-center max-w-3xl">
       <h2 class="text-h2 lg:text-display-2">Vous ne trouvez pas votre catégorie ?</h2>
       <p class="text-lg text-offwhite-200 mt-4 mb-8 leading-relaxed">
@@ -267,6 +283,7 @@ const breadcrumb = [
       const v = params.get('v');
       const f = params.get('f');
       const q = params.get('q');
+      const marque = params.get('marque'); // home marques-shortcut grid → Phase 5.2 partial
       if (v) v.split(',').filter(Boolean).forEach((id) => state.vehicles.add(id));
       if (f) f.split(',').filter(Boolean).forEach((id) => state.families.add(id));
       if (q) state.query = q;
@@ -279,6 +296,25 @@ const breadcrumb = [
         if (set.has(value)) pill.setAttribute('aria-pressed', 'true');
       });
       if (state.query && searchInput) searchInput.value = state.query;
+
+      // Marque shortcut : affiche la bannière soft + déclenche le data-vehicle-open
+      // sur tous les boutons de la page (le bouton de la bannière inclus).
+      if (marque) {
+        const banner = document.getElementById('marque-banner');
+        const label = document.getElementById('marque-banner-label');
+        const dismiss = document.getElementById('marque-banner-dismiss');
+        if (banner && label) {
+          label.textContent = decodeURIComponent(marque);
+          banner.classList.remove('hidden');
+        }
+        dismiss?.addEventListener('click', () => banner?.classList.add('hidden'));
+        // Wire all data-vehicle-open buttons in the page (banner + future hero CTA).
+        document.querySelectorAll('[data-vehicle-open]').forEach((el) => {
+          el.addEventListener('click', () => {
+            window.dispatchEvent(new CustomEvent('pac:vehicle-open'));
+          });
+        });
+      }
     }
 
     /** Sérialise l'état dans l'URL (pushState pour ne pas recharger). */

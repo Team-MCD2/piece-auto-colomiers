@@ -86,9 +86,18 @@ export const STORE = Object.freeze({
   },
 
   // === Avis (D32 — réel + placeholders étiquetés) =========================
+  // Share link corrigé en D-2026-05-13d après que l'owner a remarqué que
+  // le précédent (BGVy4jSC0uqq323oG) pointait sur une autre Place. Le
+  // Knowledge Graph ID stable (extrait du redirect chain) est /g/11yff9l5qb.
+  // count + average doivent être mis à jour manuellement quand l'owner
+  // paste les vraies données (Google ne se laisse pas scraper — consent wall).
   avis: {
-    google: { count: 1, average: 5 },
-    googleBusinessUrl: 'https://share.google/BGVy4jSC0uqq323oG',
+    // Valeurs réelles relevées sur la fiche Google Business (screenshot
+    // owner D-2026-05-13d image 36 — sidebar gauche "Pièces auto
+    // Colomiers 4.8★ (78)"). À ré-actualiser quand l'owner rafraîchit.
+    google: { count: 78, average: 4.8 },
+    googleBusinessUrl: 'https://share.google/B3GdnLnjQJ0MngRMd',
+    kgmid: '/g/11yff9l5qb',
   },
 
   // === Réseaux sociaux (D29, D30, D31, D36, D37) ==========================

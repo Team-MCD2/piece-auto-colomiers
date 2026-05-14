@@ -1,0 +1,90 @@
+---
+/**
+ * BrandStrip — équipementier grid (Phase 7.1, addresses owner brief
+ * 2026-05-13 point 2 "Partner Logos & SVGs" + implementation_plan
+ * item C).
+ *
+ * Hover/color pattern (matches existing home convention) :
+ *   - Mobile (< md) : logos display in full color by default — no
+ *     hover state, accessibility-correct because hover doesn't exist
+ *     on touch.
+ *   - Desktop (≥ md) : logos default to grayscale, hover REVEALS the
+ *     real official colors. This is the Oscaro signature : muted
+ *     wall by default, "alive" on interaction.
+ *
+ * Owner critique reproduction : the OLD inline grid on `[slug].astro`
+ * used `class="… grayscale group-hover:grayscale-0 …"` (grayscale on
+ * ALL viewports, no mobile exception) which violates the brief. This
+ * component fixes that with the `md:` breakpoint scoping.
+ *
+ * Reusable : works on `[slug].astro` ("Marques disponibles") and on
+ * `index.astro` (the home "Nos équipementiers" section can adopt it
+ * in a follow-up).
+ *
+ * Cf. implementation_plan.md item C, owner brief F-2026-05-13.
+ */
+import { publicAssetExists } from '../lib/public-asset';
+
+interface Brand {
+  id: string;
+  name: string;
+  logo: string;
+  tagline: string;
+  families: string[];
+}
+
+interface Props {
+  brands: Brand[];
+  /** Eyebrow above the H2. Empty string = headless mode. */
+  eyebrow?: string;
+  /** H2 heading text. Empty string = headless mode. */
+  heading?: string;
+  /** Legal/footnote below the grid. Empty string = none. */
+  footnote?: string;
+  /** Tailwind grid-cols modifier override. Default 2/3/4 (sm/md/lg). */
+  gridCols?: string;
+}
+
+const {
+  brands,
+  eyebrow = 'Marques disponibles',
+  heading = 'Équipementiers de référence.',
+  footnote = "Liste indicative — d'autres équipementiers sont sourcés sur demande selon la référence OEM ou VIN. Marques affichées à titre informatif (art. L713-6 CPI).",
+  gridCols = 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4',
+} = Astro.props;
+---
+
+{brands.length > 0 && (
+  <article>
+    {eyebrow && <span class="eyebrow">{eyebrow}</span>}
+    {heading && <h2 class="text-h2 mt-2 mb-5">{heading}</h2>}
+    <ul class={`grid ${gridCols} gap-3 lg:gap-4`}>
+      {brands.map((b: Brand) => {
+        const hasLogo = publicAssetExists(b.logo);
+        return (
+          <li>
+            <div class="group bg-white rounded-card border border-charcoal-100 p-4 h-full flex flex-col items-center justify-center text-center gap-2 transition-colors duration-200 hover:border-marine-700 hover:shadow-card">
+              {hasLogo ? (
+                <img
+                  src={b.logo}
+                  alt={`Logo ${b.name}`}
+                  class="h-10 w-auto max-w-full object-contain transition-all duration-300 md:grayscale md:group-hover:grayscale-0"
+                  loading="lazy"
+                  decoding="async"
+                />
+              ) : (
+                <div class="font-display uppercase text-charcoal-800 text-base">{b.name}</div>
+              )}
+              <div class="text-xs text-charcoal-500 leading-tight line-clamp-2">{b.tagline}</div>
+            </div>
+          </li>
+        );
+      })}
+    </ul>
+    {footnote && (
+      <p class="text-xs text-charcoal-400 mt-4 leading-relaxed">
+        {footnote}
+      </p>
+    )}
+  </article>
+)}

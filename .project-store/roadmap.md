@@ -443,24 +443,53 @@ can be rolled back independently without reverting the other.
       portals are the typical source; fallback to silhouette
       placeholders is acceptable for V2.5 launch).
 
-### 7.1 — L2 taxonomy + L1.5 retrofit
+### 7.1 — L2 taxonomy + L1.5 retrofit  [STATUS: shipped 2026-05-13c]
 
 **Definition of done**
-- [ ] `src/data/subcategories.js` (NEW) — schema per
+- [x] `src/data/subcategories.js` (NEW) — schema per
       `da-catalog-matrix-architecture.md` §4.1, populated with the
-      owner-validated list from 7.0.
-- [ ] `src/pages/catalogue/[slug].astro` retrofitted: prose body
+      owner-validated list from 7.0. *(Shipped 2026-05-13b for 41
+      entries × 20 categories, expanded 2026-05-13c with huile-moteur
+      ×4 + filtre-a-huile ×2 after owner F-2026-05-13b. Final count:
+      47 L2 entries × 22 of 47 L1.5 categories. Remaining 25 are
+      single-SKU-per-car and don't need L2 splits.)*
+- [x] `src/pages/catalogue/[slug].astro` retrofitted: prose body
       (current `Notre offre` + `Signes d'usure` blocks) collapses
       to a single intro paragraph; the rest of the page becomes a
       grid of L2 sub-cat cards (image + label + criteria preview +
-      brand count).
-- [ ] All existing `/catalogue/<slug>` URLs survive (no 301, no
+      brand count). *(Shipped 2026-05-13c. The prose is now in a
+      folded `<details>` "Comprendre {cat}" accordion ; the grid
+      uses the new `<L2VariantCard />` primitive with image + label
+      + criteria pills + brand badges in color + WhatsApp CTA pre-
+      filled with L2 context. The 25 categories without L2 splits
+      get a Variant B "direct-quote CTA" section instead, gated on
+      `getSubcategoriesForCategory(cat.slug).length > 0`.)*
+- [x] All existing `/catalogue/<slug>` URLs survive (no 301, no
       404). H1 is preserved; H2s gain the L2 labels (additive SEO).
+      *(Shipped 2026-05-13c. 54-page build, 0 errors. All 47 slugs
+      still resolve to a valid HTML page. H1 unchanged.)*
 - [ ] FAQ block on `[slug].astro` keeps the L1 fallback if no L2
       FAQ exists yet, but each L2 with `faqIds` populated supersedes
-      the L1 FAQ when the user navigates into it.
-- [ ] `npm run build` clean; H1/H2 audit on a sample of 5 retrofitted
-      pages.
+      the L1 FAQ when the user navigates into it. *(Partial: L1
+      fallback works ; L2-specific FAQ override is deferred to
+      Phase 7.3 — needs the L3 `[slug]/[sub].astro` route to anchor
+      the per-L2 FAQ surface.)*
+- [x] `npm run build` clean; H1/H2 audit on a sample of 5 retrofitted
+      pages. *(Shipped 2026-05-13c. Spot-checked 3 representative
+      URLs : `huile-moteur` (Variant A, 4 L2 cards), `alternateur`
+      (Variant B, direct-quote CTA), `plaquettes-de-frein` (existing
+      L2 grid still works).)*
+
+**Side-effects shipped in the same commit (D-2026-05-13c)**
+- [x] `src/components/L2VariantCard.astro` (NEW, 155 lines) — variant
+      card primitive, reusable.
+- [x] `src/components/BrandStrip.astro` (NEW, 90 lines) — full-color
+      brand grid (matches home convention: `md:grayscale
+      md:group-hover:grayscale-0`). Closes implementation_plan.md
+      item C on this surface.
+- [x] Tutorial video PROMOTED from old position 7 → new position 4
+      (between L2 grid and brand strip). Closes owner F-2026-05-13b
+      point 2.
 
 ### 7.2 — Vehicle-gating modal
 

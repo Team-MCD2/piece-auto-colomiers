@@ -52,7 +52,6 @@ const emailjsEnabled = Boolean(
   breadcrumb={breadcrumb}
 >
   <section class="bg-gradient-hero text-white relative overflow-hidden">
-    <div class="absolute inset-0 bg-hex-pattern opacity-30" aria-hidden="true"></div>
     <div class="container-tight section-y relative max-w-3xl">
       <nav aria-label="Fil d'Ariane" class="text-sm text-offwhite-200 mb-4">
         <a href="/" class="hover:text-sky-300">Accueil</a>
@@ -981,7 +980,7 @@ const emailjsEnabled = Boolean(
       // 4) Construction des params EmailJS (toutes les valeurs en string)
       const checkedCrossSells = Array.from(form.querySelectorAll<HTMLInputElement>('input[name="cross_sells"]:checked'))
         .map(input => input.value);
-      
+
       let finalMessage = String(fd.get('message') ?? '');
       if (checkedCrossSells.length > 0) {
         finalMessage += '\n\n--- Articles compl\u00e9mentaires demand\u00e9s ---\n' + checkedCrossSells.map(c => '- ' + c).join('\n');

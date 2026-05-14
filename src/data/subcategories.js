@@ -11,10 +11,22 @@
  * authored at `.project-store/drafts/subcategories-draft.js` was
  * promoted here line-for-line with no edits, on owner delegation
  * ("take your time and reason so you produce proper work, i give you
- * the right to go ahead what your suggestions"). 41 L2 entries across
- * 17 of the 47 L1.5 categories. The remaining 30 categories stay as
- * L1.5 leaves (single-SKU-per-car: alternateur, démarreur, radiateur,
- * turbo, FAP, etc.) — see `getNavigableLeaves()`.
+ * the right to go ahead what your suggestions").
+ *
+ * Current coverage : 47 L2 entries across 22 of the 47 L1.5 categories.
+ * The remaining 25 categories stay as L1.5 leaves — split into two
+ * cohorts :
+ *   - 24 single-SKU-per-car (alternateur, démarreur, radiateur, turbo,
+ *     FAP, etc.) — variant axis = vehicle, not piece type, so direct
+ *     L1.5 → quote
+ *   - 1 already-covered family (the others above)
+ *
+ * 2026-05-13c add (D-2026-05-13c, owner-validated F-2026-05-13b after
+ * the /catalogue/huile-moteur test) : 6 entries
+ *   - huile-moteur ×4 (5W-30, 5W-40, 0W-20, 10W-40 — viscosités)
+ *   - filtre-a-huile ×2 (cartouche papier, filtre vissé — formats)
+ *
+ * See `getNavigableLeaves()` for the routing decision API.
  *
  * Schema :
  *   - slug      : URL fragment, kebab-case, no accents — UNIQUE per L2
@@ -196,6 +208,100 @@ export const SUBCATEGORIES = [
       { key: 'condition', options: ['neuf', 'echange-standard'], label: 'État' },
     ],
     brands: [], faqIds: [], videoId: '',
+  },
+
+  // parent = huile-moteur (split by viscosité, the canonical magasin axis ;
+  // brand is shown as a badge inside each L2 card, not a separate L2)
+  {
+    slug: 'huile-5w30',
+    parent: 'huile-moteur',
+    family: 'moteur',
+    label: 'Huile 5W-30',
+    desc: 'La viscosité la plus courante — moteurs essence et diesel modernes.',
+    image: '/assets/subcategories/huile-5w30.jpg',
+    criteria: [
+      { key: 'viscosite', value: '5W-30', label: 'Viscosité' },
+      { key: 'type', options: ['synthèse', 'semi-synthèse'], label: 'Type' },
+    ],
+    brands: ['castrol', 'totalenergies', 'mobil-1'],
+    faqIds: [],
+    videoId: '',
+  },
+  {
+    slug: 'huile-5w40',
+    parent: 'huile-moteur',
+    family: 'moteur',
+    label: 'Huile 5W-40',
+    desc: 'Moteurs essence et diesel haute performance, climats variés.',
+    image: '/assets/subcategories/huile-5w40.jpg',
+    criteria: [
+      { key: 'viscosite', value: '5W-40', label: 'Viscosité' },
+      { key: 'type', options: ['synthèse'], label: 'Type' },
+    ],
+    brands: ['castrol', 'totalenergies', 'mobil-1'],
+    faqIds: [],
+    videoId: '',
+  },
+  {
+    slug: 'huile-0w20',
+    parent: 'huile-moteur',
+    family: 'moteur',
+    label: 'Huile 0W-20',
+    desc: 'Hybrides et japonaises récentes — viscosité ultra-faible.',
+    image: '/assets/subcategories/huile-0w20.jpg',
+    criteria: [
+      { key: 'viscosite', value: '0W-20', label: 'Viscosité' },
+      { key: 'type', options: ['synthèse'], label: 'Type' },
+    ],
+    brands: ['castrol', 'totalenergies', 'mobil-1'],
+    faqIds: [],
+    videoId: '',
+  },
+  {
+    slug: 'huile-10w40',
+    parent: 'huile-moteur',
+    family: 'moteur',
+    label: 'Huile 10W-40',
+    desc: 'Moteurs > 100 000 km, semi-synthèse, climats chauds.',
+    image: '/assets/subcategories/huile-10w40.jpg',
+    criteria: [
+      { key: 'viscosite', value: '10W-40', label: 'Viscosité' },
+      { key: 'type', options: ['semi-synthèse'], label: 'Type' },
+    ],
+    brands: ['castrol', 'totalenergies'],
+    faqIds: [],
+    videoId: '',
+  },
+
+  // parent = filtre-a-huile (split by format — cartouche papier vs filtre
+  // complet vissable, les deux topologies que la magasin différencie au devis)
+  {
+    slug: 'filtre-cartouche',
+    parent: 'filtre-a-huile',
+    family: 'moteur',
+    label: 'Cartouche filtre',
+    desc: 'Insert papier seul — boîtier non démontable, modèles récents.',
+    image: '/assets/subcategories/filtre-cartouche.jpg',
+    criteria: [
+      { key: 'format', value: 'cartouche', label: 'Format' },
+    ],
+    brands: ['bosch', 'mann-filter'],
+    faqIds: [],
+    videoId: '',
+  },
+  {
+    slug: 'filtre-visse',
+    parent: 'filtre-a-huile',
+    family: 'moteur',
+    label: 'Filtre vissé',
+    desc: 'Filtre complet vissable, le format le plus répandu.',
+    image: '/assets/subcategories/filtre-visse.jpg',
+    criteria: [
+      { key: 'format', value: 'visse', label: 'Format' },
+    ],
+    brands: ['bosch', 'mann-filter'],
+    faqIds: [],
+    videoId: '',
   },
 
   // ============================================================
@@ -414,7 +520,7 @@ export const SUBCATEGORIES = [
     image: '/assets/subcategories/ampoules-led-retrofit.jpg',
     criteria: [
       { key: 'tech', value: 'led', label: 'Technologie' },
-      { key: 'homologue', value: true, label: 'Homologuée' },
+      { key: 'homologue', value: 'oui', label: 'Homologuée' },
     ],
     brands: [], faqIds: [], videoId: '',
   },

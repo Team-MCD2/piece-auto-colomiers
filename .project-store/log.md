@@ -471,3 +471,470 @@
     check), plus the Phase 5.1 H2 audit (12-15 H2s on home) and
     the Phase 7 navigability check (no broken `/catalogue/<slug>`
     URL after L1.5 retrofit).
+
+---
+
+## D-2026-05-13c  Phase 7.1 ship — L1.5 catalog retrofit (Oscaro variant grid)
+
+- **context**  : Same evening, third pass. Owner tested
+                 `/catalogue/huile-moteur` and surfaced the gap (F-
+                 2026-05-13b, paraphrased) : « here's where we don't
+                 understand ourselves. the section shows engine oil.
+                 just like on oscaro, when you browse here, you
+                 should see the different types of the car or car
+                 type, or per the different brands that are
+                 referenced. also, the tutorial video's position
+                 should be revised. i believe it can be put a little
+                 higher. you really need to analyse the oscaro
+                 website so you see what we need. we need some
+                 liveliness here as well and good accessibility, that
+                 represents the physical store just like oscaro ».
+                 Three things in that one message :
+                   (1) the L1.5 page is prose-first ; should be
+                       variant-first (Oscaro signature)
+                   (2) tutorial video sits too low ; should be
+                       higher on the page
+                   (3) overall liveliness gap vs Oscaro
+                 Owner greenlit the proposed Variant A/B layout + the
+                 6 L2 data entries for huile-moteur and filtre-a-huile
+                 in one round-trip (option "Greenlight all 3 as
+                 proposed").
+- **diff**     :
+  * `src/data/subcategories.js` (681 → 778 lines) — 6 new L2 entries
+    added in the MOTEUR family block, between `injecteurs-diesel` and
+    the DISTRIBUTION section :
+      - huile-moteur ×4 : `huile-5w30`, `huile-5w40`, `huile-0w20`,
+        `huile-10w40` (the canonical magasin viscosité axis ; brand
+        is a badge on the L2 card, not a separate L2)
+      - filtre-a-huile ×2 : `filtre-cartouche`, `filtre-visse`
+        (the two boîtier topologies the magasin distinguishes at
+        devis time)
+    Brand IDs use only those present in `src/data/brands.js` :
+    `castrol`, `totalenergies`, `mobil-1`, `bosch`, `mann-filter`.
+    Total coverage now 47 L2 entries × 22 of 47 L1.5 (was 41 × 20).
+    Also fixed the pre-existing type-schema violation on
+    `ampoules-led-retrofit` : `value: true` → `value: 'oui'` (was a
+    boolean in a slot that the schema declares as string ; would
+    have blocked `npx astro check` once L2VariantCard's typed
+    interface started consuming the data).
+  * `src/components/L2VariantCard.astro` (NEW, 155 lines) — the
+    variant card primitive. Renders per-subcategory : image (or
+    gradient + first-letter fallback), label, 1-line description,
+    criteria pills (max 2 from `value`-typed), brand badges in FULL
+    COLOR (4 max, mini logos h-5), and a WhatsApp devis CTA pre-
+    filled with the L2 context ("Bonjour, je souhaite un devis pour
+    huile 5W-30 (huile moteur)."). The CTA carries `data-wa-enhance`
+    so the page-level enhancer in `[slug].astro` injects the saved
+    vehicle on top of that base message.
+  * `src/components/BrandStrip.astro` (NEW, 90 lines) — full-color
+    équipementier grid component. Replaces the inline grayscale grid
+    from the old `[slug].astro`. Hover pattern matches the home
+    convention : `md:grayscale md:group-hover:grayscale-0` (desktop
+    starts grayscale → hover reveals real colors ; mobile is always
+    in real color, accessibility-correct because hover doesn't exist
+    on touch). Reusable on home in a follow-up.
+  * `src/pages/catalogue/[slug].astro` (532 → 575 lines, net +43) —
+    restructured from a prose-first vitrine layout into an Oscaro-
+    shaped variant-first catalog page. Six structural moves :
+        1. NEW section 3 : **L2 variant grid** (Variant A — for
+           categories with L2 splits, 22/47) OR **direct-quote CTA**
+           (Variant B — for the 25 single-SKU-per-car categories
+           where the variant axis IS the vehicle, like alternateur,
+           démarreur, turbo, FAP). Conditional on `hasL2 =
+           getSubcategoriesForCategory(cat.slug).length > 0`.
+        2. NEW section 4 : **tutorial video PROMOTED** from old
+           position 7 → 4. The owner asked for "a little higher" ;
+           rationale for placing between L2 grid and brand strip :
+           user saw variants → "how do I install it?" → brands.
+           Natural narrative. Iframe stays `loading="lazy"` for LCP.
+        3. NEW section 5 : **BrandStrip** (full-color hover-reveal)
+           replaces the old inline grayscale brand grid.
+        4. NEW section 6 : **"Comprendre" folded accordion**
+           contains the old "Ce qu'on traite" + "Signes d'usure"
+           prose. SEO-valuable, but de-emphasised below the action
+           surfaces. H2 = summary ; the two articles become H3s.
+        5. FAQ kept verbatim, moved from old position 6 → 7. No
+           copy change (the "problem/solution" framing the owner
+           asked for is already present in `data/category-faqs.js`).
+        6. NEW section 8 : **livraison strip** (3-col horizontal
+           band) replaces the sticky sidebar livraison box that was
+           inside the old 2-col layout. Same content, less spatial
+           cost.
+        7. Catégories liées moved from old position 4 → 9 (now
+           the last section before the CTA final).
+    Imports added : `getSubcategoriesForCategory` from
+    `subcategories.js`, `L2VariantCard`, `BrandStrip`.
+    Imports removed : `publicAssetExists` (was only used in the
+    inline brand grid that got moved to BrandStrip ; the components
+    import it themselves).
+- **why**      :
+  * **Variant-first is the Oscaro signature**. The owner critique
+    was structural, not cosmetic. The V1 PAC L1.5 was modelled on a
+    typical SaaS marketing page (hero + prose + CTAs + FAQ), which
+    is correct for vitrine traffic but wrong for "shop intent"
+    traffic. Oscaro answers shop intent with a variant grid above
+    the fold. Now PAC matches. The user lands on
+    `/catalogue/huile-moteur`, sees "Quel type de huile moteur ?"
+    + 4 cards (5W-30, 5W-40, 0W-20, 10W-40), and clicks the one
+    that matches their car — instead of reading 5 paragraphs first.
+  * **Variant A vs B is data-driven, not page-by-page**. The 22
+    categories with L2 splits get the grid ; the 25 single-SKU-per-
+    car categories get a direct-quote CTA. Owner can grow the L2
+    coverage by editing `subcategories.js` only — no markup change
+    needed per category.
+  * **Tutorial video promotion serves the narrative**, not just the
+    owner request. Position 4 (between variants and brands) reads
+    as : "you've seen what's available → here's how it's installed →
+    here's who makes it". Position 7 (where it was) read as a stray
+    "by the way, here's a video".
+  * **Closing implementation_plan.md item C on this surface**. The
+    L1.5 brand grid was the worst-offending grayscale grid (applied
+    on ALL viewports). BrandStrip aligns with the home pattern. The
+    home itself can adopt BrandStrip in a follow-up (Phase 5.1) for
+    consistency, but that's not blocking.
+  * **Closing the "more for products" critique from D-2026-05-13b
+    self-review**. I had flagged 6 weaknesses in the home retrofit ;
+    the L1.5 retrofit addresses 3 of them (variant cards instead of
+    placeholder gradient cards, brand wordmarks visible on the card,
+    contextual WhatsApp prefill with L2 + vehicle). The remaining 3
+    (piece imagery in the home grid, hero swap, vehicle gating)
+    stay in the Phase 5.1 + 7.2 backlog.
+- **validation** :
+  * `npx astro check` → 0 errors, 0 warnings, 3 hints (pre-existing
+    `contact.astro` unused imports + a `Props declared but never
+    used` hint on BrandStrip that's a known Astro convention quirk,
+    out of scope).
+  * `npm run build` → 54 pages, 0 errors, 0 warnings, 9.65 s wall.
+    All 47 `/catalogue/<slug>` URLs survive.
+  * Rendered HTML spot-check on 3 representative URLs :
+      - `dist/catalogue/huile-moteur/index.html` : 4 L2 cards
+        ("Huile 5W-30", "Huile 5W-40", "Huile 0W-20", "Huile
+        10W-40"), tutorial video iframe present, BrandStrip eyebrow
+        "Marques disponibles", Castrol badge visible.
+      - `dist/catalogue/alternateur/index.html` : Variant B CTA
+        ("Devis sur mesure" eyebrow + "Une seule référence par
+        véhicule" H2), no L2 grid.
+      - `dist/catalogue/plaquettes-de-frein/index.html` : existing
+        L2 grid still works ("Plaquettes avant" card, tutorial
+        video iframe).
+- **scope traded** :
+  * **NOT shipped this session** (all the items I called out as
+    "deferred" in D-2026-05-13b's "scope traded" stay deferred — the
+    hero swap, marques shortcut, `?marque` wiring, header row-0,
+    token tightening, live Place Details fetch). Also deferred :
+      - Brand SVG refurbishment (the SVGs themselves — owner brief
+        point 2 asks for "perfectly resemble the actual logos" ;
+        that's an asset trawl, not a code change). The hover/color
+        pattern IS shipped via BrandStrip ; the SVG QUALITY is the
+        follow-up.
+      - Universal diagnostic CTA on every page (the CTA final at
+        the bottom of every L1.5 already serves this on catalog
+        pages ; needs audit on `services.astro`, `notre-magasin.
+        astro`, `contact.astro` to confirm).
+      - Auto-fill diagnostic form from a piece page (Phase 7.2
+        territory — needs the L3 listing to anchor the prefill).
+      - Recommendation system — vague spec, owner clarification
+        pending (rule-based ? history-based ? LLM ? — see
+        D-2026-05-13b "5 surfaced concerns").
+      - Year coherence and "year stops at 2014" — already correct
+        in the data ; UX clarification needed (empty-state copy
+        when a model's `yearEnd` < `currentYear`).
+      - Multi-select piece dropdown on contact form (item A) +
+        contact card resize.
+      - L3 virtual cards (Phase 7.3) — owner authoring sprint
+        (~80 fitment-virtual rows + brand × sub-cat mapping)
+        blocks this. Stays gated until owner provides B2B portal
+        access.
+- **next session** :
+  * **Phase 5.1 hero swap** (centerpiece) — extract `mode="hero"`
+    on `VehiclePanel` (or build `<HeroVehicleHook />` wrapper). H1
+    "Trouvez votre pièce parmi N catégories." + big vehicle
+    selector + 4-USP trust band. Move storefront image + écusson +
+    proximité stats to `notre-magasin.astro`.
+  * **Phase 5.1 marques shortcut grid** — `data/vehicle-marques-
+    shortcut.js` + H2 "Quelle marque conduisez-vous ?".
+  * **Phase 7.2 gating modal** — extend `VehiclePanel.tsx` with
+    `mode='gating'`. Wire L2 card clicks to gate-open when vehicle
+    unset.
+  * **Phase 5.1 BrandStrip adoption on home** — replace the inline
+    `BrandWall.tsx`-equivalent block in `index.astro` with
+    `<BrandStrip />` for consistency.
+  * **Owner-validation round** for the 5 clarifications surfaced in
+    D-2026-05-13b (real-reviews scraping mechanism, "year stops at
+    2014" reproduction steps, recommendation system flavour,
+    YouTube-vs-TikTok intent, L3 video-vs-3D priority).
+  * **Verification at every commit** : same 3-command stack +
+    Phase 7.1 spot-check on 3 representative URLs (one with L2,
+    one without, one already-good).
+
+---
+
+## D-2026-05-13d  Marathon — image fix + Phase 1 palette + Phase 5.1 hero + Phase 5.2 partial + testimonials override
+
+- **context**  : Same week, fourth pass. Owner returned with two
+                 concerns and a sweeping "tackle ALL" directive :
+    1. **Image disaster** — "a lot of inaccurate images. feel free
+       to scrape oscaro.com to get their images and their pieces too".
+       Spot-check confirmed : `bougies-allumage.jpg` = gold pendant
+       necklace, `phares.jpg` = Bretagne lighthouse, `pot-d-
+       echappement.jpg` = flower pot, `volants.jpg` = badminton
+       shuttlecocks, `rotules.jpg` = jewelry bracelet, `pieces-
+       japonaises.jpg` = wet monstera leaf, etc. Root cause was the
+       `fetch-images.mjs` strategy : `cat.label` (FR) fed directly to
+       Pexels search → French homonyms wreck English-trained search
+       (bougie/candle, phare/lighthouse, pot/flowerpot, volant/
+       shuttlecock, rotule/jewelry, train/locomotive, attelage/
+       horse-drawn carriage, chocs/chocolates, caisse/cash register).
+       22 of 47 images were semantically wrong.
+    2. **Google reviews** — "les avis google, ce c'est il passer??
+       la place ci etait differente? you were supposed to get the
+       ones from the website and write the best ones in to website."
+       Confirmed `STORE.avis.google = { count: 1, average: 5 }`
+       hardcoded in `data/store.js` ; no fetch script. Owner provided
+       a fresh share link (`B3GdnLnjQJ0MngRMd`) and noted the
+       previous one (`BGVy4jSC0uqq323oG`) pointed to a different
+       Place — the count mismatch root cause.
+    3. **Sweep directive** — "tacle ALL" remaining work in one
+       session.
+
+- **work shipped (image axis)** :
+  * **Diagnosis pushback on Oscaro scrape**. Surfaced 4 image
+    strategies with a tradeoff matrix : (A) curated Pexels EN queries
+    [recommended] ; (B) Oscaro scrape [push back : copyright L.122-4
+    CPI risk, Cloudflare-blocks UAs, clone aesthetic] ; (C) Brand B2B
+    press kits [follow-up, requires per-brand auth] ; (D) Silhouette
+    SVG fallback. Owner picked A.
+  * `src/data/category-search-queries.js` (NEW, 47 entries) — per-
+    slug English query map (e.g. `bougies-allumage → 'spark plug
+    close up'`, `phares → 'car headlight close up'`, `pot-d-
+    echappement → 'exhaust pipe automotive'`).
+  * `scripts/fetch-images.mjs` patched — strategy reorder :
+    `[curated, "${curated} automotive", cat.label, "car ${slug} part"]`.
+    Forward-compat : slugs absent from the map fall through to the
+    old FR-label strategy.
+  * Ran `node scripts/fetch-images.mjs --force` (npm consumed the
+    `--force` flag without `--`, so direct node call). 47/47
+    downloaded ; one second-pass for `rotules` (first hit was a
+    rusty industrial farm hitch ; tweaked query to "suspension ball
+    joint mechanic" → got an air-suspension bag, accepted as a real
+    car part).
+  * `src/data/subcategory-search-queries.js` (NEW, 51 entries) +
+    `scripts/fetch-images-l2.mjs` (NEW, 207 LOC) +
+    `package.json` `assets:images-l2` script + `assets:all`
+    extended. Ran the L2 fetch ; 51/51 downloaded clean
+    (`huile-5w30.jpg` = mechanic pouring oil into engine,
+    `plaquettes-avant.jpg` = mechanic working on brake disc,
+    `bougies-allumage-essence.jpg` = vintage hot rod engine).
+  * `src/data/credits.json` + `src/data/credits-l2.json` rewritten
+    with fresh Pexels attributions (all source=pexels, no picsum
+    fallbacks).
+
+- **work shipped (reviews axis)** :
+  * `STORE.avis.googleBusinessUrl` updated to the new owner link
+    (`B3GdnLnjQJ0MngRMd`). Added `STORE.avis.kgmid = '/g/11yff9l5qb'`
+    extracted from the Google redirect chain (consent-wall URL
+    leaked `kgmid` query param) — this is the stable Knowledge
+    Graph ID that survives share-link rotation.
+  * Scrape attempt confirmed dead end : `read_url_content` follows
+    `share.google → google.com/share.google → consent.google.com`,
+    no automated path past the GDPR wall.
+  * Pivoted to **override ADR-002** per owner directive : rewrote
+    `src/data/testimonials.js` with a documented schema (author,
+    rating 1-5, text, ISO date, source='google', verified, optional
+    vehicle/part) + `hasTestimonials()` / `getTopTestimonials(n)`
+    helpers. Array stays empty until owner pastes ; commented
+    example entry shows the shape.
+  * `src/pages/index.astro` testimonials section rebuilt :
+    conditional carousel above the `AvisWidget` when
+    `hasTestimonials()` is true, copy adapts ("Quelques retours…"
+    vs "Tous nos avis sont sur Google…"). Stars rendered as inline
+    SVG ; relative date via `toLocaleDateString('fr-FR')` ; vehicle
+    + part footer optional. When array is empty (current state),
+    section renders identically to the D-2026-05-13b shipping.
+  * Owner deferred actual review paste this session ("focus on
+    other work") — the scaffold is ready, one commit flips it live
+    once owner provides 3-5 reviews.
+
+- **work shipped (Phase 1 palette reset, kill the yellow)** :
+  * `tailwind.config.mjs` — `signal-*` color scale moved under
+    `colors.accent.signal.*` deep path (per Phase 1 DoD : "kept so
+    a future decorative yellow reintroduction is a one-line
+    change"). `bg-diagonal-stripe` + `bg-hex-pattern` keys removed
+    from `backgroundImage` (the SVG/CSS strings themselves had
+    already been migrated to sky-tinted in V1 ; ADR-007 "épurée
+    canon" wants the references gone). Header docstring updated.
+  * `src/styles/globals.css` — `.divider-diagonal` class removed
+    (it consumed `theme('backgroundImage.diagonal-stripe')` which
+    no longer exists). Replaced by an explanatory comment block.
+  * `src/components/Footer.astro` — `<div class="divider-diagonal
+    opacity-60">` element removed from the top of the footer.
+    The transition into the marine-900 footer is now a clean
+    `border-top` from the surrounding section.
+  * `bg-hex-pattern` overlay elements removed from 4 pages :
+    `services.astro` (hero + final-CTA), `contact.astro` (hero),
+    `catalogue/index.astro` (hero + final-CTA), `404.astro`.
+    Total : 6 overlay elements deleted.
+  * Verified no remaining `signal-*` usages anywhere in src/ via
+    grep — clean.
+
+- **work shipped (Phase 5.1 hero swap)** :
+  * `src/pages/index.astro` — the gradient-marine hero with
+    storefront image + "Toulouse Ouest" écusson + watermark PAC
+    replaced by a clean offwhite vehicle-first hero :
+    - Eyebrow "Spécialiste pièces auto · Colomiers"
+    - H1 "Trouvez votre pièce parmi {CATEGORIES.length}
+      catégories." with marine-700 accent on the second line
+    - Sub-paragraph + CTAs (Devis + WhatsApp) + tel link
+    - Side aside (`lg:col-span-5`) : sky-bordered card with a
+      truck icon + H2 "Pour quel véhicule ?" + button
+      `[data-vehicle-open]`. The button dispatches the existing
+      `pac:vehicle-open` CustomEvent → `<VehiclePanel />` mounted
+      in `Header.astro` opens the cascade/manual/plate modal.
+    - **Compromise note** : the roadmap DoD specifies "extract
+      `mode='inline'`" on `VehiclePanel` so the cascade form
+      renders inline in the hero. That's a deeper refactor of a
+      553-LOC React component. The vehicle-CTA-card pattern ships
+      the SAME UX intent (vehicle-first framing) without
+      duplicating cascade logic. Full inline-form extraction
+      stays in next-session backlog if the owner pushes back.
+  * "Notre proximité" section (intro narrative + 4-card stats
+    grid) DELETED from `index.astro`. The stats arrays `stats` +
+    `reasons` removed from frontmatter. Stays a follow-up for
+    `notre-magasin.astro` enrichment (Phase 5.1 DoD : "move both
+    to notre-magasin.astro").
+  * "Why choose us" section REPLACED by "Comment ça marche"
+    3-step (Décrivez la pièce → Devis sous 24 h → Retrait ou
+    Mondial Relay), each card numbered with a marine-100
+    watermark digit + relative chip + optional CTA link.
+  * Brand-équipementiers grid : removed `md:grayscale
+    md:group-hover:grayscale-0` per Phase 5.1 DoD. Logos render
+    in full color always now. Hover treatment reduced to
+    border-darken via existing CSS.
+  * Inline `<script is:inline>` added at end of body to wire all
+    `[data-vehicle-open]` elements (the hero CTA + the catalogue
+    banner CTA) to `window.dispatchEvent(new CustomEvent('pac:
+    vehicle-open'))`.
+
+- **work shipped (marques shortcut grid + Phase 5.2 partial)** :
+  * `src/data/vehicle-marques-shortcut.js` already existed (16
+    French-market constructeurs : Renault, Peugeot, Citroën,
+    Volkswagen, Dacia, Toyota, Ford, Fiat, Nissan, Audi, BMW,
+    Mercedes-Benz, Opel, Hyundai, Kia, Skoda). Verified
+    `/public/images/car-brands/` has all 16 SVG logos.
+  * `index.astro` — new H2 section "Quelle marque conduisez-vous ?"
+    inserted between the catalog index and services. 16-tile grid
+    `grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8`
+    using `publicAssetExists()` for logo fallback to wordmark.
+    Each tile links to `/catalogue?marque=<id>`.
+  * `catalogue/index.astro` — `?marque=<id>` query param handler
+    added (Phase 5.2 partial) : `hydrateFromURL()` reads `marque`,
+    shows a soft sky-50 banner above the filter bar ("Catalogue
+    pour {marque}. Complétez votre véhicule pour des devis
+    précis.") with `[data-vehicle-open]` CTA + dismiss button.
+    No localStorage write — pure UI awareness ; the full
+    persist-marque-as-partial-vehicle pathway needs VehiclePanel
+    extension and stays in 5.2 backlog.
+
+- **work shipped (Phase 2 partial + cross-cutting CTA audit)** :
+  * Audit of `src/pages/contact.astro` revealed the form ALREADY
+    has the Phase 2 DoD :
+    - Marque select cascade with `MARQUES` from `vehicles.js` +
+      "Autre marque…" manual escape hatch
+    - Modèle select cascade dependent on marque
+    - Année select cascade dependent on marque+modèle
+    - Multi-select piece picker (tags + dropdown + hidden input)
+    - Notes textarea
+    - Validation + EmailJS payload + mailto: fallback
+    All landed prior to D-2026-05-13d. `vehicle-brands.js` /
+    `part-types.js` wrapper files are optional cosmetic
+    abstractions ; current `MARQUES` + `CATEGORIES` direct imports
+    work fine. Marking the form work item complete.
+  * CTA audit pass :
+    - `services.astro` — per-service CTA + final diagnostic CTA ✓
+    - `notre-magasin.astro` — bottom CTA section (Demander un
+      devis + WhatsApp) ✓
+    - `contact.astro` — submit + WhatsApp ✓
+    All three pages have CTAs above the fold or in the natural
+    scroll path. Universal-diagnostic-CTA goal (D-2026-05-13c
+    follow-up) satisfied.
+
+- **verification** :
+  * `npm run build` after each major edit : 0 errors, 0 warnings.
+    Final state : 54 pages, 0 errors, 3 TS-strict unused-variable
+    hints (`Props` in BrandStrip, `CATEGORIES` + `idx` in contact)
+    — harmless.
+  * `node scripts/fetch-images.mjs --force` : 47/47 downloaded ;
+    spot-checked 8 of the disasters (bougies, courroie-distrib,
+    phares, rotules, pot-échappement, volants, pare-chocs, pieces-
+    japonaises) ; 7 acceptable + 1 vintage aesthetic.
+  * `node scripts/fetch-images-l2.mjs` : 51/51 downloaded ; spot-
+    checked huile-5w30, plaquettes-avant, bougies-allumage-essence
+    — all clearly relevant car parts.
+  * Stale IDE TS-server errors (`Layout.astro has no default
+    export`, `PUBLIC_EMAILJS_* does not exist`) reproduced
+    consistently and confirmed harmless — `npx astro sync` re-
+    generates `.astro/types.d.ts` but the IDE language server
+    needs a manual restart to pick them up. Documented in this
+    log for the next session.
+
+- **discovery worth memorising** :
+  * **FR → Pexels homonym disaster pattern** — captured to memory
+    (`image_fetch`, `pexels`, `homonyms`, `pieces_auto_colomiers`
+    tags). NEVER feed French source-of-truth labels directly to
+    English-trained image search. Add a per-slug curated EN query
+    map. This is the kind of UX bug that's invisible until owner
+    looks at the home page.
+  * **Google share-link → Knowledge Graph ID extraction** — the
+    redirect chain from `share.google/<id>` to
+    `consent.google.com/?continue=...kgmid=/g/...` leaks the
+    stable `kgmid` even when scraping is blocked. Saved
+    `STORE.avis.kgmid` for any future Place Details API
+    integration (Phase 5.6).
+
+- **followups** :
+  * **Reviews paste (owner action)** — once owner copies 3-5 best
+    Google reviews into `TESTIMONIALS`, the carousel goes live
+    automatically. Also update `STORE.avis.google.count` + `.average`.
+  * **Brand SVG quality refurb** (F-2026-05-13b point 2) — the 15
+    equipementier logos in `/public/assets/brands/` are owner-
+    described as "not perfectly resembling the actual logos". Owner
+    or designer pass needed.
+  * **Notre proximité section migration** — stats grid + intro
+    narrative need to land on `notre-magasin.astro` (currently
+    just deleted from home). Easy port, same data.
+  * **VehiclePanel inline mode extraction** — Phase 5.1 DoD strict
+    reading expects the cascade form INLINE in the hero (not behind
+    a modal-opening CTA). Current ship is an acceptable compromise ;
+    full extraction is ~30-60 min of React refactor.
+  * **Phase 5.2 full** — current marque-banner ship is cosmetic
+    only ; the real Phase 5.2 reads `?marque`, persists a partial
+    vehicle (marque-only) to localStorage, and surfaces "Compatible
+    avec votre Renault" on every catalogue page. Needs a new
+    Vehicle source like `'marque-only'` in `my-vehicle.ts` so the
+    banner can format gracefully.
+  * **Real-reviews automation (Phase 5.6)** — if owner provides a
+    Google Places API key, `scripts/fetch-avis-google.mjs` can
+    auto-refresh `STORE.avis.google.count/.average` + bypass the
+    manual paste loop. Key + Place ID via `kgmid` already in
+    `STORE.avis.kgmid`.
+  * **Stale IDE TS-server cache** — user needs Ctrl+Shift+P →
+    "TypeScript: Restart TS Server" or reopen the affected files
+    to refresh the language server. `astro check` proves the errors
+    are not real ; build is always green.
+
+- **next session** :
+  * **Owner-validation round** for : (a) reviews paste OR Places
+    API key, (b) `notre-magasin.astro` enrichment with the migrated
+    proximity content, (c) brand SVG quality pass.
+  * **Phase 5.2 full** — turn the cosmetic marque-banner into a
+    real vehicle-context persist + Phase 5.3 (sticky "Pour mon
+    véhicule" rail on `[slug].astro` ≥ lg).
+  * **Phase 7.2 vehicle-gating modal** — extend `VehiclePanel.tsx`
+    with `mode='gating'`. L2 card click → if no vehicle saved,
+    open modal first. Soft-bypass with sessionStorage flag.
+  * **Phase 5.1 polish loops** — VehiclePanel inline-mode
+    extraction, "Notre proximité" port to notre-magasin.
+  * **Verification at every commit** : same 3-command stack
+    (`npx astro check` → `npm run build` → spot-check dev) +
+    home spot-check (H1 count, vehicle-CTA modal opens, marques
+    grid links resolve, catalogue banner shows on `?marque=`).

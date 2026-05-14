@@ -11,8 +11,12 @@
  *  - #0F2C5A → marine.800 (BASE BRAND — dominant fill, headers, hero)
  *  - #5BA8D9 → sky.400    (BASE BRAND — accents, links, eyebrow)
  *  - #F4F6F9 → offwhite   (section background, never pure white)
- *  - #F5C518 → signal.400 (ACCENT only — focus-ring on dark, warn badge)
  *  - #25D366 → brand.whatsapp (third-party brand colour, never tinted)
+ *
+ * Phase 1 D-2026-05-13d : yellow `signal-*` retiré des classes Tailwind
+ * publiques. Conservé sous `colors.accent.signal.*` (deep path) pour qu'une
+ * éventuelle réintroduction décorative ne soit qu'une ligne de migration.
+ * Aucune classe Tailwind raccourcie `signal-*` n'est plus possible.
  *
  * Cf. `.project-store\decisions.md` ADR-001..008 for the full V2 canon.
  * V1 D4 sampling kept (hex tokens unchanged) ; only USAGE rules pivot.
@@ -52,23 +56,25 @@ export default {
           800: '#173E60',
           900: '#0C233A',
         },
-        // Jaune signalétique — DEPRECATED / DO NOT USE.
-        // Owner F8 (2026-05-04) : "stick only to the colors on the logo".
-        // Le jaune logo a été rejeté comme color-mismatch ; l'UI est strictement
-        // marine + sky + white + WhatsApp-green (exception de marque).
-        // Les tokens restent définis pour audits / rétro-compat mais AUCUNE
-        // nouvelle référence `signal-*` ne doit apparaître dans le code.
-        signal: {
-          50:  '#FEF9E0',
-          100: '#FCF1B6',
-          200: '#F9E682',
-          300: '#F7DC4F',
-          400: '#F5C518',
-          500: '#D9A906',
-          600: '#B98A02',
-          700: '#956C03',
-          800: '#6F5005',
-          900: '#4A3506',
+        // accent.signal — ARCHIVÉ. Owner F8 (2026-05-04) : "stick only to the
+        // colors on the logo". L'UI publique est strictement marine + sky +
+        // white + WhatsApp-green. Le jaune logo reste sous ce deep path pour
+        // qu'une réintroduction décorative future soit `text-accent-signal-400`
+        // (long, intentionnel, audit-friendly). Aucune classe `signal-*` racc.
+        // ne doit réapparaître. Cf. Phase 1 DoD (D-2026-05-13d).
+        accent: {
+          signal: {
+            50:  '#FEF9E0',
+            100: '#FCF1B6',
+            200: '#F9E682',
+            300: '#F7DC4F',
+            400: '#F5C518',
+            500: '#D9A906',
+            600: '#B98A02',
+            700: '#956C03',
+            800: '#6F5005',
+            900: '#4A3506',
+          },
         },
         // Off-white — fond clair par défaut (jamais blanc pur, fatigue oculaire)
         offwhite: {
@@ -132,14 +138,12 @@ export default {
         'inset-line': 'inset 0 -1px 0 rgba(15,44,90,.08)',
       },
       backgroundImage: {
-        // DA textures — synthesis §6 "motif hex/diamant 4% opacité". Alphas
-        // bumpés pour qu'elles se voient sans dominer (avant : quasi invisibles).
-        // V2 (ADR-007 épurée) — stripes & hex restent disponibles mais teintés14
-        // sky pour rester sobres ; suppression des sections est traitée par14.25
-        // refactor des pages, pas par le token.
-        'diagonal-stripe': 'repeating-linear-gradient(135deg, transparent 0 24px, rgba(91,168,217,.08) 24px 25px)',
-        'hex-pattern': "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='40' height='46' viewBox='0 0 40 46'><polygon points='20,2 38,12 38,34 20,44 2,34 2,12' fill='none' stroke='%235BA8D9' stroke-opacity='0.06' stroke-width='1'/></svg>\")",
-        // Dégradé hero (marine → marine-700)
+        // Phase 1 D-2026-05-13d (ADR-007 épurée canon) : suppression de
+        // `diagonal-stripe` et `hex-pattern`. La synthesis §6 mentionnait un
+        // motif hex 4% opacité, mais le pivot Oscaro impose le silence
+        // graphique — fonds plats marine/offwhite, accents par typo et
+        // `title-accent` (trait courbe sky) uniquement.
+        // Dégradé hero (marine → marine-700) — seul backgroundImage retenu.
         'gradient-hero': 'linear-gradient(135deg, #0F2C5A 0%, #152E58 50%, #1F3D6E 100%)',
       },
       animation: {

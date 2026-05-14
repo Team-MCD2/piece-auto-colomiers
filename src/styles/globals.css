@@ -447,11 +447,10 @@
     background-size: 1.1rem;
   }
 
-  /* Section dividers (D35 — lignes diagonales subtiles) */
-  .divider-diagonal {
-    @apply relative h-1 w-full overflow-hidden;
-    background-image: theme('backgroundImage.diagonal-stripe');
-  }
+  /* Phase 1 D-2026-05-13d — `.divider-diagonal` (D35 stripe texture) supprimé
+     per ADR-007 épurée canon. Les transitions entre sections se font désormais
+     par variation de fond (marine ↔ offwhite ↔ white) et par les utilitaires
+     `border-t border-marine-900/10`, jamais par motif graphique. */
 
   /* Skip link a11y */
   .skip-link {

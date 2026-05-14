@@ -15,9 +15,12 @@ import { CATEGORIES, FAMILIES, VEHICLE_TYPES } from '../../data/categories.js';
 import { BRANDS } from '../../data/brands.js';
 import { STORE, telUrl, whatsappUrl } from '../../data/store.js';
 import { getFamilyCopy } from '../../data/family-copy.js';
-import { publicAssetExists } from '../../lib/public-asset';
+import { getCategoryContent } from '../../data/category-content.js';
 import { getCategoryFaqs } from '../../data/category-faqs.js';
 import { getCategoryVideo } from '../../data/category-videos.js';
+import { getSubcategoriesForCategory } from '../../data/subcategories.js';
+import L2VariantCard from '../../components/L2VariantCard.astro';
+import BrandStrip from '../../components/BrandStrip.astro';
 
 export async function getStaticPaths() {
   return CATEGORIES.map((cat) => ({
@@ -29,7 +32,17 @@ export async function getStaticPaths() {
 const { cat } = Astro.props;
 const family = FAMILIES.find((f) => f.id === cat.family);
 const familyLabel = family?.label ?? 'Catégorie';
-const copy = getFamilyCopy(cat.family);
+
+// Phase 5.x (D-2026-05-13d) — Per-slug content with family-copy fallback.
+// `category-content.js` overrides `family-copy.js` for the 47/47 L1.5
+// slugs, providing slug-specific offre/signes/intervention/seoLong.
+// Falls back to family-level copy only if the slug isn't covered.
+const familyCopy = getFamilyCopy(cat.family);
+const slugContent = getCategoryContent(cat.slug);
+const offre: string[] = slugContent?.offre ?? familyCopy.handle;
+const signes: string[] = slugContent?.signes ?? familyCopy.signs;
+const intervention = slugContent?.intervention ?? [];
+const seoLong = slugContent?.seoLong;
 
 const vehicleLabels: string[] = cat.vehicles.map(
   (v: string) => VEHICLE_TYPES.find((vt) => vt.id === v)?.label ?? v
@@ -43,6 +56,14 @@ const relatedCategories = CATEGORIES
 
 const catFaqs = getCategoryFaqs(cat.slug);
 const catVideo = getCategoryVideo(cat.slug);
+
+// Phase 7.1 — L2 retrofit (D-2026-05-13c). If this L1.5 has
+// subcategories, the page shows the variant grid (Oscaro signature).
+// If not (single-SKU-per-car categories like alternateur), it shows a
+// direct-quote CTA section instead. The split is data-driven via
+// `getSubcategoriesForCategory()`.
+const subcategories = getSubcategoriesForCategory(cat.slug);
+const hasL2 = subcategories.length > 0;
 
 const breadcrumb = [
   { label: 'Accueil', href: '/' },
@@ -60,8 +81,12 @@ const SITE_URL = import.meta.env.PUBLIC_SITE_URL || 'https://pieces-auto-colomie
 const pageUrl = new URL(`/catalogue/${cat.slug}`, SITE_URL).toString();
 const imageUrl = new URL(cat.image, SITE_URL).toString();
 
-// Description SEO enrichie
-const seoDescription = `${cat.label} multi-marques à Colomiers (31770). ${cat.desc} Devis sous 24 h, retrait magasin ou expédition Mondial Relay.`;
+// Description SEO enrichie — prefer per-slug seoLong (richer keywords)
+// over the generic family-level template. Both keep the local geo
+// signal (Colomiers 31770) for Google Business / "near me" queries.
+const seoDescription = seoLong
+  ? `${seoLong} Devis sous 24 h, retrait magasin Colomiers (31770) ou Mondial Relay.`
+  : `${cat.label} multi-marques à Colomiers (31770). ${cat.desc} Devis sous 24 h, retrait magasin ou expédition Mondial Relay.`;
 
 // Product schema JSON-LD (catégorie générique, sans offers/prix V1)
 const productSchema = {
@@ -247,162 +272,117 @@ const productSchema = {
     })();
   </script>
 
-  {/* === Ce qu'on traite + Signes d'usure ================================== */}
-  <section class="section-y bg-offwhite">
-    <div class="container-tight grid lg:grid-cols-12 gap-8">
-      {/* Bloc gauche — contenu principal */}
-      <div class="lg:col-span-8 space-y-10">
-        <article>
-          <span class="eyebrow">Ce qu'on traite</span>
-          <h2 class="text-h2 mt-2 mb-5">Notre offre {cat.label.toLowerCase()}.</h2>
-          <ul class="space-y-3">
-            {copy.handle.map((line: string) => (
-              <li class="flex items-start gap-3">
-                <span class="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-sky-400 text-marine-900 mt-0.5">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
-                </span>
-                <span class="text-charcoal-700 leading-relaxed">{line}</span>
-              </li>
-            ))}
-          </ul>
-        </article>
-
-        <article>
-          <span class="eyebrow">Quand changer ?</span>
-          <h2 class="text-h2 mt-2 mb-5">Signes d'usure typiques.</h2>
-          <ul class="space-y-3">
-            {copy.signs.map((sign: string) => (
-              <li class="flex items-start gap-3">
-                <span class="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-sky-400/20 text-sky-700 border border-sky-400/40 mt-0.5">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
-                </span>
-                <span class="text-charcoal-700 leading-relaxed">{sign}</span>
-              </li>
-            ))}
-          </ul>
-          <p class="text-sm text-charcoal-500 mt-6 italic">
-            Doute sur le diagnostic ? Décrivez-nous le symptôme — on vous oriente avant la commande.
-          </p>
-        </article>
-
-        {/* Équipementiers compatibles */}
-        {compatibleBrands.length > 0 && (
-          <article>
-            <span class="eyebrow">Marques disponibles</span>
-            <h2 class="text-h2 mt-2 mb-5">Équipementiers de référence.</h2>
-            <ul class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-              {compatibleBrands.map((b: typeof BRANDS[number]) => {
-                const hasLogo = publicAssetExists(b.logo);
-                return (
-                  <li class="bg-white rounded-card border border-charcoal-100 p-3 text-center hover:border-marine-700 hover:shadow-card transition-all flex flex-col items-center gap-1">
-                    {hasLogo ? (
-                      <img
-                        src={b.logo}
-                        alt={`Logo ${b.name}`}
-                        class="h-8 w-auto max-w-full object-contain grayscale group-hover:grayscale-0 transition-all"
-                        loading="lazy"
-                        decoding="async"
-                      />
-                    ) : (
-                      <div class="font-display uppercase text-charcoal-700 text-sm">{b.name}</div>
-                    )}
-                    <div class="text-xs text-charcoal-500 leading-tight line-clamp-2">{b.tagline}</div>
-                  </li>
-                );
-              })}
-            </ul>
-            <p class="text-xs text-charcoal-400 mt-4 leading-relaxed">
-              Liste indicative — d'autres équipementiers sont sourcés sur demande selon la référence OEM ou VIN.
-              <span class="ml-1">Marques affichées à titre informatif (art. L713-6 CPI).</span>
-            </p>
-          </article>
-        )}
-      </div>
-
-      {/* Sidebar devis sticky */}
-      <aside class="lg:col-span-4">
-        <div class="lg:sticky lg:top-24 space-y-4">
-          <div class="card p-6 border-2 border-sky-400/40 bg-gradient-to-br from-white to-sky-50">
-            <span class="eyebrow">Devis 24 h</span>
-            <h3 class="font-display uppercase text-h3 mt-2 mb-3">Demandez un prix.</h3>
-            <p class="text-sm text-charcoal-600 mb-5 leading-relaxed">
-              Précisez marque, modèle, année et code moteur. Réponse sous 24 h ouvrées avec disponibilité, délai et tarif.
-            </p>
-            <div class="space-y-2.5">
-              <a
-                href={whatsappUrl(waMessage)}
-                target="_blank"
-                rel="noopener"
-                class="btn-whatsapp btn-md w-full"
-                data-wa-enhance
-                data-wa-category={cat.label}
-                data-wa-base={waMessage}
-              >
-                <WhatsAppIcon size={18} />
-                Devis WhatsApp
-              </a>
-              <a href={`/contact?cat=${cat.slug}#devis`} class="btn-secondary btn-md w-full">Par formulaire</a>
-              <a href={telUrl()} class="btn-ghost btn-md w-full">{STORE.contact.telDisplay}</a>
-            </div>
-          </div>
-
-          <div class="card p-5">
-            <h3 class="font-display uppercase text-base mb-3">Livraison & retrait</h3>
-            <ul class="space-y-2 text-sm text-charcoal-600">
-              <li class="flex items-start gap-2">
-                <span class="text-sky-600 font-bold shrink-0">→</span>
-                <span><strong class="text-charcoal-800">Retrait magasin</strong> — gratuit, {STORE.adresse.ville}</span>
-              </li>
-              <li class="flex items-start gap-2">
-                <span class="text-sky-600 font-bold shrink-0">→</span>
-                <span><strong class="text-charcoal-800">Mondial Relay</strong> — partout en France</span>
-              </li>
-              <li class="flex items-start gap-2">
-                <span class="text-sky-600 font-bold shrink-0">→</span>
-                <span><strong class="text-charcoal-800">Conseil pro</strong> — équipe humaine, pas de bot</span>
-              </li>
-            </ul>
-          </div>
-        </div>
-      </aside>
-    </div>
-  </section>
-
-  {/* === Catégories liées (même famille) =================================== */}
-  {relatedCategories.length > 0 && (
-    <section class="section-y bg-white border-t border-charcoal-100">
+  {/* === 3) Variant grid (A) OR Direct quote CTA (B) =====================
+       Phase 7.1 retrofit (D-2026-05-13c). The dominant section after
+       the hero. Replaces the old prose-heavy 2-col layout. The 22/47
+       L1.5 categories with L2 splits show a 4-col variant grid
+       (Oscaro signature). The remaining 25 single-SKU-per-car
+       categories show a direct-quote CTA. */}
+  {hasL2 ? (
+    <section class="section-y bg-offwhite border-t border-charcoal-100">
       <div class="container-tight">
-        <div class="mb-8 max-w-2xl">
-          <span class="eyebrow">Famille {familyLabel.toLowerCase()}</span>
-          <h2 class="text-h2 mt-2">Catégories liées.</h2>
+        <div class="mb-10 max-w-2xl">
+          <span class="eyebrow">Choisir par variante</span>
+          <h2 class="text-h2 mt-2 mb-3">Quel type de {cat.label.toLowerCase()} ?</h2>
+          <p class="text-charcoal-500 text-lg">
+            {subcategories.length} variantes pour {cat.label.toLowerCase()}.
+            Cliquez la carte qui correspond à votre besoin pour un devis ciblé —
+            ou contactez-nous si vous avez un doute.
+          </p>
         </div>
-        <ul class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 lg:gap-4">
-          {relatedCategories.map((rc) => (
-            <li>
-              <a href={`/catalogue/${rc.slug}`} class="card-interactive group p-4 h-full flex flex-col">
-                <h3 class="font-display uppercase text-sm text-charcoal-800 group-hover:text-marine-700 transition-colors">
-                  {rc.label}
-                </h3>
-                <p class="text-xs text-charcoal-500 mt-1 line-clamp-2 flex-1">{rc.desc}</p>
-                <span class="inline-flex items-center gap-1 mt-2 text-xs font-semibold text-marine-700 group-hover:text-sky-600">
-                  Voir →
-                </span>
-              </a>
-            </li>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-5">
+          {subcategories.map((sc) => (
+            <L2VariantCard subcategory={sc} parentLabel={cat.label} />
           ))}
-        </ul>
+        </div>
+      </div>
+    </section>
+  ) : (
+    <section class="section-y bg-offwhite border-t border-charcoal-100">
+      <div class="container-tight max-w-3xl text-center">
+        <span class="eyebrow">Devis sur mesure</span>
+        <h2 class="text-h2 mt-2 mb-4">Une seule référence par véhicule.</h2>
+        <p class="text-charcoal-500 text-lg mb-8 leading-relaxed">
+          {cat.label} est une pièce qui se choisit directement selon votre
+          véhicule, sans variantes génériques. Indiquez-nous marque, modèle,
+          année et code moteur — on identifie la bonne référence et on vous
+          revient avec un prix sous 24 h ouvrées.
+        </p>
+        <div class="flex flex-wrap justify-center gap-3">
+          <a
+            href={whatsappUrl(waMessage)}
+            target="_blank"
+            rel="noopener"
+            class="btn-whatsapp btn-lg"
+            data-wa-enhance
+            data-wa-category={cat.label}
+            data-wa-base={waMessage}
+          >
+            <WhatsAppIcon size={20} />
+            Devis WhatsApp
+          </a>
+          <a href={`/contact?cat=${cat.slug}#devis`} class="btn-secondary btn-lg">
+            Formulaire devis
+          </a>
+        </div>
       </div>
     </section>
   )}
 
-  {/* === Vidéo tutoriel ===================================================== */}
-  {catVideo && (
-    <section class="section-y bg-offwhite border-y border-charcoal-100">
+  {/* === 4) Comment ça se passe — guide texte par slug ===================
+       D-2026-05-13d : remplace l'ancien embed YouTube (toutes les URLs
+       étaient cassées, cf. category-videos.js désactivé). À la place :
+       guide texte 4 étapes spécifique au slug, sourcé depuis
+       category-content.js → intervention[]. Avantages :
+         - Fiable (pas de dépendance tierce)
+         - SEO+ (~400 mots de contenu spécifique par fiche)
+         - Mobile-friendly (pas d'iframe lourde)
+         - Pédagogique sans bruit (animation/pub YouTube)
+       La section ne s'affiche que si le slug a `intervention[]` (47/47
+       slugs en sont équipés via category-content.js). L'ancien embed
+       vidéo reste possible (fallback `catVideo`) si une URL est un
+       jour ré-activée après vérification humaine. */}
+  {intervention.length > 0 && (
+    <section class="section-y bg-white border-t border-charcoal-100">
       <div class="container-narrow">
-        <div class="mb-8 text-center">
+        <div class="mb-10">
+          <span class="eyebrow">Comprendre l'opération</span>
+          <h2 class="text-h2 mt-2">Comment ça se passe ?</h2>
+          <p class="text-charcoal-500 mt-3 max-w-prose">
+            Le remplacement de {cat.label.toLowerCase()} en 4 étapes — repères clés
+            pour comprendre l'intervention avant d'envoyer votre devis.
+          </p>
+        </div>
+        <ol class="grid gap-4 md:grid-cols-2">
+          {intervention.map((s: {step:number; title:string; body:string}) => (
+            <li class="card p-5 lg:p-6 flex gap-4">
+              <span class="shrink-0 inline-flex size-9 lg:size-10 items-center justify-center rounded-full bg-marine-700 text-white font-display text-base lg:text-lg">
+                {s.step}
+              </span>
+              <div class="min-w-0">
+                <h3 class="font-display uppercase text-base lg:text-lg text-charcoal-800 leading-tight mb-2">{s.title}</h3>
+                <p class="text-sm lg:text-[15px] text-charcoal-600 leading-relaxed">{s.body}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+        <p class="mt-8 text-sm text-charcoal-500 italic max-w-prose">
+          Conseil pratique fourni à titre informatif. Pour une intervention
+          réelle, faites monter la pièce par un garage qualifié — nous pouvons
+          vous orienter vers un partenaire à {STORE.adresse.ville} ou Toulouse Ouest.
+        </p>
+      </div>
+    </section>
+  )}
+
+  {/* Embed vidéo optionnel — réactivé seulement si un humain a vérifié
+       l'URL et l'a remise dans category-videos.js (cf. ADR-013). */}
+  {catVideo && (
+    <section class="section-y bg-offwhite border-t border-charcoal-100">
+      <div class="container-narrow">
+        <div class="mb-8">
           <span class="eyebrow">Tutoriel vidéo</span>
-          <h2 class="text-h2 lg:text-display-2 mt-2">Comment remplacer vos {cat.label.toLowerCase()} ?</h2>
-          <p class="text-charcoal-500 mt-3 text-lg">Un guide visuel pour comprendre l'opération avant de commander.</p>
+          <h2 class="text-h2 mt-2">Voir l'intervention en vidéo.</h2>
         </div>
         <div class="relative w-full aspect-video rounded-card overflow-hidden shadow-card border border-charcoal-100">
           <iframe
@@ -418,9 +398,74 @@ const productSchema = {
     </section>
   )}
 
-  {/* === FAQ catégorie ====================================================== */}
+  {/* === 5) BrandStrip — full color (replaces old grayscale grid) ========
+       implementation_plan.md item C + owner brief 2026-05-13 point 2.
+       Logos default to grayscale on desktop, hover reveals real
+       colors. On mobile (< md) logos are always full color (no
+       hover). */}
+  {compatibleBrands.length > 0 && (
+    <section class="section-y bg-offwhite border-t border-charcoal-100">
+      <div class="container-tight">
+        <BrandStrip
+          brands={compatibleBrands}
+          heading={`Équipementiers pour ${cat.label.toLowerCase()}.`}
+        />
+      </div>
+    </section>
+  )}
+
+  {/* === 6) "Comprendre" — folded accordion ===============================
+       The old "Ce qu'on traite" + "Signes d'usure" prose lives here
+       now — SEO-valuable but de-emphasized below the action surfaces.
+       H2 is the summary ; the two articles inside become H3s. */}
+  <section class="section-y bg-white border-t border-charcoal-100">
+    <div class="container-narrow">
+      <details class="group">
+        <summary class="cursor-pointer list-none flex items-start justify-between gap-4 group-open:mb-8">
+          <div>
+            <span class="eyebrow">Pour aller plus loin</span>
+            <h2 class="text-h2 mt-2">Comprendre {cat.label.toLowerCase()}.</h2>
+          </div>
+          <svg class="shrink-0 mt-3 transition-transform group-open:rotate-180 text-charcoal-400 group-open:text-marine-700" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+        </summary>
+        <div class="grid lg:grid-cols-2 gap-8 lg:gap-12">
+          <article>
+            <h3 class="font-display uppercase text-h3 mb-4">Notre offre.</h3>
+            <ul class="space-y-3">
+              {offre.map((line: string) => (
+                <li class="flex items-start gap-3">
+                  <span class="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-sky-400 text-marine-900 mt-0.5">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                  </span>
+                  <span class="text-charcoal-700 leading-relaxed">{line}</span>
+                </li>
+              ))}
+            </ul>
+          </article>
+          <article>
+            <h3 class="font-display uppercase text-h3 mb-4">Signes d'usure.</h3>
+            <ul class="space-y-3">
+              {signes.map((sign: string) => (
+                <li class="flex items-start gap-3">
+                  <span class="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-sky-400/20 text-sky-700 border border-sky-400/40 mt-0.5">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+                  </span>
+                  <span class="text-charcoal-700 leading-relaxed">{sign}</span>
+                </li>
+              ))}
+            </ul>
+            <p class="text-sm text-charcoal-500 mt-5 italic">
+              Doute sur le diagnostic ? Décrivez-nous le symptôme — on vous oriente avant la commande.
+            </p>
+          </article>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  {/* === 7) FAQ (kept — problem/solution copy already in data) =========== */}
   {catFaqs.length > 0 && (
-    <section class="section-y bg-white">
+    <section class="section-y bg-offwhite border-t border-charcoal-100">
       <div class="container-narrow">
         <div class="mb-8 text-center">
           <span class="eyebrow">Questions fréquentes</span>
@@ -442,6 +487,68 @@ const productSchema = {
         <div class="text-center mt-8">
           <a href={`/contact?cat=${cat.slug}#devis`} class="link-inline">Une autre question ? Demandez un devis</a>
         </div>
+      </div>
+    </section>
+  )}
+
+  {/* === 8) Livraison strip (replaces the old sticky sidebar box) ======== */}
+  <section class="bg-white border-t border-charcoal-100">
+    <div class="container-tight py-8 lg:py-10">
+      <ul class="grid sm:grid-cols-3 gap-4 lg:gap-6">
+        <li class="flex items-start gap-3">
+          <span class="inline-flex shrink-0 size-10 items-center justify-center rounded-full bg-sky-400/15 text-sky-700">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          </span>
+          <div>
+            <h3 class="font-display uppercase text-sm text-charcoal-800 leading-tight">Retrait magasin</h3>
+            <p class="text-sm text-charcoal-500 leading-snug mt-1">Gratuit à {STORE.adresse.ville}</p>
+          </div>
+        </li>
+        <li class="flex items-start gap-3">
+          <span class="inline-flex shrink-0 size-10 items-center justify-center rounded-full bg-sky-400/15 text-sky-700">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/></svg>
+          </span>
+          <div>
+            <h3 class="font-display uppercase text-sm text-charcoal-800 leading-tight">Mondial Relay</h3>
+            <p class="text-sm text-charcoal-500 leading-snug mt-1">Partout en France</p>
+          </div>
+        </li>
+        <li class="flex items-start gap-3">
+          <span class="inline-flex shrink-0 size-10 items-center justify-center rounded-full bg-sky-400/15 text-sky-700">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+          </span>
+          <div>
+            <h3 class="font-display uppercase text-sm text-charcoal-800 leading-tight">Conseil pro</h3>
+            <p class="text-sm text-charcoal-500 leading-snug mt-1">Équipe humaine, pas de bot</p>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  {/* === 9) Catégories liées (was section 4, moved to last-before-CTA) === */}
+  {relatedCategories.length > 0 && (
+    <section class="section-y bg-offwhite border-t border-charcoal-100">
+      <div class="container-tight">
+        <div class="mb-8 max-w-2xl">
+          <span class="eyebrow">Famille {familyLabel.toLowerCase()}</span>
+          <h2 class="text-h2 mt-2">Catégories liées.</h2>
+        </div>
+        <ul class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 lg:gap-4">
+          {relatedCategories.map((rc) => (
+            <li>
+              <a href={`/catalogue/${rc.slug}`} class="card-interactive group p-4 h-full flex flex-col">
+                <h3 class="font-display uppercase text-sm text-charcoal-800 group-hover:text-marine-700 transition-colors">
+                  {rc.label}
+                </h3>
+                <p class="text-xs text-charcoal-500 mt-1 line-clamp-2 flex-1">{rc.desc}</p>
+                <span class="inline-flex items-center gap-1 mt-2 text-xs font-semibold text-marine-700 group-hover:text-sky-600">
+                  Voir →
+                </span>
+              </a>
+            </li>
+          ))}
+        </ul>
       </div>
     </section>
   )}
