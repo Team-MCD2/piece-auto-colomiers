@@ -1,0 +1,25 @@
+# Liste des Tâches — Contenu Additif & Sous-Pages ID Skillz
+
+Ce document de suivi consigne l'avancement pas à pas de l'implémentation du contenu additif pour les sous-pages du flagship d'ID Skillz, conformément au plan validé. **Rappel absolu : aucune modification visuelle ou structurelle de la page d'accueil d'origine.**
+
+- `[x]` **Phase 1 : Enrichissement du Socle de Données (`site/src/lib/site.ts`)**
+    - `[x]` Intégration de l'historique complet (Mwcrea, SAS 2022, dirigeants Bilal Koçhih & Sami Hifdi).
+    - `[x]` Ajout des métadonnées de la double implantation (Paris Champs-Élysées & Colomiers Studio).
+    - `[x]` Enrichissement des 4 pôles d'expertise avec intégration explicite des applications mobiles iOS natives publiées sur l'App Store (**EaglEyes**, **My Orders**).
+    - `[x]` Rédaction profonde des études de cas pour les projets phares (Mon Boum, Reno Bat, Programme mixte Colomiers, Oniris Gazelles).
+    - `[x]` Détaillage exhaustif et chiffré de la méthode de création en 6 étapes.
+    - `[x]` Configuration de la table de routage globale vers les URL propres.
+
+- `[/]` **Phase 2 : Câblage de l'Accueil et de la Navigation**
+    - `[ ]` Remplacement des ancres unipage par les routes absolues dans le composant `Header.astro` (liens de navigation et menu tiroir).
+    - `[ ]` Redirection discrète de tous les boutons d'appel à l'action (CTA) de la page d'accueil d'origine vers les nouvelles sous-pages, sans altérer le code visuel de l'accueil.
+
+- `[ ]` **Phase 3 : Scaffolding des Sous-Pages Additives (Contenu Profond)**
+    - `[ ]` Création de `site/src/pages/projets.astro` (études de cas détaillées, filtrage dynamique, JSON-LD dédié).
+    - `[ ]` Création de `site/src/pages/services.astro` (manifesto technique des 4 pôles, preuves d'applications natives, schémas SEO ciblés).
+    - `[ ]` Création de `site/src/pages/methode.astro` (trame immersive en 6 étapes chiffrées avec garanties de livrables).
+    - `[ ]` Création de `site/src/pages/contact.astro` (hub d'entreprise qualifié avec données légales et double adresse).
+
+- `[ ]` **Phase 4 : Vérification et Non-Régression**
+    - `[ ]` Contrôle visuel de la page d'accueil pour attester de sa préservation parfaite.
+    - `[ ]` Exécution de `npm run build` pour certifier l'absence absolue de liens morts ou de conflits.

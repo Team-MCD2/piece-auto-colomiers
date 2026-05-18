@@ -67,71 +67,20 @@ const breadcrumb = [
     </div>
   </section>
 
-  {/* Marque shortcut banner (Phase 5.2 partial, D-2026-05-13d).
-       Affiché via JS quand `?marque=<id>` arrive depuis la home (marques
-       shortcut grid). Soft awareness band, pas de re-rendu serveur. */}
-  <div id="marque-banner" class="hidden bg-sky-50 border-b border-sky-200" role="status" aria-live="polite">
-    <div class="container-tight py-3 flex flex-wrap items-center gap-3">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-marine-700 shrink-0" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
-      <p class="text-sm text-charcoal-700 flex-1 min-w-0">
-        Catalogue pour <strong id="marque-banner-label" class="text-marine-800">votre marque</strong>. Complétez votre véhicule pour des devis précis.
-      </p>
-      <button type="button" class="text-sm font-semibold text-marine-700 hover:text-sky-600 underline decoration-2 underline-offset-4 decoration-sky-400" data-vehicle-open>
-        Renseigner mon véhicule
-      </button>
-      <button id="marque-banner-dismiss" type="button" class="inline-flex items-center justify-center size-7 rounded-pill hover:bg-sky-100 text-charcoal-500" aria-label="Masquer la bannière">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-      </button>
-    </div>
-  </div>
-
-  {/* Filtres sticky (search + vehicles + families)
-       top-[68px] = hauteur exacte de la sticky main bar du Header.astro
-       (py-3 + h-11 logo md = 12+44+12). Le `<header class="contents">`
-       garantit que la main bar s'épingle correctement à top-0 ; le filter-bar
-       s'épile juste en dessous. z-30 < header z-40 (priorité menu), > content. */}
+  {/* Filtres sticky (families) */}
   <section class="bg-white/95 backdrop-blur-sm border-b border-charcoal-100 sticky top-[68px] z-30">
     <div class="container-tight py-4 lg:py-5 space-y-3">
-      {/* Ligne 1 : search + reset + count */}
-      <div class="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
-        <label class="relative flex-1 min-w-0">
-          <span class="sr-only">Rechercher une catégorie</span>
-          <svg class="absolute left-3 top-1/2 -translate-y-1/2 text-charcoal-400 pointer-events-none" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-          <input
-            type="search"
-            id="catalog-search"
-            placeholder="Rechercher (ex. plaquettes, batterie, phares…)"
-            class="w-full pl-10 pr-4 py-2.5 rounded-pill border-2 border-charcoal-100 focus:border-marine-700 focus:outline-none transition-colors text-sm bg-white"
-            autocomplete="off"
-          />
-        </label>
-        <div class="flex items-center justify-between sm:justify-end gap-3 shrink-0">
-          <span id="catalog-count" class="text-sm text-charcoal-500 tabular-nums">
-            <strong class="text-charcoal-800">{CATEGORIES.length}</strong> catégories
-          </span>
-          <button id="catalog-reset" type="button" class="text-sm font-semibold text-marine-700 hover:text-sky-600 underline decoration-2 underline-offset-4 decoration-sky-400 hidden">
-            Réinitialiser
-          </button>
-        </div>
+      {/* Ligne 1 : count + reset */}
+      <div class="flex items-center justify-between gap-3 flex-wrap">
+        <span id="catalog-count" class="text-sm text-charcoal-500 tabular-nums">
+          <strong class="text-charcoal-800">{CATEGORIES.length}</strong> catégories
+        </span>
+        <button id="catalog-reset" type="button" class="text-sm font-semibold text-marine-700 hover:text-sky-600 underline decoration-2 underline-offset-4 decoration-sky-400 hidden">
+          Réinitialiser
+        </button>
       </div>
 
-      {/* Ligne 2 : pills véhicule */}
-      <div class="flex flex-wrap items-center gap-2" role="group" aria-label="Filtrer par véhicule">
-        <span class="eyebrow text-charcoal-500 mr-1">Véhicule :</span>
-        {VEHICLE_TYPES.map((v) => (
-          <button
-            type="button"
-            class="filter-pill badge-soft hover:bg-marine-700 hover:text-white hover:border-marine-700 cursor-pointer transition-colors"
-            data-filter-type="vehicle"
-            data-filter-value={v.id}
-            aria-pressed="false"
-          >
-            {v.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Ligne 3 : pills famille (scrollable horizontal mobile) */}
+      {/* Ligne 2 : pills famille (scrollable horizontal mobile) */}
       <div class="flex items-center gap-2 overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap pb-1" role="group" aria-label="Filtrer par famille">
         <span class="eyebrow text-charcoal-500 mr-1 shrink-0">Famille :</span>
         {FAMILIES.filter((f) => grouped.find((g) => g.id === f.id)).map((f) => (
@@ -245,84 +194,40 @@ const breadcrumb = [
   </section>
 </Layout>
 
-{/*
-  Filtres catalogue — vanilla JS, pas de framework.
-  - Pills (vehicle/family) en mode AND multi-sélection (au moins un véhicule cochée → filtre, sinon ALL)
-  - Search par label OU synonyms (insensible casse + accents)
-  - Sections famille masquées si zéro card visible
-  - URL sync : ?v=tourisme,4x4&f=freinage&q=plaquettes (deep-linkable, partageable)
-*/}
 <script>
-  // Sélecteurs (TS-safe avec optional chaining)
-  const searchInput = document.getElementById('catalog-search') as HTMLInputElement | null;
+  // Sélecteurs
   const resetBtn = document.getElementById('catalog-reset');
   const countEl = document.getElementById('catalog-count');
   const emptyEl = document.getElementById('catalog-empty');
-  const pills = document.querySelectorAll<HTMLButtonElement>('.filter-pill');
+  const pills = document.querySelectorAll<HTMLButtonElement>('.filter-pill[data-filter-type="family"]');
   const cards = document.querySelectorAll<HTMLAnchorElement>('.catalog-card');
   const sections = document.querySelectorAll<HTMLElement>('[data-family-section]');
 
-  if (!searchInput || !resetBtn || !countEl || !emptyEl) {
-    // Si l'un des éléments manque, on abandonne silencieusement — page reste fonctionnelle
+  if (!resetBtn || !countEl || !emptyEl) {
     console.warn('[catalogue] filter elements missing, JS disabled');
   } else {
-    /** Normalise une chaîne pour search insensible aux accents et casse. */
-    const normalize = (s: string) =>
-      s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-
     /** État courant des filtres actifs. */
     const state = {
-      vehicles: new Set<string>(),
       families: new Set<string>(),
-      query: '',
     };
 
     /** Lit l'URL au chargement et hydrate l'état + UI. */
     function hydrateFromURL() {
       const params = new URLSearchParams(window.location.search);
-      const v = params.get('v');
       const f = params.get('f');
-      const q = params.get('q');
-      const marque = params.get('marque'); // home marques-shortcut grid → Phase 5.2 partial
-      if (v) v.split(',').filter(Boolean).forEach((id) => state.vehicles.add(id));
       if (f) f.split(',').filter(Boolean).forEach((id) => state.families.add(id));
-      if (q) state.query = q;
 
       pills.forEach((pill) => {
-        const type = pill.dataset.filterType;
         const value = pill.dataset.filterValue;
-        if (!type || !value) return;
-        const set = type === 'vehicle' ? state.vehicles : state.families;
-        if (set.has(value)) pill.setAttribute('aria-pressed', 'true');
+        if (!value) return;
+        if (state.families.has(value)) pill.setAttribute('aria-pressed', 'true');
       });
-      if (state.query && searchInput) searchInput.value = state.query;
-
-      // Marque shortcut : affiche la bannière soft + déclenche le data-vehicle-open
-      // sur tous les boutons de la page (le bouton de la bannière inclus).
-      if (marque) {
-        const banner = document.getElementById('marque-banner');
-        const label = document.getElementById('marque-banner-label');
-        const dismiss = document.getElementById('marque-banner-dismiss');
-        if (banner && label) {
-          label.textContent = decodeURIComponent(marque);
-          banner.classList.remove('hidden');
-        }
-        dismiss?.addEventListener('click', () => banner?.classList.add('hidden'));
-        // Wire all data-vehicle-open buttons in the page (banner + future hero CTA).
-        document.querySelectorAll('[data-vehicle-open]').forEach((el) => {
-          el.addEventListener('click', () => {
-            window.dispatchEvent(new CustomEvent('pac:vehicle-open'));
-          });
-        });
-      }
     }
 
     /** Sérialise l'état dans l'URL (pushState pour ne pas recharger). */
     function syncURL() {
       const params = new URLSearchParams();
-      if (state.vehicles.size) params.set('v', [...state.vehicles].join(','));
       if (state.families.size) params.set('f', [...state.families].join(','));
-      if (state.query) params.set('q', state.query);
       const qs = params.toString();
       const newUrl = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
       window.history.replaceState(null, '', newUrl);
@@ -330,33 +235,18 @@ const breadcrumb = [
 
     /** Applique les filtres aux cards et met à jour visibilité + compteurs. */
     function applyFilters() {
-      const normQuery = normalize(state.query.trim());
       let visibleTotal = 0;
       const familyVisibleCount = new Map<string, number>();
 
       cards.forEach((card) => {
-        const cardVehicles = (card.dataset.vehicles ?? '').split(',').filter(Boolean);
         const cardFamily = card.dataset.family ?? '';
-        const cardLabel = card.dataset.label ?? '';
-        const cardSynonyms = card.dataset.synonyms ?? '';
 
-        // Match véhicule : OR (au moins un cochée correspond), ou aucun filtre = tout passe
-        const vehicleMatch =
-          state.vehicles.size === 0 ||
-          cardVehicles.some((v) => state.vehicles.has(v));
-
-        // Match famille : OR
+        // Match famille : OR (tout passe si aucune sélection)
         const familyMatch =
           state.families.size === 0 ||
           state.families.has(cardFamily);
 
-        // Match query : label OU synonyms contient la query (insensible accents)
-        const queryMatch =
-          normQuery === '' ||
-          normalize(cardLabel).includes(normQuery) ||
-          normalize(cardSynonyms).includes(normQuery);
-
-        const visible = vehicleMatch && familyMatch && queryMatch;
+        const visible = familyMatch;
         card.classList.toggle('hidden', !visible);
 
         if (visible) {
@@ -383,8 +273,7 @@ const breadcrumb = [
       }
 
       // Reset button visible si au moins un filtre actif
-      const hasActiveFilter =
-        state.vehicles.size > 0 || state.families.size > 0 || state.query !== '';
+      const hasActiveFilter = state.families.size > 0;
       if (resetBtn) {
         resetBtn.classList.toggle('hidden', !hasActiveFilter);
       }
@@ -392,15 +281,13 @@ const breadcrumb = [
 
     /** Toggle une pill et applique. */
     function togglePill(pill: HTMLButtonElement) {
-      const type = pill.dataset.filterType;
       const value = pill.dataset.filterValue;
-      if (!type || !value) return;
-      const set = type === 'vehicle' ? state.vehicles : state.families;
-      if (set.has(value)) {
-        set.delete(value);
+      if (!value) return;
+      if (state.families.has(value)) {
+        state.families.delete(value);
         pill.setAttribute('aria-pressed', 'false');
       } else {
-        set.add(value);
+        state.families.add(value);
         pill.setAttribute('aria-pressed', 'true');
       }
       syncURL();
@@ -409,11 +296,8 @@ const breadcrumb = [
 
     /** Reset complet. */
     function resetAll() {
-      state.vehicles.clear();
       state.families.clear();
-      state.query = '';
       pills.forEach((p) => p.setAttribute('aria-pressed', 'false'));
-      if (searchInput) searchInput.value = '';
       syncURL();
       applyFilters();
     }
@@ -423,19 +307,7 @@ const breadcrumb = [
       pill.addEventListener('click', () => togglePill(pill));
     });
 
-    // Debounce léger sur la search input (perf + UX sur claviers virtuels)
-    let searchDebounce: ReturnType<typeof setTimeout> | undefined;
-    searchInput?.addEventListener('input', (e) => {
-      const target = e.target as HTMLInputElement;
-      clearTimeout(searchDebounce);
-      searchDebounce = setTimeout(() => {
-        state.query = target.value;
-        syncURL();
-        applyFilters();
-      }, 120);
-    });
-
-    resetBtn?.addEventListener('click', resetAll);
+    resetBtn.addEventListener('click', resetAll);
 
     // === Init ===
     hydrateFromURL();

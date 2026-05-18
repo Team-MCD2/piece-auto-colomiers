@@ -16,8 +16,6 @@
 
 import Logo from './Logo.astro';
 import WhatsAppIcon from './WhatsAppIcon.astro';
-import VehiclePanel from './VehiclePanel.tsx';
-import SearchBar from './SearchBar.tsx';
 import OpeningBadge from './OpeningBadge.astro';
 import { STORE, telUrl, whatsappUrl } from '../data/store.js';
 import { MAIN_NAV } from '../data/menu.js';
@@ -93,18 +91,7 @@ const waUrl = whatsappUrl();
     </div>
   </div>
 
-  {/* === 1.5) Mon véhicule (chip Oscaro-style — ADR-008, Phase 5) ==========
-       IMPORTANT : ne PAS ajouter `backdrop-blur-*` / `transform` / `filter` sur
-       ce wrapper — cela crée un containing block pour les descendants
-       `position: fixed`, ce qui piégerait le modal <VehiclePanel /> dans
-       la bande (bug 2026-05-04). Le modal est de toute façon portal'd vers
-       document.body, mais on garde le wrapper "propre" par défense. */}
-  <div class="bg-marine-700/60 border-b border-white/10">
-    <div class="container-tight py-2 flex items-center justify-between gap-3">
-      <span class="hidden md:inline-flex eyebrow-light shrink-0 text-white/70">Pour un devis personnalisé</span>
-      <VehiclePanel client:load />
-    </div>
-  </div>
+
 
   {/* === 2) Barre principale (sticky) ======================================
        Hauteur stable = 68px (py-3 + h-11 logo) sur tous breakpoints, pour que
@@ -114,8 +101,7 @@ const waUrl = whatsappUrl();
       {/* Logo */}
       <Logo size="md" variant="light" withText={true} href="/" class="shrink-0" />
 
-      {/* Search Bar Desktop */}
-      <SearchBar client:load className="hidden lg:block flex-1 max-w-sm ml-2 mr-4" />
+
 
       {/* Nav desktop */}
       <nav class="hidden xl:flex items-center gap-1" aria-label="Navigation principale">
@@ -210,10 +196,7 @@ const waUrl = whatsappUrl();
 
       <Logo size="md" variant="light" withText={true} href="/" class="mb-6" />
 
-      {/* Search Bar Mobile */}
-      <div class="mb-6 relative z-10">
-        <SearchBar client:load className="w-full" />
-      </div>
+
 
       <nav class="flex flex-col gap-2 mb-8" aria-label="Navigation mobile">
         {MAIN_NAV.map((item) => (

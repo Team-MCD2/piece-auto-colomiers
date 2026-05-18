@@ -138,32 +138,7 @@ const emailjsEnabled = Boolean(
             Plus le véhicule est précis, plus le devis est rapide. Réponse sous 24 h ouvrées.
           </p>
 
-          {/* === Bandeau "Mon véhicule" — préremplissage Oscaro (ADR-008) ====== */}
-          <div
-            id="vehicle-prefill-banner"
-            class="hidden mb-5 px-4 py-3 rounded-lg bg-sky-50 border border-sky-200 flex items-center gap-3"
-            aria-live="polite"
-          >
-            <span class="inline-flex items-center justify-center size-8 rounded-pill bg-sky-400/15 text-sky-700 shrink-0" aria-hidden="true">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L16 11l-2.7-3.6a1 1 0 0 0-.8-.4H5.24a2 2 0 0 0-1.8 1.1l-.8 1.63A6 6 0 0 0 2 12.42V16h2"/>
-                <circle cx="6.5" cy="16.5" r="2.5"/>
-                <circle cx="16.5" cy="16.5" r="2.5"/>
-              </svg>
-            </span>
-            <div class="flex-1 min-w-0 text-sm leading-snug">
-              <span class="text-charcoal-500">Votre véhicule :</span>{' '}
-              <strong data-vehicle-label class="text-marine-900">—</strong>
-              <span class="text-charcoal-500 hidden sm:inline"> · les champs marque, modèle et année sont pré-remplis</span>
-            </div>
-            <button
-              type="button"
-              data-open-vehicle
-              class="text-sky-600 hover:text-sky-700 text-sm font-semibold underline shrink-0"
-            >
-              Modifier
-            </button>
-          </div>
+
 
           <form
             id="devis-form"
@@ -295,19 +270,7 @@ const emailjsEnabled = Boolean(
               </label>
             </div>
 
-            {/* === Smart Devis (Cross-selling Oscaro-style) === */}
-            <div id="smart-devis-container" class="hidden mb-4 p-5 rounded-lg border-2 border-sky-400/40 bg-sky-50 shadow-inner">
-              <span class="flex items-center gap-2 font-semibold text-marine-900 mb-3">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-sky-600"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
-                Recommandé pour votre montage
-              </span>
-              <p class="text-sm text-charcoal-600 mb-4 leading-relaxed">
-                Ajoutez ces articles fréquemment nécessaires pour ce type d'intervention à votre demande de devis :
-              </p>
-              <div id="smart-devis-checkboxes" class="space-y-3">
-                {/* Dynamically populated by JS */}
-              </div>
-            </div>
+
 
             {/* Honeypot anti-spam (champ caché que les bots remplissent) */}
             <input type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" class="absolute left-[-9999px] opacity-0 pointer-events-none" />
@@ -434,19 +397,13 @@ const emailjsEnabled = Boolean(
 */}
 <script is:inline define:vars={{ VEHICLES_DATA: VEHICLES, MARQUES_DATA: MARQUES }}>
   (function () {
-    var STORAGE_KEY = 'pac-last-vehicle';
     var CURRENT_YEAR = new Date().getFullYear();
-
-    var banner    = document.getElementById('vehicle-prefill-banner');
-    var labelEl   = banner && banner.querySelector('[data-vehicle-label]');
-    var openBtn   = banner && banner.querySelector('[data-open-vehicle]');
 
     var marqueSel = document.getElementById('devis-marque-select');
     var marqueInp = document.getElementById('devis-marque-manual');
     var modeleSel = document.getElementById('devis-modele-select');
     var modeleInp = document.getElementById('devis-modele-manual');
     var anneeSel  = document.getElementById('devis-annee-select');
-    var motoInp   = document.querySelector('#devis-form [name="motorisation"]');
 
     if (!marqueSel || !marqueInp || !modeleSel || !modeleInp || !anneeSel) return;
 
@@ -582,106 +539,100 @@ const emailjsEnabled = Boolean(
     // Initial empty state.
     populateModeles('');
     populateAnnees('', '', true);
+  })();
+</script>
 
-    // -------------------------------------------------------------------
-    // Prefill from stored vehicle (localStorage / bus).
-    // Strategy :
-    //   - If marque is in our MARQUES list → use cascade mode.
-    //   - Else → manual mode for marque + modele.
-    //   - If year not in the generated option list, inject it as the
-    //     first concrete year (handles pre-1990 edge cases gracefully).
-    // -------------------------------------------------------------------
-    function read() {
-      try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null'); }
-      catch (e) { return null; }
+<script is:inline define:vars={{ CATEGORIES_DATA: CATEGORIES.map(c => ({ slug: c.slug, label: c.label })) }}>
+  (function () {
+    var searchInput = document.getElementById('piece-search');
+    var dropdown = document.getElementById('piece-dropdown');
+    var tagsContainer = document.getElementById('piece-tags');
+    var hiddenInput = document.getElementById('piece-hidden');
+
+    if (!searchInput || !dropdown || !tagsContainer || !hiddenInput) return;
+
+    var selectedTags = [];
+
+    function updateHiddenValue() {
+      hiddenInput.value = selectedTags.map(function(t) { return t.label; }).join(', ');
     }
 
-    function prefill(v) {
-      if (!v || !v.marque) return;
-
-      if (MARQUES_DATA.indexOf(v.marque) !== -1) {
-        // Cascade-known marque.
-        marqueSel.value = v.marque;
-        setMarqueMode('cascade');
-        populateModeles(v.marque);
-
-        var knownModels = Object.keys(VEHICLES_DATA[v.marque] || {});
-        if (v.modele && knownModels.indexOf(v.modele) !== -1) {
-          modeleSel.value = v.modele;
-          setModeleMode('cascade');
-          populateAnnees(v.marque, v.modele, false);
-        } else if (v.modele) {
-          modeleSel.value = '__manual__';
-          setModeleMode('manual');
-          modeleInp.value = v.modele;
-          populateAnnees(v.marque, '', true);
-        }
-      } else {
-        // Unknown marque — manual mode.
-        marqueSel.value = '__manual__';
-        setMarqueMode('manual');
-        marqueInp.value = v.marque;
-        setModeleMode('manual');
-        modeleInp.value = v.modele || '';
-        populateAnnees('', '', true);
-      }
-
-      if (v.annee) {
-        var yearStr = String(v.annee);
-        var hasYear = false;
-        for (var i = 0; i < anneeSel.options.length; i++) {
-          if (anneeSel.options[i].value === yearStr) { hasYear = true; break; }
-        }
-        if (!hasYear) {
-          var opt = document.createElement('option');
-          opt.value = yearStr;
-          opt.textContent = yearStr;
-          // Insert right after the placeholder.
-          anneeSel.insertBefore(opt, anneeSel.options[1] || null);
-        }
-        anneeSel.value = yearStr;
-      }
-
-      if (v.motorisation && motoInp && !motoInp.value) {
-        motoInp.value = v.motorisation;
-      }
+    function renderTags() {
+      tagsContainer.innerHTML = '';
+      selectedTags.forEach(function (tag, idx) {
+        var span = document.createElement('span');
+        span.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-pill bg-sky-50 text-sky-800 text-sm font-semibold border border-sky-200';
+        span.innerHTML = '<span>' + tag.label + '</span>' +
+          '<button type="button" class="inline-flex size-4 items-center justify-center rounded-full hover:bg-sky-200 text-sky-700 shrink-0 font-bold" style="font-size:10px;" aria-label="Retirer">&times;</button>';
+        
+        span.querySelector('button').addEventListener('click', function () {
+          selectedTags.splice(idx, 1);
+          renderTags();
+          updateHiddenValue();
+        });
+        
+        tagsContainer.appendChild(span);
+      });
     }
 
-    // -------------------------------------------------------------------
-    // Banner UI (compatibility with existing markup).
-    // -------------------------------------------------------------------
-    function renderBanner(v) {
-      if (!banner) return;
-      var has = v && v.marque && v.modele;
-      banner.classList.toggle('hidden', !has);
-      if (has && labelEl) {
-        labelEl.textContent = [v.marque, v.modele, v.annee].filter(Boolean).join(' ');
+    function filterOptions(query) {
+      if (!query.trim()) {
+        dropdown.classList.add('hidden');
+        return;
       }
+      var normQuery = query.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      var matches = CATEGORIES_DATA.filter(function (cat) {
+        var normLabel = cat.label.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        return normLabel.indexOf(normQuery) !== -1;
+      });
+
+      // Filter out already selected categories
+      matches = matches.filter(function (cat) {
+        return !selectedTags.some(function (tag) { return tag.slug === cat.slug; });
+      });
+
+      if (matches.length === 0) {
+        dropdown.classList.add('hidden');
+        return;
+      }
+
+      dropdown.innerHTML = '';
+      matches.slice(0, 8).forEach(function (cat) {
+        var li = document.createElement('li');
+        li.className = 'px-4 py-2 hover:bg-charcoal-50 cursor-pointer text-sm text-charcoal-700 transition-colors font-medium';
+        li.textContent = cat.label;
+        li.addEventListener('click', function () {
+          selectedTags.push(cat);
+          renderTags();
+          updateHiddenValue();
+          searchInput.value = '';
+          dropdown.classList.add('hidden');
+        });
+        dropdown.appendChild(li);
+      });
+      dropdown.classList.remove('hidden');
     }
 
-    // Boot : apply prefill + banner + register bus listeners.
-    var current = read();
-    if (current) {
-      prefill(current);
-      renderBanner(current);
-    }
+    searchInput.addEventListener('input', function (e) {
+      filterOptions(e.target.value);
+    });
 
-    window.addEventListener('pac:vehicle-changed', function (e) {
-      var v = e.detail;
-      // Re-prefill only when user actually changes vehicle — and do not
-      // clobber fields they've already edited manually after load.
-      if (v) {
-        prefill(v);
-        renderBanner(v);
-      } else {
-        renderBanner(null);
+    // Close dropdown on click outside
+    document.addEventListener('click', function (e) {
+      if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+        dropdown.classList.add('hidden');
       }
     });
 
-    if (openBtn) {
-      openBtn.addEventListener('click', function () {
-        window.dispatchEvent(new CustomEvent('pac:vehicle-open'));
-      });
+    // If an optional 'cat' is in URL, pre-fill it as a tag!
+    var urlCat = new URL(window.location.href).searchParams.get('cat');
+    if (urlCat) {
+      var matched = CATEGORIES_DATA.find(function(c) { return c.slug === urlCat; });
+      if (matched) {
+        selectedTags.push(matched);
+        renderTags();
+        updateHiddenValue();
+      }
     }
   })();
 </script>
@@ -745,42 +696,6 @@ const emailjsEnabled = Boolean(
       if (sel) sel.value = 'pro';
     }
 
-    // === Smart Devis Logic ===================================================
-    const CROSS_SELL_DATA: Record<string, string[]> = {
-      'plaquettes-de-frein': ['Disques de frein', 'Nettoyant freins', 'Repousse piston \u00e9trier'],
-      'disques-de-frein': ['Plaquettes de frein', 'Nettoyant freins'],
-      'courroie-de-distribution': ['Pompe \u00e0 eau', 'Courroie d\u0027accessoire', 'Liquide de refroidissement'],
-      'amortisseurs': ['Coupelles d\u0027amortisseur', 'Kit de protection (soufflets)'],
-      'embrayage': ['Volant moteur', 'But\u00e9e d\u0027embrayage', 'Huile de bo\u00eete', 'Joint spi'],
-      'kit-embrayage': ['Volant moteur', 'But\u00e9e d\u0027embrayage', 'Huile de bo\u00eete', 'Joint spi'],
-      'batterie': ['Nettoyant contacts', 'Graisse cuivr\u00e9e pour cosses'],
-      'huile-moteur': ['Filtre \u00e0 huile', 'Bouchon de vidange', 'Joint de vidange'],
-      'filtre-a-huile': ['Huile moteur', 'Bouchon de vidange'],
-    };
-
-    const urlCat = new URL(window.location.href).searchParams.get('cat');
-    const smartDevisContainer = document.getElementById('smart-devis-container');
-    const smartDevisCheckboxes = document.getElementById('smart-devis-checkboxes');
-
-    if (urlCat && CROSS_SELL_DATA[urlCat] && smartDevisContainer && smartDevisCheckboxes) {
-      const suggestions = CROSS_SELL_DATA[urlCat];
-      suggestions.forEach((item, idx) => {
-        const label = document.createElement('label');
-        label.className = 'flex items-start gap-3 cursor-pointer group';
-        label.innerHTML = `
-          <div class="relative flex items-center mt-0.5">
-            <input type="checkbox" name="cross_sells" value="${item}" class="peer sr-only" />
-            <div class="size-5 rounded border-2 border-sky-300 bg-white peer-checked:bg-sky-500 peer-checked:border-sky-500 transition-colors flex items-center justify-center">
-              <svg class="opacity-0 peer-checked:opacity-100 text-white" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            </div>
-          </div>
-          <span class="text-sm font-medium text-charcoal-700 group-hover:text-marine-900 transition-colors">${item}</span>
-        `;
-        smartDevisCheckboxes.appendChild(label);
-      });
-      smartDevisContainer.classList.remove('hidden');
-    }
-
     // === Photos state ========================================================
     interface PhotoEntry {
       file: File;
@@ -814,26 +729,6 @@ const emailjsEnabled = Boolean(
       }
     }
 
-    function showStatus(kind: 'success' | 'error' | 'info', msg: string) {
-      if (!statusEl) return;
-      const palette: Record<typeof kind, string> = {
-        success: 'bg-green-50 border-green-300 text-green-800',
-        error: 'bg-red-50 border-red-300 text-red-800',
-        info: 'bg-sky-50 border-sky-300 text-sky-800',
-      };
-      const icon =
-        kind === 'success'
-          ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>'
-          : '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>';
-      statusEl.className = `rounded-lg p-4 border-2 text-sm flex items-start gap-3 ${palette[kind]}`;
-      statusEl.innerHTML = `<span class="shrink-0 mt-0.5">${icon}</span><span>${msg}</span>`;
-      statusEl.classList.remove('hidden');
-    }
-    function hideStatus() {
-      if (!statusEl) return;
-      statusEl.classList.add('hidden');
-    }
-
     // === Compression photo via canvas ========================================
     function compressImage(file: File): Promise<string> {
       return new Promise((resolve, reject) => {
@@ -863,6 +758,26 @@ const emailjsEnabled = Boolean(
         };
         reader.readAsDataURL(file);
       });
+    }
+
+    function showStatus(kind: 'success' | 'error' | 'info', msg: string) {
+      if (!statusEl) return;
+      const palette: Record<typeof kind, string> = {
+        success: 'bg-green-50 border-green-300 text-green-800',
+        error: 'bg-red-50 border-red-300 text-red-800',
+        info: 'bg-sky-50 border-sky-300 text-sky-800',
+      };
+      const icon =
+        kind === 'success'
+          ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>'
+          : '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>';
+      statusEl.className = `rounded-lg p-4 border-2 text-sm flex items-start gap-3 ${palette[kind]}`;
+      statusEl.innerHTML = `<span class="shrink-0 mt-0.5">${icon}</span><span>${msg}</span>`;
+      statusEl.classList.remove('hidden');
+    }
+    function hideStatus() {
+      if (!statusEl) return;
+      statusEl.classList.add('hidden');
     }
 
     // === Render thumbnails ====================================================
@@ -936,10 +851,11 @@ const emailjsEnabled = Boolean(
     function validateForm(fd: FormData): string | null {
       const nom = String(fd.get('nom') ?? '').trim();
       const email = String(fd.get('email') ?? '').trim();
+      const pieces = String(fd.get('pieces') ?? '').trim();
       const message = String(fd.get('message') ?? '').trim();
       if (nom.length < 2) return 'Merci d\'indiquer votre nom.';
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return 'Adresse email invalide.';
-      if (message.length < 10) return 'Décrivez la pièce recherchée (10 caractères minimum).';
+      if (!pieces && message.length < 10) return 'Sélectionnez au moins une pièce ou décrivez votre besoin (10 caractères minimum).';
       return null;
     }
 
@@ -978,12 +894,18 @@ const emailjsEnabled = Boolean(
       }
 
       // 4) Construction des params EmailJS (toutes les valeurs en string)
-      const checkedCrossSells = Array.from(form.querySelectorAll<HTMLInputElement>('input[name="cross_sells"]:checked'))
-        .map(input => input.value);
+      const piecesSelected = String(fd.get('pieces') ?? '').trim();
+      const notesMessage = String(fd.get('message') ?? '').trim();
 
-      let finalMessage = String(fd.get('message') ?? '');
-      if (checkedCrossSells.length > 0) {
-        finalMessage += '\n\n--- Articles compl\u00e9mentaires demand\u00e9s ---\n' + checkedCrossSells.map(c => '- ' + c).join('\n');
+      let finalMessage = '';
+      if (piecesSelected) {
+        finalMessage += 'Pièces recherchées : ' + piecesSelected + '\n\n';
+      }
+      if (notesMessage) {
+        finalMessage += 'Notes complémentaires :\n' + notesMessage;
+      }
+      if (!finalMessage) {
+        finalMessage = '—';
       }
 
       const params: Record<string, string> = {
