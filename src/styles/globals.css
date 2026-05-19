@@ -569,3 +569,80 @@ body > nav[aria-label="Actions rapides"] { view-transition-name: sticky-bar; }
     animation: none;
   }
 }
+
+/* =====================================================================
+   Animation Keyframes & Utilities for lively and professional feel
+   ===================================================================== */
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes count-up {
+  0% {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes pulse-whatsapp {
+  0% {
+    box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.45);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(37, 211, 102, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(37, 211, 102, 0);
+  }
+}
+
+@keyframes spin-gear {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Apply smooth hover pulse & micro-interactions */
+.btn-whatsapp {
+  animation: pulse-whatsapp 2.5s infinite;
+}
+
+.hover-spin-gear:hover svg,
+.hover-spin-gear:hover img {
+  animation: spin-gear 4s linear infinite;
+}
+
+/* Interactive card micro-scale transitions */
+.card-interactive {
+  will-change: transform, box-shadow, border-color;
+  transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1),
+              box-shadow 0.4s cubic-bezier(0.2, 0.8, 0.2, 1),
+              border-color 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
