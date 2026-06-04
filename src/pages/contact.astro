@@ -928,34 +928,59 @@ const emailjsEnabled = Boolean(
       // 5) Envoi
       setSubmitState('loading');
 
-      // Fallback mailto: si EmailJS pas configuré
-      if (!cfg.enabled) {
-        const body = [
-          `Nom : ${params.nom}`,
-          `Email : ${params.email}`,
-          `Téléphone : ${params.telephone}`,
-          `Profil : ${params.audience}`,
-          ``,
-          `Véhicule : ${params.marque} ${params.modele} ${params.annee}`,
-          `Motorisation/VIN : ${params.motorisation}`,
-          ``,
-          `Demande :`,
-          params.message,
-          ``,
-          `Photos : ${params.photos_count} (à demander en réponse)`,
-        ].join('\n');
-        const subject = encodeURIComponent(`Devis pièce auto — ${params.nom}`);
-        window.location.href = `mailto:${cfg.fallbackEmail}?subject=${subject}&body=${encodeURIComponent(body)}`;
-        showStatus(
-          'info',
-          'EmailJS non configuré — votre client mail s\'ouvre avec le message pré-rempli.'
-        );
-        setSubmitState('idle');
-        return;
-      }
+      const payload = {
+        ...params,
+        _lang: "fr",
+        _gotcha: honeypot || undefined,
+      };
 
       try {
-        await emailjs.send(cfg.service, cfg.template, params);
+        const apiUrl = "http://localhost:3000/api";
+        const formId = "20c8aa7f-e176-4004-b244-3f43b163cde2";
+
+        showStatus('info', 'Calcul de sécurité en cours...');
+
+        // 1. Demander le challenge cryptographique
+        const challengeRes = await fetch(`${apiUrl}/challenge`);
+        if (!challengeRes.ok) throw new Error("Le service est temporairement indisponible.");
+        const { challenge, timestamp, difficulty } = await challengeRes.json();
+
+        // 2. Résoudre le challenge (Proof-of-Work)
+        async function sha256(str: string) {
+          const buf = new TextEncoder().encode(str);
+          const hashBuf = await crypto.subtle.digest("SHA-256", buf);
+          return Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2, "0")).join("");
+        }
+
+        let nonce = 0;
+        let hash = "";
+        const prefix = "0".repeat(difficulty);
+
+        while (true) {
+          hash = await sha256(`${challenge}:${nonce}`);
+          if (hash.startsWith(prefix)) break;
+          nonce++;
+        }
+
+        // 3. Ajouter PoW au payload
+        Object.assign(payload, {
+          pow_challenge: challenge,
+          pow_timestamp: timestamp,
+          pow_nonce: nonce.toString()
+        });
+
+        // 4. Envoyer au microservice
+        const res = await fetch(`${apiUrl}/submit/${formId}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(data.error || "Une erreur est survenue lors de l'envoi.");
+        }
+
         localStorage.setItem(RATE_LIMIT_KEY, String(Date.now()));
         showStatus(
           'success',
@@ -964,20 +989,17 @@ const emailjsEnabled = Boolean(
         form.reset();
         photos.length = 0;
         renderPreviews();
+        
         // Re-prefill audience si on était venu via ?audience=pro (UX cohérente)
         if (urlAudience === 'pro') {
           const sel = form.querySelector<HTMLSelectElement>('select[name="audience"]');
           if (sel) sel.value = 'pro';
         }
-      } catch (err) {
-        console.error('[contact] emailjs.send error:', err);
-        const errMsg =
-          err && typeof err === 'object' && 'text' in err
-            ? String((err as { text: string }).text)
-            : 'Erreur d\'envoi inconnue';
+      } catch (err: any) {
+        console.error('[contact] api send error:', err);
         showStatus(
           'error',
-          `Impossible d'envoyer (${errMsg}). Réessayez ou contactez-nous au ${form.dataset.fallbackMailto ?? 'téléphone'}.`
+          `Impossible d'envoyer (${err.message || 'Erreur inconnue'}). Réessayez ou contactez-nous.`
         );
       } finally {
         setSubmitState('idle');
