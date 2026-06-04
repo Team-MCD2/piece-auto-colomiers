@@ -44,6 +44,10 @@ const emailjsConfig = {
 const emailjsEnabled = Boolean(
   emailjsConfig.serviceId && emailjsConfig.templateId && emailjsConfig.publicKey
 );
+
+// Configuration for new Form Service API
+const formApiUrl = import.meta.env.PUBLIC_FORM_API_URL || "https://logiciel-formulaire.vercel.app/api";
+const formId = import.meta.env.PUBLIC_FORM_ID;
 ---
 
 <Layout
@@ -151,6 +155,8 @@ const emailjsEnabled = Boolean(
             data-emailjs-public={emailjsConfig.publicKey}
             data-emailjs-enabled={String(emailjsEnabled)}
             data-fallback-mailto={STORE.contact.email}
+            data-api-url={formApiUrl}
+            data-form-id={formId}
             novalidate
           >
             <div class="grid sm:grid-cols-2 gap-4">
@@ -935,8 +941,12 @@ const emailjsEnabled = Boolean(
       };
 
       try {
-        const apiUrl = "https://logiciel-formulaire.vercel.app/api";
-        const formId = "20c8aa7f-e176-4004-b244-3f43b163cde2";
+        const apiUrl = form.dataset.apiUrl || "https://logiciel-formulaire.vercel.app/api";
+        const formIdToSubmit = form.dataset.formId;
+
+        if (!formIdToSubmit) {
+          throw new Error("Form ID manquant. Veuillez configurer PUBLIC_FORM_ID.");
+        }
 
         showStatus('info', 'Calcul de sécurité en cours...');
 
@@ -970,7 +980,7 @@ const emailjsEnabled = Boolean(
         });
 
         // 4. Envoyer au microservice
-        const res = await fetch(`${apiUrl}/submit/${formId}`, {
+        const res = await fetch(`${apiUrl}/submit/${formIdToSubmit}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
