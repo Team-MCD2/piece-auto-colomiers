@@ -146,7 +146,7 @@ const formId = import.meta.env.PUBLIC_FORM_ID;
 
           <form
             id="devis-form"
-            action={`mailto:${STORE.contact.email}`}
+            action={formId ? `${formApiUrl}/submit/${formId}` : `mailto:${STORE.contact.email}`}
             method="post"
             enctype="text/plain"
             class="space-y-5"
