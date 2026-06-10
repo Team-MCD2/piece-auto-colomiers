@@ -146,8 +146,7 @@ const formId = import.meta.env.PUBLIC_FORM_ID;
 
           <form
             id="devis-form"
-            action={formId ? `${formApiUrl}/submit/${formId}` : `mailto:${STORE.contact.email}`}
-            method="post"
+            data-api-form="auto_colomier"
             enctype="text/plain"
             class="space-y-5"
             data-emailjs-service={emailjsConfig.serviceId}
@@ -866,155 +865,8 @@ const formId = import.meta.env.PUBLIC_FORM_ID;
     }
 
     // === Submit handler =======================================================
-    form.addEventListener('submit', async (ev) => {
-      ev.preventDefault();
-      hideStatus();
-      clearPhotoError();
-
-      const fd = new FormData(form);
-
-      // 1) Honeypot — bot a rempli le champ "website" → on simule un succès silencieux
-      const honeypot = String(fd.get('website') ?? '').trim();
-      if (honeypot) {
-        showStatus('success', 'Demande envoyée. Réponse sous 24 heures ouvrées.');
-        form.reset();
-        photos.length = 0;
-        renderPreviews();
-        return;
-      }
-
-      // 2) Rate-limit
-      const lastSent = Number(localStorage.getItem(RATE_LIMIT_KEY) ?? '0');
-      const elapsed = Date.now() - lastSent;
-      if (lastSent > 0 && elapsed < RATE_LIMIT_MS) {
-        const wait = Math.ceil((RATE_LIMIT_MS - elapsed) / 1000);
-        showStatus('info', `Patientez ${wait} s avant de renvoyer une demande.`);
-        return;
-      }
-
-      // 3) Validation manuelle
-      const validationError = validateForm(fd);
-      if (validationError) {
-        showStatus('error', validationError);
-        return;
-      }
-
-      // 4) Construction des params EmailJS (toutes les valeurs en string)
-      const piecesSelected = String(fd.get('pieces') ?? '').trim();
-      const notesMessage = String(fd.get('message') ?? '').trim();
-
-      let finalMessage = '';
-      if (piecesSelected) {
-        finalMessage += 'Pièces recherchées : ' + piecesSelected + '\n\n';
-      }
-      if (notesMessage) {
-        finalMessage += 'Notes complémentaires :\n' + notesMessage;
-      }
-      if (!finalMessage) {
-        finalMessage = '—';
-      }
-
-      const params: Record<string, string> = {
-        nom: String(fd.get('nom') ?? ''),
-        email: String(fd.get('email') ?? ''),
-        telephone: String(fd.get('telephone') ?? '—'),
-        audience: String(fd.get('audience') ?? 'particulier'),
-        marque: String(fd.get('marque') ?? '—'),
-        modele: String(fd.get('modele') ?? '—'),
-        annee: String(fd.get('annee') ?? '—'),
-        motorisation: String(fd.get('motorisation') ?? '—'),
-        message: finalMessage,
-        photos_count: String(photos.length),
-        photo_1_data: photos[0]?.compressed ?? '',
-        photo_2_data: photos[1]?.compressed ?? '',
-        photo_3_data: photos[2]?.compressed ?? '',
-        sent_at: new Date().toLocaleString('fr-FR', { timeZone: 'Europe/Paris' }),
-      };
-
-      // 5) Envoi
-      setSubmitState('loading');
-
-      const payload = {
-        ...params,
-        _lang: "fr",
-        _gotcha: honeypot || undefined,
-      };
-
-      try {
-        const apiUrl = form.dataset.apiUrl || "https://logiciel-formulaire.vercel.app/api";
-        const formIdToSubmit = form.dataset.formId;
-
-        if (!formIdToSubmit) {
-          throw new Error("Form ID manquant. Veuillez configurer PUBLIC_FORM_ID.");
-        }
-
-        showStatus('info', 'Calcul de sécurité en cours...');
-
-        // 1. Demander le challenge cryptographique
-        const challengeRes = await fetch(`${apiUrl}/challenge`);
-        if (!challengeRes.ok) throw new Error("Le service est temporairement indisponible.");
-        const { challenge, timestamp, difficulty } = await challengeRes.json();
-
-        // 2. Résoudre le challenge (Proof-of-Work)
-        async function sha256(str: string) {
-          const buf = new TextEncoder().encode(str);
-          const hashBuf = await crypto.subtle.digest("SHA-256", buf);
-          return Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2, "0")).join("");
-        }
-
-        let nonce = 0;
-        let hash = "";
-        const prefix = "0".repeat(difficulty);
-
-        while (true) {
-          hash = await sha256(`${challenge}:${nonce}`);
-          if (hash.startsWith(prefix)) break;
-          nonce++;
-        }
-
-        // 3. Ajouter PoW au payload
-        Object.assign(payload, {
-          pow_challenge: challenge,
-          pow_timestamp: timestamp,
-          pow_nonce: nonce.toString()
-        });
-
-        // 4. Envoyer au microservice
-        const res = await fetch(`${apiUrl}/submit/${formIdToSubmit}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          throw new Error(data.error || "Une erreur est survenue lors de l'envoi.");
-        }
-
-        localStorage.setItem(RATE_LIMIT_KEY, String(Date.now()));
-        showStatus(
-          'success',
-          'Demande envoyée. Réponse sous 24 h ouvrées par email. Pour un devis urgent, appelez-nous.'
-        );
-        form.reset();
-        photos.length = 0;
-        renderPreviews();
-        
-        // Re-prefill audience si on était venu via ?audience=pro (UX cohérente)
-        if (urlAudience === 'pro') {
-          const sel = form.querySelector<HTMLSelectElement>('select[name="audience"]');
-          if (sel) sel.value = 'pro';
-        }
-      } catch (err: any) {
-        console.error('[contact] api send error:', err);
-        showStatus(
-          'error',
-          `Impossible d'envoyer (${err.message || 'Erreur inconnue'}). Réessayez ou contactez-nous.`
-        );
-      } finally {
-        setSubmitState('idle');
-      }
-    });
+    // Supprimé conformément aux instructions : "Ne crée aucun script fetch manuel en JS. 
+    // Le SDK magique s'occupera automatiquement de tout"
   }
 </script>
 
