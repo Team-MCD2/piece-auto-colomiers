@@ -147,7 +147,16 @@ const formId = import.meta.env.PUBLIC_FORM_ID;
           <form
             id="devis-form"
             data-api-form="auto_colomier"
+            enctype="text/plain"
             class="space-y-5"
+            data-emailjs-service={emailjsConfig.serviceId}
+            data-emailjs-template={emailjsConfig.templateId}
+            data-emailjs-public={emailjsConfig.publicKey}
+            data-emailjs-enabled={String(emailjsEnabled)}
+            data-fallback-mailto={STORE.contact.email}
+            data-api-url={formApiUrl}
+            data-form-id={formId}
+            novalidate
           >
             <div class="grid sm:grid-cols-2 gap-4">
               <label class="block">
